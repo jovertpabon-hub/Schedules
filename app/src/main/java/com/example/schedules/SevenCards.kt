@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.GridView
@@ -50,6 +51,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,7 +74,7 @@ enum class ScheduleTab(val title: String, val icon: ImageVector) {
     NOW("Now", Icons.Default.Schedule),
     GRID("Cards View", Icons.Default.GridView),
     TIMETABLE("Matrix View", Icons.Default.TableChart),
-    TEMPLATE("Template View", Icons.Default.DateRange)
+    TEMPLATE("Template", Icons.Default.DateRange)
 }
 
 enum class CardDetailState {
@@ -93,7 +95,8 @@ data class CourseClass(
     val courseName: String,
     val startTime: String,
     val endTime: String,
-    val room: String = "TBA"
+    val room: String = "TBA",
+    val instructor: String
 )
 
 data class DayScheduleData(
@@ -115,45 +118,45 @@ val realWeekData = listOf(
     DayScheduleData(
         dayName = "Monday",
         classes = listOf(
-            CourseClass("GE6", "Art Appreciation", "08:00 AM", "10:00 AM", "IITONLINE"),
-            CourseClass("GE7", "Science, Tech & Society", "01:00 PM", "03:00 PM", "IITBLENDED"),
-            CourseClass("CSP2", "Numerical Methods", "03:00 PM", "05:00 PM", "IITRM11"),
-            CourseClass("NC1", "Networks & Communication", "05:00 PM", "06:00 PM", "IITRM6")
+            CourseClass("GE6", "Art Appreciation", "08:00 AM", "10:00 AM", "IITONLINE", "TBA"),
+            CourseClass("GE7", "Science, Tech & Society", "01:00 PM", "03:00 PM", "IITBLENDED", "J. Sedeño"),
+            CourseClass("CSP2", "Numerical Methods", "03:00 PM", "05:00 PM", "IITRM11", "S. Carilo"),
+            CourseClass("NC1", "Networks & Communication", "05:00 PM", "06:00 PM", "IITRM6", "N. Pura")
         )
     ),
     DayScheduleData(
         dayName = "Tuesday",
         classes = listOf(
-            CourseClass("SDF1", "Object Oriented Programming", "08:00 AM", "09:00 AM", "IITRM7"),
-            CourseClass("CC4", "Data Structures & Algorithm", "09:00 AM", "10:00 AM", "IITONLINE"),
-            CourseClass("GE7", "Science, Tech & Society", "02:00 PM", "03:00 PM", "IITBLENDED"),
-            CourseClass("PATHFIT3", "Dance", "03:00 PM", "05:00 PM", "GYM6")
+            CourseClass("SDF1", "Object Oriented Programming", "08:00 AM", "09:00 AM", "IITRM7", "N. Pura"),
+            CourseClass("CC4", "Data Structures & Algorithm", "09:00 AM", "10:00 AM", "IITONLINE", "J. Sabaria"),
+            CourseClass("GE7", "Science, Tech & Society", "02:00 PM", "03:00 PM", "IITBLENDED", "J. Sedeño"),
+            CourseClass("PATHFIT3", "Dance", "03:00 PM", "05:00 PM", "GYM6", " C. Sanoy")
         )
     ),
     DayScheduleData(
         dayName = "Wednesday",
         classes = listOf(
-            CourseClass("GE6", "Art Appreciation", "08:00 AM", "09:00 AM", "IITONLINE"),
-            CourseClass("SDF1", "Object Oriented Programming", "10:00 AM", "12:00 PM", "IITRM12"),
-            CourseClass("CC4", "Data Structures & Algorithm", "01:00 PM", "03:00 PM", "IITONLINE"),
-            CourseClass("CC4", "Data Structures & Algorithm", "03:00 PM", "05:00 PM", "IITRM12")
+            CourseClass("GE6", "Art Appreciation", "08:00 AM", "09:00 AM", "IITONLINE", "TBA"),
+            CourseClass("SDF1", "Object Oriented Programming", "10:00 AM", "12:00 PM", "IITRM12", "N. Pura"),
+            CourseClass("CC4", "Data Structures & Algorithm", "01:00 PM", "03:00 PM", "IITONLINE", "J. Sabaria"),
+            CourseClass("CC4", "Data Structures & Algorithm", "03:00 PM", "05:00 PM", "IITRM12", "J. Sabaria")
         )
     ),
     DayScheduleData(
         dayName = "Thursday",
         classes = listOf(
-            CourseClass("GEE3-C", "Living in the IT Era", "08:00 AM", "09:00 AM", "IITRM20"),
-            CourseClass("SDF1", "Object Oriented Programming", "10:00 AM", "12:00 PM", "IITRM7"),
-            CourseClass("NC1", "Networks & Communication", "01:00 PM", "03:00 PM", "IITRM14"),
-            CourseClass("CSP2", "Numerical Methods", "03:00 PM", "04:00 PM", "IITRM5")
+            CourseClass("GEE3-C", "Living in the IT Era", "08:00 AM", "09:00 AM", "IITRM20", "F. Oliver"),
+            CourseClass("SDF1", "Object Oriented Programming", "10:00 AM", "12:00 PM", "IITRM7", "N. Pura"),
+            CourseClass("NC1", "Networks & Communication", "01:00 PM", "03:00 PM", "IITRM14", "N. Pura"),
+            CourseClass("CSP2", "Numerical Methods", "03:00 PM", "04:00 PM", "IITRM5", "S. Carilo")
         )
     ),
     DayScheduleData(
         dayName = "Friday",
         classes = listOf(
-            CourseClass("NC1", "Networks & Communication", "08:00 AM", "09:00 AM", "IITRM6"),
-            CourseClass("GEE3-C", "Living in the IT Era", "10:00 AM", "12:00 PM", "IITRM20"),
-            CourseClass("CSP2", "Numerical Methods", "01:00 PM", "03:00 PM", "IITRM7")
+            CourseClass("NC1", "Networks & Communication", "08:00 AM", "09:00 AM", "IITRM6", "N. Pura"),
+            CourseClass("GEE3-C", "Living in the IT Era", "10:00 AM", "12:00 PM", "IITRM20", "F. Oliver"),
+            CourseClass("CSP2", "Numerical Methods", "01:00 PM", "03:00 PM", "IITRM7", "S. Carilo")
         )
     ),
     DayScheduleData(dayName = "Saturday", classes = emptyList()),
@@ -171,7 +174,7 @@ fun calculateCurrentStatus(weekData: List<DayScheduleData>): ScheduleStatus {
     val todaySchedule = weekData.firstOrNull { it.dayName.equals(today, ignoreCase = true) }
 
     if (todaySchedule != null) {
-        // 1. Check for ONGOING class
+        // 1. Check for ONGOING class today
         for (course in todaySchedule.classes) {
             val startTime = runCatching { LocalTime.parse(course.startTime, timeFormatter) }.getOrNull()
             val endTime = runCatching { LocalTime.parse(course.endTime, timeFormatter) }.getOrNull()
@@ -219,41 +222,13 @@ fun calculateCurrentStatus(weekData: List<DayScheduleData>): ScheduleStatus {
         }
     }
 
-    // 3. Look ahead to NEXT UPCOMING DAY with accurate multi-day countdown
-    val dayOrder = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-    val todayIndex = dayOrder.indexOfFirst { it.equals(today, ignoreCase = true) }
-
-    for (i in 1..6) {
-        val nextDayIndex = if (todayIndex != -1) (todayIndex + i) % 7 else 0
-        val nextDayName = dayOrder[nextDayIndex]
-        val nextDaySchedule = weekData.firstOrNull { it.dayName == nextDayName }
-
-        if (nextDaySchedule != null && nextDaySchedule.classes.isNotEmpty()) {
-            val firstClass = nextDaySchedule.classes.first()
-            val startTime = runCatching { LocalTime.parse(firstClass.startTime, timeFormatter) }.getOrNull()
-
-            if (startTime != null) {
-                // Total seconds remaining = remaining time today + days in between + target class start time
-                val secondsTillEndOfToday = Duration.between(now, LocalTime.MAX).seconds + 1
-                val secondsOnTargetDay = startTime.toSecondOfDay().toLong()
-                val fullDaysInBetween = (i - 1).toLong()
-                val totalRemainingSeconds = secondsTillEndOfToday + (fullDaysInBetween * 86400) + secondsOnTargetDay
-
-                val hours = totalRemainingSeconds / 3600
-                val minutes = (totalRemainingSeconds % 3600) / 60
-                val seconds = totalRemainingSeconds % 60
-
-                return ScheduleStatus(
-                    courseClass = firstClass,
-                    dayName = nextDaySchedule.dayName,
-                    status = ClassStatus.UPCOMING,
-                    remainingFormatted = String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
-                )
-            }
-        }
-    }
-
-    return ScheduleStatus(null, "Today", ClassStatus.NONE, "00:00:00")
+    // 3. NO MORE CLASSES TODAY (or off day) -> Strictly return End of Day status
+    return ScheduleStatus(
+        courseClass = null,
+        dayName = today,
+        status = ClassStatus.NONE,
+        remainingFormatted = "End of the day"
+    )
 }
 // --- Main App Screen ---
 
@@ -313,7 +288,7 @@ fun IncomingScheduleBanner(status: ScheduleStatus) {
     val tagText = when (status.status) {
         ClassStatus.ONGOING -> "CLASS IN PROGRESS (${status.dayName.uppercase(Locale.US)})"
         ClassStatus.UPCOMING -> "NEXT CLASS (${status.dayName.uppercase(Locale.US)})"
-        ClassStatus.NONE -> "SCHEDULE STATUS"
+        ClassStatus.NONE -> "END OF THE DAY"
     }
 
     Card(
@@ -324,6 +299,7 @@ fun IncomingScheduleBanner(status: ScheduleStatus) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
     ) {
         Column(
             modifier = Modifier
@@ -348,11 +324,13 @@ fun IncomingScheduleBanner(status: ScheduleStatus) {
                 if (status.status != ClassStatus.NONE) {
                     Box(
                         modifier = Modifier
+                            .border(0.1.dp, MaterialTheme.colorScheme.outline)
                             .background(
                                 color = MaterialTheme.colorScheme.primaryContainer,
                                 shape = MaterialTheme.shapes.extraSmall
                             )
                             .padding(horizontal = 8.dp, vertical = 4.dp)
+
                     ) {
                         Text(
                             text = if (status.status == ClassStatus.ONGOING)
@@ -391,9 +369,11 @@ fun IncomingScheduleBanner(status: ScheduleStatus) {
                         progress = { status.progressPercent },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(4.dp),
+                            .height(4.5.dp)
+                            .border(0.1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
                         color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.primaryContainer
+                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                        drawStopIndicator = {}
                     )
                 }
 
@@ -419,7 +399,7 @@ fun IncomingScheduleBanner(status: ScheduleStatus) {
                 }
             } else {
                 Text(
-                    text = "No upcoming classes found 🎉",
+                    text = "No upcoming classes found",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -440,14 +420,16 @@ fun NowTabScreen(status: ScheduleStatus) {
             .padding(16.dp)
     ) {
         Card(
-            modifier = Modifier.fillMaxSize(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium),
+            elevation = CardDefaults.cardElevation(defaultElevation = 7.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -474,7 +456,10 @@ fun NowTabScreen(status: ScheduleStatus) {
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(0.5.dp, MaterialTheme.colorScheme.outline, shape = MaterialTheme.shapes.small)
                 ) {
                     Column(
                         modifier = Modifier
@@ -508,9 +493,12 @@ fun NowTabScreen(status: ScheduleStatus) {
                                 progress = { status.progressPercent },
                                 modifier = Modifier
                                     .fillMaxWidth(0.85f)
-                                    .height(6.dp),
+                                    .height(8.dp)
+                                    .clip(CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
                                 color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                                gapSize = 4.dp,
+                                drawStopIndicator = {}
                             )
                         }
                     }
@@ -522,7 +510,9 @@ fun NowTabScreen(status: ScheduleStatus) {
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
                     ) {
                         Column(
                             modifier = Modifier
@@ -553,31 +543,50 @@ fun NowTabScreen(status: ScheduleStatus) {
                                 color = MaterialTheme.colorScheme.outlineVariant
                             )
 
-                            // 2. Bottom Section: Info Badges Grid
-                            Row(
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                // Room Badge
-                                InfoBadge(
-                                    modifier = Modifier.weight(1f),
-                                    label = "ROOM",
-                                    value = course.room
-                                )
+                                // Row 1: Time Schedule (Start Time & End Time together)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    InfoBadge(
+                                        modifier = Modifier.weight(1f),
+                                        label = "🕒 START TIME",
+                                        value = course.startTime
+                                    )
+                                    InfoBadge(
+                                        modifier = Modifier.weight(1f),
+                                        label = "🕒 END TIME",
+                                        value = course.endTime
+                                    )
+                                }
 
-                                // Time Schedule Badge
-                                InfoBadge(
-                                    modifier = Modifier.weight(1.5f),
-                                    label = "TIME",
-                                    value = "${course.startTime} - ${course.endTime}"
-                                )
+                                // Row 2: Location & Staff (Room & Instructor together)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    InfoBadge(
+                                        modifier = Modifier.weight(1f),
+                                        label = "📍 ROOM",
+                                        value = course.room
+                                    )
+                                    InfoBadge(
+                                        modifier = Modifier.weight(1f),
+                                        label = "👤 INSTRUCTOR",
+                                        value = course.instructor
+                                    )
+                                }
                             }
                         }
                     }
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "No remaining classes scheduled. Rest up! 🎉",
+                        text = "No remaining classes scheduled. Rest up!",
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -602,7 +611,7 @@ private fun InfoBadge(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
         shape = MaterialTheme.shapes.small,
-        modifier = modifier
+        modifier = modifier.border(0.5.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
     ) {
         // Room Info
         Column(
@@ -832,7 +841,7 @@ fun DetailedDayCard(dayData: DayScheduleData) {
 fun TimetableMatrixTab(weekData: List<DayScheduleData>) {
     val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     val fullDays = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-    val slots = listOf("08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM")
+    val slots = listOf("08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM")
 
     val scheduleMap = remember(weekData) {
         weekData.flatMap { dayData ->
@@ -1101,5 +1110,5 @@ fun TemplateMatrixTab(weekData: List<DayScheduleData>) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MainAppPreview() {
-    NowTabScreen(calculateCurrentStatus(realWeekData))
+    TimetableMatrixTab(realWeekData)
 }
