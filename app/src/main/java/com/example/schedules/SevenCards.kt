@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -26,7 +27,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.GridView
@@ -41,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -411,8 +415,13 @@ fun IncomingScheduleBanner(status: ScheduleStatus) {
 // --- NOW Tab ---
 
 @Composable
-fun NowTabScreen(status: ScheduleStatus) {
+fun NowTabScreen(
+    status: ScheduleStatus,
+    todayClasses: List<CourseClass> = emptyList() // 👈 Passed to show remaining schedule preview
+) {
     val course = status.courseClass
+    // State to toggle between Countdown view and Upcoming Schedule view
+    var showUpcomingList by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -429,6 +438,7 @@ fun NowTabScreen(status: ScheduleStatus) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState()) // Prevents bottom content clipping
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -451,7 +461,7 @@ fun NowTabScreen(status: ScheduleStatus) {
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                 )
 
-                // Digital Countdown Display Card
+                // Digital Countdown Display Card (Interactive Tap-to-Fade)
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -460,51 +470,136 @@ fun NowTabScreen(status: ScheduleStatus) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(0.5.dp, MaterialTheme.colorScheme.outline, shape = MaterialTheme.shapes.small)
+                        .clickable { showUpcomingList = !showUpcomingList } // 👈 Tap to toggle schedule
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp, horizontal = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = when (status.status) {
-                                ClassStatus.ONGOING -> "TIME REMAINING"
-                                ClassStatus.UPCOMING -> "COUNTDOWN TO NEXT CLASS"
-                                ClassStatus.NONE -> "COUNTDOWN TO NEXT SESSION"
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            letterSpacing = 0.5.sp
-                        )
-
-                        Text(
-                            text = status.remainingFormatted,
-                            style = MaterialTheme.typography.displayMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-
-                        if (status.status == ClassStatus.ONGOING) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            LinearProgressIndicator(
-                                progress = { status.progressPercent },
+                    AnimatedContent(
+                        targetState = showUpcomingList,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                        },
+                        label = "CountdownScheduleFade"
+                    ) { isShowingList ->
+                        if (isShowingList) {
+                            // --- NEW FEATURE VIEW: TODAY'S UPCOMING SCHEDULE ---
+                            Column(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.85f)
-                                    .height(8.dp)
-                                    .clip(CircleShape)
-                                    .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
-                                color = MaterialTheme.colorScheme.primary,
-                                gapSize = 4.dp,
-                                drawStopIndicator = {}
-                            )
+                                    .fillMaxWidth()
+                                    .padding(18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "TODAY'S REMAINING CLASSES",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    letterSpacing = 0.5.sp
+                                )
+
+                                if (todayClasses.isNotEmpty()) {
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        todayClasses.forEach { classItem ->
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                                shape = MaterialTheme.shapes.extraSmall
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = "${classItem.courseCode} - ${classItem.courseName}",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    Text(
+                                                        text = "${classItem.startTime} - ${classItem.endTime}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Text(
+                                        text = "No remaining classes scheduled for today.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+
+                                Text(
+                                    text = "💡 Tap card to return to timer",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        } else {
+                            // --- ORIGINAL VIEW: DIGITAL COUNTDOWN ---
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp, horizontal = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = when (status.status) {
+                                        ClassStatus.ONGOING -> "TIME REMAINING"
+                                        ClassStatus.UPCOMING -> "COUNTDOWN TO NEXT CLASS"
+                                        ClassStatus.NONE -> "COUNTDOWN TO NEXT SESSION"
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    letterSpacing = 0.5.sp
+                                )
+
+                                Text(
+                                    text = status.remainingFormatted,
+                                    style = MaterialTheme.typography.displayMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+
+                                if (status.status == ClassStatus.ONGOING) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    LinearProgressIndicator(
+                                        progress = { status.progressPercent },
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.85f)
+                                            .height(8.dp)
+                                            .clip(CircleShape)
+                                            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        gapSize = 4.dp,
+                                        drawStopIndicator = {}
+                                    )
+                                }
+
+                                Text(
+                                    text = "💡 Tap card to view upcoming schedule",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
                         }
                     }
                 }
 
-                // --- RESTRUCTURED COURSE DETAILS CARD ---
+                // --- RESTRUCTURED COURSE DETAILS CARD (UNTOUCHED) ---
                 if (course != null) {
                     Card(
                         colors = CardDefaults.cardColors(
