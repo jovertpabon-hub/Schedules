@@ -2,14 +2,18 @@ package com.example.schedules
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,11 +23,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedules.data.models.ScheduleTab
 import com.example.schedules.ui.components.CardsViewTab
-import com.example.schedules.ui.components.IncomingScheduleBanner
 import com.example.schedules.ui.components.NowTabScreen
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import kotlinx.coroutines.launch
@@ -40,7 +44,10 @@ fun MainScheduleApp(
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp
+            ) {
                 ScheduleTab.entries.forEach { tab ->
                     NavigationBarItem(
                         selected = currentPage == tab.ordinal,
@@ -50,7 +57,14 @@ fun MainScheduleApp(
                             }
                         },
                         icon = { Icon(imageVector = tab.icon, contentDescription = tab.title) },
-                        label = { Text(tab.title) }
+                        label = { Text(tab.title) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             }
@@ -61,25 +75,17 @@ fun MainScheduleApp(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            BannerSection(viewModel)
-
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f),
                 userScrollEnabled = false,
-                beyondViewportPageCount = 1 
+                beyondViewportPageCount = 1 ,
             ) { page ->
                 TabContent(page, viewModel)
             }
         }
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun BannerSection(viewModel: ScheduleViewModel) {
-    val currentStatus by viewModel.currentStatus.collectAsState()
-    IncomingScheduleBanner(status = currentStatus)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

@@ -165,7 +165,7 @@ fun NowTabScreen(
                                     }
                                 } else {
                                     Text(
-                                        text = "No remaining classes scheduled for today.",
+                                        text = "No remaining classes scheduled.",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         textAlign = TextAlign.Center
@@ -328,7 +328,7 @@ fun NowTabScreen(
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "No remaining classes scheduled. Rest up!",
+                        text = "No remaining classes scheduled.",
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

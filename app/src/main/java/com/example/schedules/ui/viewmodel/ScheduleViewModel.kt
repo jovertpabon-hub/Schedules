@@ -40,7 +40,7 @@ class ScheduleViewModel : ViewModel() {
             courseClass = null,
             dayName = LocalDate.now().dayOfWeek.name,
             status = ClassStatus.NONE,
-            remainingFormatted = "Hive at Rest"
+            remainingFormatted = "Rest Up"
         )
     }
 
