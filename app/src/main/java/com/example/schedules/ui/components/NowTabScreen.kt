@@ -151,6 +151,9 @@ fun NowTabScreen(
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                         modifier = Modifier.weight(1f)
                                                     )
+
+                                                    Spacer(modifier = Modifier.fillMaxWidth(0.04f))
+
                                                     Text(
                                                         text = "${classItem.startTime.format(ScheduleConstants.TimeFormatter)} - ${classItem.endTime.format(ScheduleConstants.TimeFormatter)}",
                                                         style = MaterialTheme.typography.labelSmall,

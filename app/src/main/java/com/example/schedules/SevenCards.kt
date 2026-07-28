@@ -2,10 +2,11 @@ package com.example.schedules
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -13,10 +14,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,27 +25,30 @@ import com.example.schedules.data.models.ScheduleTab
 import com.example.schedules.ui.components.CardsViewTab
 import com.example.schedules.ui.components.IncomingScheduleBanner
 import com.example.schedules.ui.components.NowTabScreen
-import com.example.schedules.ui.components.TemplateMatrixTab
-import com.example.schedules.ui.components.TimetableMatrixTab
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScheduleApp(
     viewModel: ScheduleViewModel = viewModel()
 ) {
-    var selectedTab by remember { mutableStateOf(ScheduleTab.NOW) }
-    val currentStatus by viewModel.currentStatus.collectAsState()
-    val weekData by viewModel.weekData.collectAsState()
-    val todayRemainingClasses by viewModel.todayRemainingClasses.collectAsState()
+    val pagerState = rememberPagerState(pageCount = { ScheduleTab.entries.size })
+    val coroutineScope = rememberCoroutineScope()
+
+    val currentPage by remember { derivedStateOf { pagerState.currentPage } }
 
     Scaffold(
         bottomBar = {
             NavigationBar {
                 ScheduleTab.entries.forEach { tab ->
                     NavigationBarItem(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
+                        selected = currentPage == tab.ordinal,
+                        onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(tab.ordinal)
+                            }
+                        },
                         icon = { Icon(imageVector = tab.icon, contentDescription = tab.title) },
                         label = { Text(tab.title) }
                     )
@@ -57,19 +61,42 @@ fun MainScheduleApp(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            IncomingScheduleBanner(status = currentStatus)
+            BannerSection(viewModel)
 
-            Box(modifier = Modifier.weight(1f)) {
-                when (selectedTab) {
-                    ScheduleTab.NOW -> NowTabScreen(
-                        status = currentStatus,
-                        todayRemainingClasses = todayRemainingClasses
-                    )
-                    ScheduleTab.GRID -> CardsViewTab(weekData = weekData)
-                    ScheduleTab.TIMETABLE -> TimetableMatrixTab(weekData = weekData)
-                    ScheduleTab.TEMPLATE -> TemplateMatrixTab(weekData = weekData)
-                }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f),
+                userScrollEnabled = false,
+                beyondViewportPageCount = 1 
+            ) { page ->
+                TabContent(page, viewModel)
             }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun BannerSection(viewModel: ScheduleViewModel) {
+    val currentStatus by viewModel.currentStatus.collectAsState()
+    IncomingScheduleBanner(status = currentStatus)
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun TabContent(page: Int, viewModel: ScheduleViewModel) {
+    when (ScheduleTab.entries[page]) {
+        ScheduleTab.NOW -> {
+            val currentStatus by viewModel.currentStatus.collectAsState()
+            val todayRemainingClasses by viewModel.todayRemainingClasses.collectAsState()
+            NowTabScreen(
+                status = currentStatus,
+                todayRemainingClasses = todayRemainingClasses.items
+            )
+        }
+        ScheduleTab.GRID -> {
+            val weekData by viewModel.weekData.collectAsState()
+            CardsViewTab(weekSchedule = weekData)
         }
     }
 }

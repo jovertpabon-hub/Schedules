@@ -3,6 +3,7 @@ package com.example.schedules.ui.components
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -146,8 +147,14 @@ fun DetailedDayCard(dayData: DayScheduleData) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(dayData.classes.size) { index ->
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(
+                        count = dayData.classes.size,
+                        key = { index -> "${dayData.dayName}_${dayData.classes[index].courseCode}_$index" }
+                    ) { index ->
                         val item = dayData.classes[index]
                         Column(
                             verticalArrangement = Arrangement.spacedBy(6.dp),

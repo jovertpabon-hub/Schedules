@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
@@ -24,13 +25,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.schedules.data.models.DayScheduleData
+import com.example.schedules.data.models.WeekSchedule
 import kotlinx.coroutines.launch
 
 @Composable
-fun CardsViewTab(weekData: List<DayScheduleData>) {
+fun CardsViewTab(weekSchedule: WeekSchedule) {
     var cardState by remember { mutableStateOf(CardDetailState.GRID_LIST) }
-    val pagerState = rememberPagerState(initialPage = 0) { weekData.size }
+    val pagerState = rememberPagerState(initialPage = 0) { weekSchedule.days.size }
     val coroutineScope = rememberCoroutineScope()
 
     BackHandler(enabled = cardState == CardDetailState.PAGER_DETAIL) {
@@ -44,8 +45,9 @@ fun CardsViewTab(weekData: List<DayScheduleData>) {
     ) { state ->
         when (state) {
             CardDetailState.GRID_LIST -> {
-                val weekdays = weekData.take(6)
-                val sunday = weekData.lastOrNull()
+                val weekData = weekSchedule.days
+                val weekdays = remember(weekData) { weekData.take(6) }
+                val sunday = remember(weekData) { weekData.lastOrNull() }
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
@@ -54,9 +56,12 @@ fun CardsViewTab(weekData: List<DayScheduleData>) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(weekdays.size) { index ->
+                    itemsIndexed(
+                        items = weekdays,
+                        key = { _, item -> item.dayName }
+                    ) { index, dayData ->
                         DayMiniCard(
-                            dayData = weekdays[index],
+                            dayData = dayData,
                             onClick = {
                                 coroutineScope.launch { pagerState.scrollToPage(index) }
                                 cardState = CardDetailState.PAGER_DETAIL
@@ -64,7 +69,10 @@ fun CardsViewTab(weekData: List<DayScheduleData>) {
                         )
                     }
                     if (sunday != null) {
-                        item(span = { GridItemSpan(2) }) {
+                        item(
+                            span = { GridItemSpan(2) },
+                            key = "Sunday"
+                        ) {
                             Box(
                                 modifier = Modifier.fillMaxWidth(),
                                 contentAlignment = Alignment.Center
@@ -89,7 +97,7 @@ fun CardsViewTab(weekData: List<DayScheduleData>) {
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
                     pageSpacing = 16.dp
                 ) { page ->
-                    DetailedDayCard(dayData = weekData[page])
+                    DetailedDayCard(dayData = weekSchedule.days[page])
                 }
             }
         }

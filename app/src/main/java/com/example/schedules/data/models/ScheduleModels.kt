@@ -1,10 +1,9 @@
 package com.example.schedules.data.models
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -16,11 +15,10 @@ object ScheduleConstants {
 
 enum class ScheduleTab(val title: String, val icon: ImageVector) {
     NOW("Now", Icons.Default.Schedule),
-    GRID("Cards View", Icons.Default.GridView),
-    TIMETABLE("Matrix View", Icons.Default.TableChart),
-    TEMPLATE("Template", Icons.Default.DateRange)
+    GRID("Cards View", Icons.Default.GridView)
 }
 
+@Immutable
 data class CourseClass(
     val courseCode: String,
     val courseName: String,
@@ -30,9 +28,21 @@ data class CourseClass(
     val instructor: String
 )
 
+@Immutable
 data class DayScheduleData(
     val dayName: String,
     val classes: List<CourseClass>
+)
+
+// Wrapper for List stability in Compose
+@Immutable
+data class WeekSchedule(
+    val days: List<DayScheduleData>
+)
+
+@Immutable
+data class ClassList(
+    val items: List<CourseClass>
 )
 
 enum class ClassStatus {
@@ -41,6 +51,7 @@ enum class ClassStatus {
     NONE
 }
 
+@Immutable
 data class ScheduleStatus(
     val courseClass: CourseClass?,
     val dayName: String,
