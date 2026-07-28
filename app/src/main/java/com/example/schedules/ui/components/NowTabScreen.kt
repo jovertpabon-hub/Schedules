@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.example.schedules.R
 import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.CourseClass
+import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
 import java.util.Locale
 
@@ -151,7 +152,7 @@ fun NowTabScreen(
                                                         modifier = Modifier.weight(1f)
                                                     )
                                                     Text(
-                                                        text = "${classItem.startTime} - ${classItem.endTime}",
+                                                        text = "${classItem.startTime.format(ScheduleConstants.TimeFormatter)} - ${classItem.endTime.format(ScheduleConstants.TimeFormatter)}",
                                                         style = MaterialTheme.typography.labelSmall,
                                                         color = MaterialTheme.colorScheme.primary
                                                     )
@@ -294,12 +295,12 @@ fun NowTabScreen(
                                     InfoBadge(
                                         modifier = Modifier.weight(1f),
                                         label = "🕒 START TIME",
-                                        value = course.startTime
+                                        value = course.startTime.format(ScheduleConstants.TimeFormatter)
                                     )
                                     InfoBadge(
                                         modifier = Modifier.weight(1f),
                                         label = "🕒 END TIME",
-                                        value = course.endTime
+                                        value = course.endTime.format(ScheduleConstants.TimeFormatter)
                                     )
                                 }
 

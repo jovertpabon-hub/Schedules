@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.schedules.data.models.DayScheduleData
+import com.example.schedules.data.models.ScheduleConstants
 
 enum class CardDetailState {
     GRID_LIST,
@@ -105,7 +106,7 @@ fun DayMiniCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = item.startTime,
+                            text = item.startTime.format(ScheduleConstants.TimeFormatter),
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 10.sp
                         )
@@ -169,7 +170,7 @@ fun DetailedDayCard(dayData: DayScheduleData) {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                 )
                                 Text(
-                                    text = "${item.startTime} - ${item.endTime}",
+                                    text = "${item.startTime.format(ScheduleConstants.TimeFormatter)} - ${item.endTime.format(ScheduleConstants.TimeFormatter)}",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary

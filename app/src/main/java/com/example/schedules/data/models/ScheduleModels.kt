@@ -6,6 +6,13 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.ui.graphics.vector.ImageVector
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+object ScheduleConstants {
+    val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.US)
+}
 
 enum class ScheduleTab(val title: String, val icon: ImageVector) {
     NOW("Now", Icons.Default.Schedule),
@@ -17,8 +24,8 @@ enum class ScheduleTab(val title: String, val icon: ImageVector) {
 data class CourseClass(
     val courseCode: String,
     val courseName: String,
-    val startTime: String,
-    val endTime: String,
+    val startTime: LocalTime,
+    val endTime: LocalTime,
     val room: String = "TBA",
     val instructor: String
 )

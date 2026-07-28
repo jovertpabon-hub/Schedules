@@ -143,13 +143,11 @@ fun TemplateMatrixTab(weekData: List<DayScheduleData>) {
 
                             periodsWithTime.forEach { (period, _) ->
                                 val matchingClasses = dayData.classes.filter { course ->
+                                    val hour = course.startTime.hour
                                     when (period) {
-                                        "Morning" -> course.startTime.contains("AM", ignoreCase = true)
-                                        "Afternoon" -> course.startTime.contains("PM", ignoreCase = true) &&
-                                                !course.startTime.startsWith("05") &&
-                                                !course.startTime.startsWith("06")
-                                        "Evening" -> course.startTime.contains("PM", ignoreCase = true) &&
-                                                (course.startTime.startsWith("05") || course.startTime.startsWith("06"))
+                                        "Morning" -> hour < 12
+                                        "Afternoon" -> hour in 12..16
+                                        "Evening" -> hour >= 17
                                         else -> false
                                     }
                                 }
@@ -167,7 +165,8 @@ fun TemplateMatrixTab(weekData: List<DayScheduleData>) {
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .padding(2.dp)
-                                                .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                                                .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(0.5f)),
                                             verticalArrangement = Arrangement.Center,
                                             horizontalAlignment = Alignment.CenterHorizontally
                                         ) {

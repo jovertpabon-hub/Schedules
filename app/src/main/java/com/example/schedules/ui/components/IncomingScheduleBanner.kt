@@ -15,6 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.schedules.data.models.ClassStatus
+import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
 import java.util.Locale
 
@@ -126,11 +128,19 @@ fun IncomingScheduleBanner(status: ScheduleStatus) {
                         text = "📍 Room: ${course.room}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    )
+
+                    VerticalDivider(
+                        modifier = Modifier
+                            .padding(vertical = 2.dp)
+                            .height(12.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
 
                     Text(
-                        text = "🕒 ${course.startTime} - ${course.endTime}",
+                        text = "🕒 ${course.startTime.format(ScheduleConstants.TimeFormatter)} - ${course.endTime.format(ScheduleConstants.TimeFormatter)}",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary

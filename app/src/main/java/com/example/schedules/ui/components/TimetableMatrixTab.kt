@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.schedules.data.models.DayScheduleData
+import com.example.schedules.data.models.ScheduleConstants
 
 @Composable
 fun TimetableMatrixTab(weekData: List<DayScheduleData>) {
@@ -29,7 +30,7 @@ fun TimetableMatrixTab(weekData: List<DayScheduleData>) {
     val scheduleMap = remember(weekData) {
         weekData.flatMap { dayData ->
             dayData.classes.map { course ->
-                "${dayData.dayName}_${course.startTime}" to course
+                "${dayData.dayName}_${course.startTime.format(ScheduleConstants.TimeFormatter)}" to course
             }
         }.toMap()
     }
