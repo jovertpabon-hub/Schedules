@@ -2,8 +2,11 @@ package com.example.schedules.ui.components
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +43,15 @@ fun CardsViewTab(weekSchedule: WeekSchedule) {
 
     AnimatedContent(
         targetState = cardState,
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        transitionSpec = {
+            if (targetState == CardDetailState.PAGER_DETAIL) {
+                (fadeIn(animationSpec = tween(300)) + scaleIn(initialScale = 0.92f))
+                    .togetherWith(fadeOut(animationSpec = tween(300)))
+            } else {
+                fadeIn(animationSpec = tween(300))
+                    .togetherWith(fadeOut(animationSpec = tween(300)) + scaleOut(targetScale = 0.92f))
+            }
+        },
         label = "CardViewTransition"
     ) { state ->
         when (state) {

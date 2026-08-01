@@ -77,7 +77,13 @@ fun DayMiniCard(
         modifier = modifier
             .height(150.dp)
             .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = MaterialTheme.shapes.medium),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 8.dp,
+            hoveredElevation = 4.dp,
+            focusedElevation = 4.dp
+        )
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             Text(
@@ -166,21 +172,40 @@ fun DetailedDayCard(dayData: DayScheduleData) {
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Row(
+                            Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                horizontalAlignment = Alignment.Start
                             ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Room: ${item.room}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.8f
+                                        )
+                                    )
+                                    Text(
+                                        text = "${item.startTime.format(ScheduleConstants.TimeFormatter)} - ${
+                                            item.endTime.format(
+                                                ScheduleConstants.TimeFormatter
+                                            )
+                                        }",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
                                 Text(
-                                    text = "Room: ${item.room}",
+                                    text = "Instructor: ${item.instructor}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                )
-                                Text(
-                                    text = "${item.startTime.format(ScheduleConstants.TimeFormatter)} - ${item.endTime.format(ScheduleConstants.TimeFormatter)}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        alpha = 0.8f
+                                    )
                                 )
                             }
                         }

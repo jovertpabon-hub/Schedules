@@ -11,7 +11,7 @@ object ScheduleRepository {
             DayScheduleData(
                 dayName = "Monday",
                 classes = listOf(
-                    createClass("GE6", "Art Appreciation", "08:00 AM", "10:00 AM", "IITONLINE", "TBA"),
+                    createClass("GE6", "Art Appreciation", "08:00 AM", "11:00 AM", "IITONLINE", "New Faculty"),
                     createClass("GE7", "Science, Tech & Society", "01:00 PM", "03:00 PM", "IITBLENDED", "J. Sedeño"),
                     createClass("CSP2", "Numerical Methods", "03:00 PM", "05:00 PM", "IITRM11", "S. Carilo"),
                     createClass("NC1", "Networks & Communication", "05:00 PM", "06:00 PM", "IITRM6", "N. Pura")
@@ -29,10 +29,10 @@ object ScheduleRepository {
             DayScheduleData(
                 dayName = "Wednesday",
                 classes = listOf(
-                    createClass("GE6", "Art Appreciation", "08:00 AM", "09:00 AM", "IITONLINE", "TBA"),
                     createClass("SDF1", "Object Oriented Programming", "10:00 AM", "12:00 PM", "IITRM12", "N. Pura"),
                     createClass("CC4", "Data Structures & Algorithm", "01:00 PM", "03:00 PM", "IITONLINE", "J. Sabaria"),
-                    createClass("CC4", "Data Structures & Algorithm", "03:00 PM", "05:00 PM", "IITRM12", "J. Sabaria")
+                    createClass("CC4", "Data Structures & Algorithm", "03:00 PM", "05:00 PM", "IITRM12", "J. Sabaria"),
+                    createClass("NC1", "Networks & Communication", "05:00 PM", "06:00 PM", "IITRM6", "N. Pura")
                 )
             ),
             DayScheduleData(
