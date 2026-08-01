@@ -1,6 +1,7 @@
 package com.example.schedules.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.schedules.data.models.ClassList
 import com.example.schedules.data.models.ClassStatus
@@ -8,11 +9,12 @@ import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.DayScheduleData
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
-import com.example.schedules.data.repository.ScheduleRepository
+import com.example.schedules.data.repository.IScheduleRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDate
@@ -20,9 +22,9 @@ import java.time.LocalTime
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
-class ScheduleViewModel : ViewModel() {
+class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel() {
 
-    private val _weekData = MutableStateFlow(WeekSchedule(ScheduleRepository.getWeekData()))
+    private val _weekData = MutableStateFlow(WeekSchedule(emptyList()))
     val weekData: StateFlow<WeekSchedule> = _weekData.asStateFlow()
 
     private val _currentStatus = MutableStateFlow(calculateInitialStatus())
@@ -32,7 +34,39 @@ class ScheduleViewModel : ViewModel() {
     val todayRemainingClasses: StateFlow<ClassList> = _todayRemainingClasses.asStateFlow()
 
     init {
+        observeData()
         startTimer()
+    }
+
+    private fun observeData() {
+        viewModelScope.launch {
+            repository.getAllSchedules().collect { entities ->
+                val dayData = entities.groupBy { it.dayName }.map { (dayName, classes) ->
+                    DayScheduleData(
+                        dayName = dayName,
+                        classes = classes.map { entity ->
+                            CourseClass(
+                                id = entity.id,
+                                courseCode = entity.courseCode,
+                                courseName = entity.courseName,
+                                startTime = entity.startTime,
+                                endTime = entity.endTime,
+                                room = entity.room,
+                                instructor = entity.instructor
+                            )
+                        }.sortedBy { it.startTime }
+                    )
+                }
+                
+                val allDays = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+                val fullWeekData = allDays.map { dayName ->
+                    dayData.find { it.dayName.equals(dayName, ignoreCase = true) } 
+                        ?: DayScheduleData(dayName, emptyList())
+                }
+                
+                _weekData.value = WeekSchedule(fullWeekData)
+            }
+        }
     }
 
     private fun calculateInitialStatus(): ScheduleStatus {
@@ -46,19 +80,27 @@ class ScheduleViewModel : ViewModel() {
 
     private fun startTimer() {
         viewModelScope.launch {
-            while (true) {
-                val data = _weekData.value
-                val (status, remaining) = updateScheduleState(data.days)
-                
-                _currentStatus.value = status
-                // Optimization: Only update flow if the list content changed
-                val newRemaining = ClassList(remaining)
-                if (_todayRemainingClasses.value != newRemaining) {
-                    _todayRemainingClasses.value = newRemaining
+            // Make the timer reactive to data changes.
+            // Whenever weekData updates (e.g. from Room), this block restarts immediately.
+            weekData.collectLatest { data ->
+                if (data.days.isEmpty()) {
+                    _currentStatus.value = calculateInitialStatus()
+                    return@collectLatest
                 }
+                
+                while (true) {
+                    val (status, remaining) = updateScheduleState(data.days)
+                    
+                    _currentStatus.value = status
+                    val newRemaining = ClassList(remaining)
+                    if (_todayRemainingClasses.value != newRemaining) {
+                        _todayRemainingClasses.value = newRemaining
+                    }
 
-                val nextDelay = if (status.status == ClassStatus.NONE) 60.seconds else 1.seconds
-                delay(nextDelay)
+                    // Ticker: 1s if class ongoing/upcoming, longer if nothing to count down
+                    val nextDelay = if (status.status == ClassStatus.NONE) 30.seconds else 1.seconds
+                    delay(nextDelay)
+                }
             }
         }
     }
@@ -115,5 +157,15 @@ class ScheduleViewModel : ViewModel() {
         val m = (seconds % 3600) / 60
         val s = seconds % 60
         return String.format(Locale.US, "%02d:%02d:%02d", h, m, s)
+    }
+
+    class Factory(private val repository: IScheduleRepository) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(ScheduleViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return ScheduleViewModel(repository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
     }
 }

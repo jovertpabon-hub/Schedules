@@ -20,6 +20,7 @@ enum class ScheduleTab(val title: String, val icon: ImageVector) {
 
 @Immutable
 data class CourseClass(
+    val id: Long? = null,
     val courseCode: String,
     val courseName: String,
     val startTime: LocalTime,
