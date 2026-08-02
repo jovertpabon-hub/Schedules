@@ -22,11 +22,13 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -41,7 +43,8 @@ fun CardsViewTab(
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onEdit: (CourseClass, String) -> Unit = { _, _ -> },
-    onDelete: (CourseClass) -> Unit = {}
+    onDelete: (CourseClass) -> Unit = {},
+    onVisibleDayChanged: (String) -> Unit = {}
 ) {
     var cardState by remember { mutableStateOf(CardDetailState.GRID_LIST) }
     val pagerState = rememberPagerState(initialPage = 0) { weekSchedule.days.size }
@@ -49,6 +52,15 @@ fun CardsViewTab(
 
     BackHandler(enabled = cardState == CardDetailState.PAGER_DETAIL) {
         cardState = CardDetailState.GRID_LIST
+    }
+
+    // Phase 2: Report visible day for context-aware adding
+    LaunchedEffect(pagerState, cardState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            if (cardState == CardDetailState.PAGER_DETAIL && page < weekSchedule.days.size) {
+                onVisibleDayChanged(weekSchedule.days[page].dayName)
+            }
+        }
     }
 
     PullToRefreshBox(

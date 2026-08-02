@@ -51,11 +51,9 @@ class RoomScheduleRepository(private val scheduleDao: ScheduleDao) : IScheduleRe
         }
 
         return try {
-            if (schedule.id == 0L) {
-                scheduleDao.insertSchedule(schedule)
-            } else {
-                scheduleDao.updateSchedule(schedule)
-            }
+            // Use insertSchedule for both Add and Update since it has OnConflictStrategy.REPLACE
+            // and handles restoring deleted items correctly.
+            scheduleDao.insertSchedule(schedule)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

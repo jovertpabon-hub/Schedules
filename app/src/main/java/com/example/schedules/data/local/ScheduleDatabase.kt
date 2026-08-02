@@ -25,18 +25,16 @@ abstract class ScheduleDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     ScheduleDatabase::class.java,
-                    "schedule_database"
+                    "schedule_database",
                 )
-                .addCallback(ScheduleDatabaseCallback(context))
+                .addCallback(ScheduleDatabaseCallback())
                 .build()
                 INSTANCE = instance
                 instance
             }
         }
 
-        private class ScheduleDatabaseCallback(
-            private val context: Context
-        ) : RoomDatabase.Callback() {
+        private class ScheduleDatabaseCallback : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
                 INSTANCE?.let { database ->

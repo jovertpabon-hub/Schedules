@@ -16,11 +16,14 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.DayScheduleData
 import com.example.schedules.data.models.ScheduleConstants
@@ -138,6 +140,7 @@ fun DayMiniCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailedDayCard(
     dayData: DayScheduleData,
@@ -180,12 +183,13 @@ fun DetailedDayCard(
                         key = { index -> "${dayData.dayName}_${dayData.classes[index].courseCode}_$index" }
                     ) { index ->
                         val item = dayData.classes[index]
+
                         Column(
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { selectedClass = item }
-                                .padding(vertical = 4.dp)
+                                .padding(vertical = 8.dp)
                         ) {
                             Text(
                                 text = "${item.courseCode} - ${item.courseName}",
@@ -245,7 +249,7 @@ fun DetailedDayCard(
     }
 
     if (selectedClass != null) {
-        ClassOptionsDialog(
+        ClassOptionsBottomSheet(
             onDismiss = { selectedClass = null },
             onEdit = {
                 selectedClass?.let(onEdit)
@@ -259,55 +263,66 @@ fun DetailedDayCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClassOptionsDialog(
+fun ClassOptionsBottomSheet(
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            tonalElevation = 8.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Class Options",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+    val sheetState = rememberModalBottomSheetState()
 
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { androidx.compose.material3.BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp, start = 16.dp, end = 16.dp, top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Class Options",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Surface(
+                onClick = onEdit,
+                color = MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.medium
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onEdit() }
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 16.dp, horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    Text("Edit Class", style = MaterialTheme.typography.bodyLarge)
+                    Text("Edit Class Details", style = MaterialTheme.typography.bodyLarge)
                 }
+            }
 
-                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-
+            Surface(
+                onClick = onDelete,
+                color = MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.medium
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onDelete() }
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 16.dp, horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -315,7 +330,7 @@ fun ClassOptionsDialog(
                         tint = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        "Delete Class",
+                        "Delete Class Permanently",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error
                     )

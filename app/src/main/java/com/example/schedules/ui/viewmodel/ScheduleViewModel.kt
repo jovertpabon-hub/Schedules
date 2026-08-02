@@ -3,6 +3,7 @@ package com.example.schedules.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.ClassList
 import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.CourseClass
@@ -11,8 +12,11 @@ import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
 import com.example.schedules.data.repository.IScheduleRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -21,6 +25,12 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
+
+sealed class CrudEvent {
+    data class ShowSnackbar(val message: String, val actionLabel: String? = null, val onAction: (() -> Unit)? = null) : CrudEvent()
+    object TriggerErrorHaptic : CrudEvent()
+    object RequestDismissDialog : CrudEvent()
+}
 
 class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel() {
 
@@ -32,6 +42,18 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
 
     private val _todayRemainingClasses = MutableStateFlow(ClassList(emptyList()))
     val todayRemainingClasses: StateFlow<ClassList> = _todayRemainingClasses.asStateFlow()
+
+    // CRUD and UI State
+    private val _validationError = MutableStateFlow<String?>(null)
+    val validationError: StateFlow<String?> = _validationError.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _events = MutableSharedFlow<CrudEvent>()
+    val events: SharedFlow<CrudEvent> = _events.asSharedFlow()
+
+    private var lastDeletedEntity: ScheduleEntity? = null
 
     init {
         observeData()
@@ -80,8 +102,6 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
 
     private fun startTimer() {
         viewModelScope.launch {
-            // Make the timer reactive to data changes.
-            // Whenever weekData updates (e.g. from Room), this block restarts immediately.
             weekData.collectLatest { data ->
                 if (data.days.isEmpty()) {
                     _currentStatus.value = calculateInitialStatus()
@@ -97,7 +117,6 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
                         _todayRemainingClasses.value = newRemaining
                     }
 
-                    // Ticker: 1s if class ongoing/upcoming, longer if nothing to count down
                     val nextDelay = if (status.status == ClassStatus.NONE) 30.seconds else 1.seconds
                     delay(nextDelay)
                 }
@@ -157,6 +176,86 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
         val m = (seconds % 3600) / 60
         val s = seconds % 60
         return String.format(Locale.US, "%02d:%02d:%02d", h, m, s)
+    }
+
+    // CRUD Operations
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            delay(1000)
+            _isRefreshing.value = false
+            _events.emit(CrudEvent.ShowSnackbar("Schedules synchronized"))
+        }
+    }
+
+    fun addOrUpdateSchedule(
+        id: Long? = null,
+        day: String,
+        code: String,
+        name: String,
+        startTime: LocalTime,
+        endTime: LocalTime,
+        room: String,
+        instructor: String
+    ) {
+        viewModelScope.launch {
+            _validationError.value = null
+            
+            if (day.isBlank() || code.isBlank() || name.isBlank() || room.isBlank() || instructor.isBlank()) {
+                _validationError.value = "All fields must be filled"
+                _events.emit(CrudEvent.TriggerErrorHaptic)
+                return@launch
+            }
+
+            val entity = ScheduleEntity(
+                id = id ?: 0,
+                dayName = day,
+                courseCode = code,
+                courseName = name,
+                startTime = startTime,
+                endTime = endTime,
+                room = room,
+                instructor = instructor
+            )
+
+            repository.validateAndInsert(entity).onFailure { error ->
+                _validationError.value = error.message
+                _events.emit(CrudEvent.TriggerErrorHaptic)
+                _events.emit(CrudEvent.ShowSnackbar(error.message ?: "Validation failed"))
+            }.onSuccess {
+                _validationError.value = null
+                _events.emit(CrudEvent.ShowSnackbar(if (id == null) "Class added" else "Class updated"))
+                _events.emit(CrudEvent.RequestDismissDialog)
+            }
+        }
+    }
+
+    fun deleteSchedule(entity: ScheduleEntity) {
+        viewModelScope.launch {
+            try {
+                lastDeletedEntity = entity
+                repository.deleteSchedule(entity)
+                _events.emit(
+                    CrudEvent.ShowSnackbar(
+                        message = "Class deleted",
+                        actionLabel = "Undo",
+                        onAction = { restoreLastDeleted() }
+                    )
+                )
+            } catch (e: Exception) {
+                _events.emit(CrudEvent.ShowSnackbar("Failed to delete class"))
+                _events.emit(CrudEvent.TriggerErrorHaptic)
+            }
+        }
+    }
+
+    private fun restoreLastDeleted() {
+        viewModelScope.launch {
+            lastDeletedEntity?.let {
+                repository.validateAndInsert(it)
+                lastDeletedEntity = null
+            }
+        }
     }
 
     class Factory(private val repository: IScheduleRepository) : ViewModelProvider.Factory {
