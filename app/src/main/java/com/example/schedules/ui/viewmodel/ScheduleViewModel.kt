@@ -8,6 +8,7 @@ import com.example.schedules.data.models.ClassList
 import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.DayScheduleData
+import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
 import com.example.schedules.data.repository.IScheduleRepository
@@ -24,240 +25,294 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-sealed class CrudEvent {
-    data class ShowSnackbar(val message: String, val actionLabel: String? = null, val onAction: (() -> Unit)? = null) : CrudEvent()
-    object TriggerErrorHaptic : CrudEvent()
-    object RequestDismissDialog : CrudEvent()
+/**
+ * Events that happen once, like showing a message or vibrating the phone.
+ * We use a "SharedFlow" for these so they don't get repeated if the screen rotates.
+ */
+sealed class UiEvent {
+    data class ShowMessage(val text: String, val actionText: String? = null, val onActionClick: (() -> Unit)? = null) : UiEvent()
+    object VibrateError : UiEvent()
+    object CloseDialog : UiEvent()
 }
 
+/**
+ * The ScheduleViewModel is the "Manager" for the Schedule Screen.
+ * It holds the data (State) and handles user actions (Logic).
+ */
 class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel() {
 
-    private val _weekData = MutableStateFlow(WeekSchedule(emptyList()))
-    val weekData: StateFlow<WeekSchedule> = _weekData.asStateFlow()
+    // --- UI States (Things the user sees) ---
 
-    private val _currentStatus = MutableStateFlow(calculateInitialStatus())
-    val currentStatus: StateFlow<ScheduleStatus> = _currentStatus.asStateFlow()
+    // The full list of classes for the whole week
+    private val _weekSchedule = MutableStateFlow(WeekSchedule(emptyList()))
+    val weekSchedule: StateFlow<WeekSchedule> = _weekSchedule.asStateFlow()
 
-    private val _todayRemainingClasses = MutableStateFlow(ClassList(emptyList()))
-    val todayRemainingClasses: StateFlow<ClassList> = _todayRemainingClasses.asStateFlow()
+    // Information about the class happening RIGHT NOW (or the next one)
+    private val _liveStatus = MutableStateFlow(createEmptyStatus())
+    val liveStatus: StateFlow<ScheduleStatus> = _liveStatus.asStateFlow()
 
-    // CRUD and UI State
-    private val _validationError = MutableStateFlow<String?>(null)
-    val validationError: StateFlow<String?> = _validationError.asStateFlow()
+    // The list of classes left for the current day
+    private val _remainingClassesToday = MutableStateFlow(ClassList(emptyList()))
+    val remainingClassesToday: StateFlow<ClassList> = _remainingClassesToday.asStateFlow()
 
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    // Error messages shown when adding/editing
+    private val _inputErrorMessage = MutableStateFlow<String?>(null)
+    val inputErrorMessage: StateFlow<String?> = _inputErrorMessage.asStateFlow()
 
-    private val _events = MutableSharedFlow<CrudEvent>()
-    val events: SharedFlow<CrudEvent> = _events.asSharedFlow()
+    // Whether the app is currently "refreshing" data
+    private val _isDataLoading = MutableStateFlow(true)
+    val isDataLoading: StateFlow<Boolean> = _isDataLoading.asStateFlow()
 
-    private var lastDeletedEntity: ScheduleEntity? = null
+    // Stream of one-time events (like Snackbars)
+    private val _uiEvents = MutableSharedFlow<UiEvent>()
+    val uiEvents: SharedFlow<UiEvent> = _uiEvents.asSharedFlow()
+
+    // Temporary storage to allow "Undo" after deleting a class
+    private var recentlyDeletedClass: ScheduleEntity? = null
 
     init {
-        observeData()
-        startTimer()
+        // Start these as soon as the ViewModel is created
+        monitorDatabaseChanges()
+        startLiveUpdatesTimer()
     }
 
-    private fun observeData() {
+    /**
+     * Step 1: Data Monitoring
+     * This function listens to the Repository. Whenever the database changes,
+     * it automatically updates our _weekSchedule state.
+     */
+    private fun monitorDatabaseChanges() {
+        // launch starts a background task that lives as long as this ViewModel exists
         viewModelScope.launch {
-            repository.getAllSchedules().collect { entities ->
-                val dayData = entities.groupBy { it.dayName }.map { (dayName, classes) ->
+            repository.getAllSchedules().collect { allEntities ->
+                // Group the raw database rows by their day name
+                val groupedByDay = allEntities.groupBy { it.dayName }
+                
+                // Transform raw database rows into UI-friendly "CourseClass" objects
+                val formattedDayData = groupedByDay.map { (dayName, entities) ->
                     DayScheduleData(
                         dayName = dayName,
-                        classes = classes.map { entity ->
-                            CourseClass(
-                                id = entity.id,
-                                courseCode = entity.courseCode,
-                                courseName = entity.courseName,
-                                startTime = entity.startTime,
-                                endTime = entity.endTime,
-                                room = entity.room,
-                                instructor = entity.instructor
-                            )
-                        }.sortedBy { it.startTime }
+                        classes = entities.map { it.toUiModel() }.sortedBy { it.startTime }
                     )
                 }
                 
-                val allDays = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-                val fullWeekData = allDays.map { dayName ->
-                    dayData.find { it.dayName.equals(dayName, ignoreCase = true) } 
-                        ?: DayScheduleData(dayName, emptyList())
+                // Ensure every day of the week exists in the list, even if empty
+                val finalWeekData = ScheduleConstants.DaysOfWeek.map { day ->
+                    formattedDayData.find { it.dayName.equals(day, ignoreCase = true) } 
+                        ?: DayScheduleData(day, emptyList())
                 }
                 
-                _weekData.value = WeekSchedule(fullWeekData)
+                // Update the state—this triggers the UI to redraw!
+                _weekSchedule.value = WeekSchedule(finalWeekData)
+
+                // Initial load complete
+                if (_isDataLoading.value && allEntities.isNotEmpty()) {
+                    _isDataLoading.value = false
+                } else if (_isDataLoading.value) {
+                    // Even if empty, we stop loading after a short delay to avoid flickering
+                    // or just stop it immediately if that's preferred.
+                    // Let's add a small delay to show the skeleton for a bit if it's too fast.
+                    delay(500.milliseconds)
+                    _isDataLoading.value = false
+                }
             }
         }
     }
 
-    private fun calculateInitialStatus(): ScheduleStatus {
-        return ScheduleStatus(
-            courseClass = null,
-            dayName = LocalDate.now().dayOfWeek.name,
-            status = ClassStatus.NONE,
-            remainingFormatted = "Rest Up"
-        )
-    }
-
-    private fun startTimer() {
+    /**
+     * Step 2: Live Updates
+     * A timer that runs every second to update the "Time Remaining" for the current class.
+     */
+    private fun startLiveUpdatesTimer() {
         viewModelScope.launch {
-            weekData.collectLatest { data ->
-                if (data.days.isEmpty()) {
-                    _currentStatus.value = calculateInitialStatus()
+            // collectLatest cancels the old timer loop whenever the week data changes
+            weekSchedule.collectLatest { schedule ->
+                if (schedule.days.isEmpty()) {
+                    _liveStatus.value = createEmptyStatus()
                     return@collectLatest
                 }
                 
+                // Infinite loop that runs while the ViewModel is active
                 while (true) {
-                    val (status, remaining) = updateScheduleState(data.days)
+                    val (newStatus, remainingList) = calculateCurrentStatus(schedule.days)
                     
-                    _currentStatus.value = status
-                    val newRemaining = ClassList(remaining)
-                    if (_todayRemainingClasses.value != newRemaining) {
-                        _todayRemainingClasses.value = newRemaining
-                    }
+                    _liveStatus.value = newStatus
+                    _remainingClassesToday.value = ClassList(remainingList)
 
-                    val nextDelay = if (status.status == ClassStatus.NONE) 30.seconds else 1.seconds
-                    delay(nextDelay)
+                    // If no classes are happening, we don't need to update every second (save battery)
+                    val delayTime = if (newStatus.status == ClassStatus.NONE) 30.seconds else 1.seconds
+                    delay(delayTime)
                 }
             }
         }
     }
 
-    private fun updateScheduleState(weekData: List<DayScheduleData>): Pair<ScheduleStatus, List<CourseClass>> {
-        val today = LocalDate.now().dayOfWeek.name
-        val now = LocalTime.now()
+    /**
+     * Helper logic to figure out which class is Ongoing or Upcoming.
+     */
+    private fun calculateCurrentStatus(allDays: List<DayScheduleData>): Pair<ScheduleStatus, List<CourseClass>> {
+        val todayName = LocalDate.now().dayOfWeek.name
+        val currentTime = LocalTime.now()
 
-        val todaySchedule = weekData.firstOrNull { it.dayName.equals(today, ignoreCase = true) }
+        val todaySchedule = allDays.firstOrNull { it.dayName.equals(todayName, ignoreCase = true) }
         
         if (todaySchedule == null || todaySchedule.classes.isEmpty()) {
-            return calculateInitialStatus() to emptyList()
+            return createEmptyStatus() to emptyList()
         }
 
-        var currentStatusResult: ScheduleStatus? = null
-        val remainingClassesResult = mutableListOf<CourseClass>()
+        var foundStatus: ScheduleStatus? = null
+        val remaining = mutableListOf<CourseClass>()
 
         for (course in todaySchedule.classes) {
-            if (now.isBefore(course.endTime)) {
-                remainingClassesResult.add(course)
+            // If the class hasn't ended yet, it's relevant!
+            if (currentTime.isBefore(course.endTime)) {
+                remaining.add(course)
 
-                if (currentStatusResult == null) {
-                    if (now.isAfter(course.startTime) || now == course.startTime) {
-                        val remainingSeconds = Duration.between(now, course.endTime).seconds
-                        val totalSeconds = Duration.between(course.startTime, course.endTime).seconds
-                        val progress = if (totalSeconds > 0) (totalSeconds - remainingSeconds).toFloat() / totalSeconds.toFloat() else 0f
+                if (foundStatus == null) {
+                    if (currentTime.isAfter(course.startTime) || currentTime == course.startTime) {
+                        // CLASS IS ONGOING
+                        val timeLeft = Duration.between(currentTime, course.endTime).seconds
+                        val totalDuration = Duration.between(course.startTime, course.endTime).seconds
+                        val progress = if (totalDuration > 0) (totalDuration - timeLeft).toFloat() / totalDuration.toFloat() else 0f
                         
-                        currentStatusResult = ScheduleStatus(
+                        foundStatus = ScheduleStatus(
                             courseClass = course,
                             dayName = todaySchedule.dayName,
                             status = ClassStatus.ONGOING,
-                            remainingFormatted = formatSeconds(remainingSeconds),
+                            remainingFormatted = formatTimeRemaining(timeLeft),
                             progressPercent = progress
                         )
-                    } else if (now.isBefore(course.startTime)) {
-                        val remainingSeconds = Duration.between(now, course.startTime).seconds
-                        currentStatusResult = ScheduleStatus(
+                    } else {
+                        // CLASS IS UPCOMING
+                        val timeUntilStart = Duration.between(currentTime, course.startTime).seconds
+                        foundStatus = ScheduleStatus(
                             courseClass = course,
                             dayName = todaySchedule.dayName,
                             status = ClassStatus.UPCOMING,
-                            remainingFormatted = formatSeconds(remainingSeconds)
+                            remainingFormatted = formatTimeRemaining(timeUntilStart)
                         )
                     }
                 }
             }
         }
 
-        val finalStatus = currentStatusResult ?: calculateInitialStatus()
-        return finalStatus to remainingClassesResult
+        return (foundStatus ?: createEmptyStatus()) to remaining
     }
 
-    private fun formatSeconds(seconds: Long): String {
-        val h = seconds / 3600
-        val m = (seconds % 3600) / 60
-        val s = seconds % 60
-        return String.format(Locale.US, "%02d:%02d:%02d", h, m, s)
-    }
+    // --- User Actions (CRUD) ---
 
-    // CRUD Operations
-    fun refresh() {
+    /**
+     * Simulates a data refresh.
+     * In a real app, this might fetch new data from a server.
+     */
+    fun refreshData() {
         viewModelScope.launch {
-            _isRefreshing.value = true
-            delay(1000)
-            _isRefreshing.value = false
-            _events.emit(CrudEvent.ShowSnackbar("Schedules synchronized"))
+            _isDataLoading.value = true
+            delay(1000.milliseconds) // Simulate network delay
+            _isDataLoading.value = false
+            _uiEvents.emit(UiEvent.ShowMessage("Schedules synchronized"))
         }
     }
 
-    fun addOrUpdateSchedule(
-        id: Long? = null,
+    fun addNewOrEditSchedule(
+        existingId: Long? = null,
         day: String,
         code: String,
         name: String,
-        startTime: LocalTime,
-        endTime: LocalTime,
+        start: LocalTime,
+        end: LocalTime,
         room: String,
         instructor: String
     ) {
         viewModelScope.launch {
-            _validationError.value = null
+            _inputErrorMessage.value = null // Reset errors
             
+            // Basic check: Are all boxes filled?
             if (day.isBlank() || code.isBlank() || name.isBlank() || room.isBlank() || instructor.isBlank()) {
-                _validationError.value = "All fields must be filled"
-                _events.emit(CrudEvent.TriggerErrorHaptic)
+                _inputErrorMessage.value = "Please fill in all details"
+                _uiEvents.emit(UiEvent.VibrateError)
                 return@launch
             }
 
-            val entity = ScheduleEntity(
-                id = id ?: 0,
+            val scheduleToSave = ScheduleEntity(
+                id = existingId ?: ScheduleConstants.DEFAULT_ID,
                 dayName = day,
                 courseCode = code,
                 courseName = name,
-                startTime = startTime,
-                endTime = endTime,
+                startTime = start,
+                endTime = end,
                 room = room,
                 instructor = instructor
             )
 
-            repository.validateAndInsert(entity).onFailure { error ->
-                _validationError.value = error.message
-                _events.emit(CrudEvent.TriggerErrorHaptic)
-                _events.emit(CrudEvent.ShowSnackbar(error.message ?: "Validation failed"))
-            }.onSuccess {
-                _validationError.value = null
-                _events.emit(CrudEvent.ShowSnackbar(if (id == null) "Class added" else "Class updated"))
-                _events.emit(CrudEvent.RequestDismissDialog)
-            }
+            // Tell the repository to validate and save
+            repository.validateAndSaveSchedule(scheduleToSave)
+                .onSuccess {
+                    _uiEvents.emit(UiEvent.ShowMessage(if (existingId == null) "Class added!" else "Class updated!"))
+                    _uiEvents.emit(UiEvent.CloseDialog)
+                }
+                .onFailure { error ->
+                    _inputErrorMessage.value = error.message
+                    _uiEvents.emit(UiEvent.VibrateError)
+                }
         }
     }
 
-    fun deleteSchedule(entity: ScheduleEntity) {
+    fun deleteClass(classToDelete: ScheduleEntity) {
         viewModelScope.launch {
-            try {
-                lastDeletedEntity = entity
-                repository.deleteSchedule(entity)
-                _events.emit(
-                    CrudEvent.ShowSnackbar(
-                        message = "Class deleted",
-                        actionLabel = "Undo",
-                        onAction = { restoreLastDeleted() }
-                    )
-                )
-            } catch (e: Exception) {
-                _events.emit(CrudEvent.ShowSnackbar("Failed to delete class"))
-                _events.emit(CrudEvent.TriggerErrorHaptic)
-            }
+            recentlyDeletedClass = classToDelete
+            repository.deleteSchedule(classToDelete)
+            
+            _uiEvents.emit(UiEvent.ShowMessage(
+                text = "Class removed",
+                actionText = "Undo",
+                onActionClick = { restoreDeletedClass() }
+            ))
         }
     }
 
-    private fun restoreLastDeleted() {
+    private fun restoreDeletedClass() {
         viewModelScope.launch {
-            lastDeletedEntity?.let {
-                repository.validateAndInsert(it)
-                lastDeletedEntity = null
+            recentlyDeletedClass?.let {
+                repository.saveScheduleDirectly(it)
+                recentlyDeletedClass = null
             }
         }
     }
 
+    // --- Helper Functions ---
+
+    private fun createEmptyStatus() = ScheduleStatus(
+        courseClass = null,
+        dayName = LocalDate.now().dayOfWeek.name,
+        status = ClassStatus.NONE,
+        remainingFormatted = "See you tomorrow"
+    )
+
+    private fun formatTimeRemaining(seconds: Long): String {
+        val hours = seconds / 3600
+        val minutes = (seconds % 3600) / 60
+        val secs = seconds % 60
+        return String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, secs)
+    }
+
+    // Extension function to convert Database Entity -> UI Model
+    private fun ScheduleEntity.toUiModel() = CourseClass(
+        id = this.id,
+        courseCode = this.courseCode,
+        courseName = this.courseName,
+        startTime = this.startTime,
+        endTime = this.endTime,
+        room = this.room,
+        instructor = this.instructor
+    )
+
+    /**
+     * Factory class tells Android how to create our ViewModel with a Repository.
+     */
     class Factory(private val repository: IScheduleRepository) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ScheduleViewModel::class.java)) {

@@ -11,6 +11,10 @@ import java.util.Locale
 
 object ScheduleConstants {
     val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.US)
+    
+    val DaysOfWeek = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    
+    const val DEFAULT_ID = 0L
 }
 
 enum class ScheduleTab(val title: String, val icon: ImageVector) {

@@ -44,7 +44,7 @@ fun AddOrEditClassDialog(
     onConfirm: (Long?, String, String, String, LocalTime, LocalTime, String, String) -> Unit,
     viewModel: ScheduleViewModel
 ) {
-    var day by remember { mutableStateOf(if (editingDay.isNotEmpty()) editingDay else "Monday") }
+    var day by remember { mutableStateOf(editingDay.ifEmpty { ScheduleConstants.DaysOfWeek[0] }) }
     var code by remember { mutableStateOf(editingClass?.courseCode ?: "") }
     var name by remember { mutableStateOf(editingClass?.courseName ?: "") }
     var startTime by remember { mutableStateOf(editingClass?.startTime ?: LocalTime.of(8, 0)) }
@@ -55,10 +55,10 @@ fun AddOrEditClassDialog(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
-    val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    val days = ScheduleConstants.DaysOfWeek
     var expanded by remember { mutableStateOf(false) }
 
-    val validationError by viewModel.validationError.collectAsState()
+    val validationError by viewModel.inputErrorMessage.collectAsState()
     
     val isFormValid = code.isNotBlank() && name.isNotBlank() && room.isNotBlank() && instructor.isNotBlank()
 
