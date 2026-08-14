@@ -32,15 +32,28 @@ data class ExtractedSchedule(
 
 object ScheduleExtractor {
 
-    // Matches main course lines e.g. "C632 GE6 Art Appreciation 3.0 8-11 am M IITONLINE2 BSCS 2B"
-    // Removed ^ to be more flexible with leading whitespace/formatting
-    private val subjectRegex = Regex("""(C\d+)\s+([A-Za-z0-9\-]+)\s+(.+?)\s+(\d+\.\d+)\s+(.+)""")
-    
-    // Matches schedule slots e.g. "8-11 am M IITONLINE2"
-    private val schedSlotRegex = Regex("""(\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+([A-Za-z]+)\s+([A-Za-z0-9\-]+)""", RegexOption.IGNORE_CASE)
-    
-    // Matches time ranges like "8-11 am", "1-3 pm"
-    private val timeRangeRegex = Regex("""(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*-\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)""", RegexOption.IGNORE_CASE)
+    // 1. FLEXIBLE SUBJECT REGEX:
+    // Group 1: Internal Code (any non-space token, e.g., "C632", "101", "SEC-A")
+    // Group 2: Subject Code (any non-space token, e.g., "GE6", "CS-101", "PATHFIT3")
+    // Group 3: Description (text before units)
+    // Group 4: Units (matches "3.0", "3", "1.5")
+    // Group 5: Rest of line (schedule, room, section)
+    private val subjectRegex = Regex(
+        """^(\S+)\s+(\S+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(.+)""",
+        RegexOption.IGNORE_CASE
+    )
+
+    // 2. FLEXIBLE SCHEDULE SLOT REGEX:
+    // Matches time range (e.g., "8-11 am", "10:30 am-12:00 pm"), day (e.g., "M", "T", "Th"), and room (allows spaces/dashes)
+    private val schedSlotRegex = Regex(
+        """(\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+([A-Za-z]+)\s+([A-Za-z0-9\-\s]+)""",
+        RegexOption.IGNORE_CASE
+    )
+
+    private val timeRangeRegex = Regex(
+        """(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*-\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)""",
+        RegexOption.IGNORE_CASE
+    )
 
     suspend fun extractTextFromPdf(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
         PDFBoxResourceLoader.init(context)
@@ -74,17 +87,18 @@ object ScheduleExtractor {
 
             if (subjectMatch != null) {
                 // Main course row found
-                currentCode = subjectMatch.groupValues[2]
-                currentName = subjectMatch.groupValues[3]
-                
-                // Group 5 contains the schedule, room, and potentially section info
+                currentCode = subjectMatch.groupValues[2] // Subject Code (e.g., "GE6", "PATHFIT3")
+                currentName = subjectMatch.groupValues[3]  // Description (e.g., "Art Appreciation")
+
                 val rawSchedPart = subjectMatch.groupValues[5]
-                
-                // Try to extract the first schedule slot from the same line
-                processAndAddSchedule(currentCode, currentName, rawSchedPart, courseClasses)
+
+                // Clean off section tag at line end if present (e.g., "BSCS 2B")
+                val schedPartClean = rawSchedPart.replace(Regex("""\s+[A-Z0-9]+\s+[0-9][A-Z]$""", RegexOption.IGNORE_CASE), "").trim()
+
+                processAndAddSchedule(currentCode, currentName, schedPartClean, courseClasses)
 
             } else if (currentCode.isNotEmpty()) {
-                // Check if this line is a continuation containing more schedule slots
+                // Continuation line for multi-slot schedules
                 processAndAddSchedule(currentCode, currentName, trimmed, courseClasses)
             }
         }
@@ -99,13 +113,20 @@ object ScheduleExtractor {
         textToSearch: String,
         outputList: MutableList<ExtractedSchedule>
     ) {
-        // Find all schedule patterns in the text (some lines might have multiple)
         val matches = schedSlotRegex.findAll(textToSearch)
-        
+
         for (match in matches) {
             val timeStr = match.groupValues[1].trim()
             val dayStr = match.groupValues[2].trim()
-            val roomPart = match.groupValues[3].trim()
+            var roomPart = match.groupValues[3].trim()
+
+            // Trim trailing section suffix if room accidentally captured section (e.g., "IITRM7 BSCS 2B" -> "IITRM7")
+            if (roomPart.contains(" ")) {
+                val parts = roomPart.split(Regex("""\s+"""))
+                if (parts.size > 1 && parts.last().matches(Regex("""[0-9]?[A-Z]+[0-9]?[A-Z]?""", RegexOption.IGNORE_CASE))) {
+                    roomPart = parts.dropLast(1).joinToString(" ")
+                }
+            }
 
             val timeRange = parseTimeRange(timeStr) ?: continue
             val dayOfWeekList = parseDayOfWeek(dayStr)
@@ -117,7 +138,7 @@ object ScheduleExtractor {
                         courseName = name,
                         startTime = timeRange.first,
                         endTime = timeRange.second,
-                        room = roomPart,
+                        room = roomPart.ifEmpty { "TBA" },
                         dayOfWeek = day,
                         instructor = "Unknown"
                     )
@@ -126,11 +147,10 @@ object ScheduleExtractor {
         }
     }
 
-    // Returns a list of Days because some strings like "MWF" represent multiple days
     private fun parseDayOfWeek(dayStr: String): List<DayOfWeek> {
         val result = mutableListOf<DayOfWeek>()
         val normalized = dayStr.uppercase(Locale.ROOT)
-        
+
         if (normalized.contains("TH")) {
             result.add(DayOfWeek.THURSDAY)
         }
@@ -138,10 +158,13 @@ object ScheduleExtractor {
         if (normalized.contains("T") && !normalized.contains("TH")) result.add(DayOfWeek.TUESDAY)
         if (normalized.contains("W")) result.add(DayOfWeek.WEDNESDAY)
         if (normalized.contains("F")) result.add(DayOfWeek.FRIDAY)
-        if (normalized.contains("S") && !normalized.contains("SU") && !normalized.contains("SA")) result.add(DayOfWeek.SATURDAY)
-        if (normalized.contains("SA")) result.add(DayOfWeek.SATURDAY)
+        if (normalized.contains("SA")) {
+            result.add(DayOfWeek.SATURDAY)
+        } else if (normalized.contains("S") && !normalized.contains("SU") && !normalized.contains("TH")) {
+            result.add(DayOfWeek.SATURDAY)
+        }
         if (normalized.contains("SU")) result.add(DayOfWeek.SUNDAY)
-        
+
         return if (result.isEmpty()) listOf(DayOfWeek.SUNDAY) else result
     }
 
@@ -158,7 +181,6 @@ object ScheduleExtractor {
 
         val startAmPm = when {
             startAmPmRaw != null -> startAmPmRaw
-            // Inherit from end time: e.g. "10-12 pm" -> 10 inherits AM if 12 is PM and start < end logically
             endAmPmRaw.equals("pm", ignoreCase = true) && endHourInt == 12 && startHourInt in 8..11 -> "am"
             endAmPmRaw.equals("pm", ignoreCase = true) && startHourInt > endHourInt -> "am"
             else -> endAmPmRaw
@@ -184,7 +206,6 @@ object ScheduleExtractor {
 
     private fun isNoiseLine(line: String): Boolean {
         val lower = line.lowercase(Locale.ROOT)
-        // Keep subject info headers but skip strictly metadata lines
         return lower.contains("republic of the philippines") ||
                 lower.contains("partido state university") ||
                 lower.contains("certificate of enrollment") ||
