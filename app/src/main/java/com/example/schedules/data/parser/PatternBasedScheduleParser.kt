@@ -1,50 +1,18 @@
-package com.example.schedules
+package com.example.schedules.data.parser
 
-import android.content.Context
-import android.net.Uri
 import android.util.Log
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
-import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.text.PDFTextStripper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.example.schedules.data.models.ExtractedSchedule
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.util.Locale
 
-// ==========================================
-// DATA MODELS
-// ==========================================
+class PatternBasedScheduleParser : IScheduleParser {
 
-data class ExtractedSchedule(
-    val courseCode: String,
-    val courseName: String,
-    val startTime: LocalTime,
-    val endTime: LocalTime,
-    val room: String = "TBA",
-    val dayOfWeek: DayOfWeek,
-    val instructor: String = "Unknown"
-)
-
-// ==========================================
-// SCHEDULE EXTRACTOR (PDF Reader + Parser)
-// ==========================================
-
-object ScheduleExtractor {
-
-    // 1. FLEXIBLE SUBJECT REGEX:
-    // Group 1: Internal Code (any non-space token, e.g., "C632", "101", "SEC-A")
-    // Group 2: Subject Code (any non-space token, e.g., "GE6", "CS-101", "PATHFIT3")
-    // Group 3: Description (text before units)
-    // Group 4: Units (matches "3.0", "3", "1.5")
-    // Group 5: Rest of line (schedule, room, section)
     private val subjectRegex = Regex(
         """^(\S+)\s+(\S+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(.+)""",
         RegexOption.IGNORE_CASE
     )
 
-    // 2. FLEXIBLE SCHEDULE SLOT REGEX:
-    // Matches time range (e.g., "8-11 am", "10:30 am-12:00 pm"), day (e.g., "M", "T", "Th"), and room (allows spaces/dashes)
     private val schedSlotRegex = Regex(
         """(\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+([A-Za-z]+)\s+([A-Za-z0-9\-\s]+)""",
         RegexOption.IGNORE_CASE
@@ -55,55 +23,33 @@ object ScheduleExtractor {
         RegexOption.IGNORE_CASE
     )
 
-    suspend fun extractTextFromPdf(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
-        PDFBoxResourceLoader.init(context)
-        try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                PDDocument.load(inputStream).use { pdDocument ->
-                    val stripper = PDFTextStripper()
-                    stripper.sortByPosition = true
-                    val text = stripper.getText(pdDocument)
-                    Log.d("ScheduleExtractor", "Extracted Text Length: ${text.length}")
-                    text
-                }
-            } ?: ""
-        } catch (e: Exception) {
-            Log.e("ScheduleExtractor", "Error reading PDF", e)
-            ""
-        }
-    }
-
-    fun parsePdfToExtractedSchedules(extractedText: String): List<ExtractedSchedule> {
+    override fun parse(text: String): List<ExtractedSchedule> {
         val courseClasses = mutableListOf<ExtractedSchedule>()
 
         var currentCode = ""
         var currentName = ""
 
-        for (line in extractedText.lines()) {
+        for (line in text.lines()) {
             val trimmed = line.trim()
             if (trimmed.isBlank() || isNoiseLine(trimmed)) continue
 
             val subjectMatch = subjectRegex.find(trimmed)
 
             if (subjectMatch != null) {
-                // Main course row found
-                currentCode = subjectMatch.groupValues[2] // Subject Code (e.g., "GE6", "PATHFIT3")
-                currentName = subjectMatch.groupValues[3]  // Description (e.g., "Art Appreciation")
+                currentCode = subjectMatch.groupValues[2]
+                currentName = subjectMatch.groupValues[3]
 
                 val rawSchedPart = subjectMatch.groupValues[5]
-
-                // Clean off section tag at line end if present (e.g., "BSCS 2B")
                 val schedPartClean = rawSchedPart.replace(Regex("""\s+[A-Z0-9]+\s+[0-9][A-Z]$""", RegexOption.IGNORE_CASE), "").trim()
 
                 processAndAddSchedule(currentCode, currentName, schedPartClean, courseClasses)
 
             } else if (currentCode.isNotEmpty()) {
-                // Continuation line for multi-slot schedules
                 processAndAddSchedule(currentCode, currentName, trimmed, courseClasses)
             }
         }
 
-        Log.d("ScheduleExtractor", "Total parsed classes: ${courseClasses.size}")
+        Log.d("ScheduleParser", "Total parsed classes: ${courseClasses.size}")
         return courseClasses
     }
 
@@ -120,7 +66,6 @@ object ScheduleExtractor {
             val dayStr = match.groupValues[2].trim()
             var roomPart = match.groupValues[3].trim()
 
-            // Trim trailing section suffix if room accidentally captured section (e.g., "IITRM7 BSCS 2B" -> "IITRM7")
             if (roomPart.contains(" ")) {
                 val parts = roomPart.split(Regex("""\s+"""))
                 if (parts.size > 1 && parts.last().matches(Regex("""[0-9]?[A-Z]+[0-9]?[A-Z]?""", RegexOption.IGNORE_CASE))) {

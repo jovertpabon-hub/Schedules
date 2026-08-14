@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.schedules.ScheduleExtractor
 import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.ClassList
 import com.example.schedules.data.models.ClassStatus
@@ -15,6 +14,10 @@ import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
 import com.example.schedules.data.models.toEntity
+import com.example.schedules.data.parser.IScheduleParser
+import com.example.schedules.data.parser.PatternBasedScheduleParser
+import com.example.schedules.data.pdf.AndroidPdfExtractor
+import com.example.schedules.data.pdf.IPdfExtractor
 import com.example.schedules.data.repository.IScheduleRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -47,7 +50,14 @@ sealed class UiEvent {
  * The ScheduleViewModel is the "Manager" for the Schedule Screen.
  * It holds the data (State) and handles user actions (Logic).
  */
-class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel() {
+class ScheduleViewModel(
+    private val repository: IScheduleRepository,
+    context: Context // Passing context for AndroidPdfExtractor instantiation
+) : ViewModel() {
+
+    // Component instantiation as requested
+    private val pdfExtractor: IPdfExtractor = AndroidPdfExtractor(context)
+    private val scheduleParser: IScheduleParser = PatternBasedScheduleParser()
 
     // --- UI States (Things the user sees) ---
 
@@ -211,12 +221,12 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
         }
     }
 
-    fun importPdf(context: Context, uri: Uri) {
+    fun importPdf(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             _isDataLoading.value = true
             try {
-                val rawText = ScheduleExtractor.extractTextFromPdf(context, uri)
-                val extractedSchedules = ScheduleExtractor.parsePdfToExtractedSchedules(rawText)
+                val rawText = pdfExtractor.extractText(uri)
+                val extractedSchedules = scheduleParser.parse(rawText)
 
                 if (extractedSchedules.isEmpty()) {
                     _uiEvents.emit(UiEvent.ShowMessage("No schedules found in PDF"))
@@ -294,6 +304,13 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
         }
     }
 
+    fun clearAllSchedules() {
+        viewModelScope.launch {
+            repository.clearAllSchedules()
+            _uiEvents.emit(UiEvent.ShowMessage("All schedules cleared"))
+        }
+    }
+
     private fun restoreDeletedClass() {
         viewModelScope.launch {
             recentlyDeletedClass?.let {
@@ -333,11 +350,14 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
     /**
      * Factory class tells Android how to create our ViewModel with a Repository.
      */
-    class Factory(private val repository: IScheduleRepository) : ViewModelProvider.Factory {
+    class Factory(
+        private val repository: IScheduleRepository,
+        private val context: Context
+    ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ScheduleViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return ScheduleViewModel(repository) as T
+                return ScheduleViewModel(repository, context) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

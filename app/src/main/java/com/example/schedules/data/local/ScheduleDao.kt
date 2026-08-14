@@ -51,4 +51,10 @@ interface ScheduleDao {
      */
     @Delete
     suspend fun removeSchedule(scheduleToDelete: ScheduleEntity)
+
+    /**
+     * Removes all schedule entries from the database.
+     */
+    @Query("DELETE FROM schedules")
+    suspend fun clearAll()
 }

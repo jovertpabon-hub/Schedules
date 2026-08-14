@@ -1,6 +1,5 @@
 package com.example.schedules.data.models
 
-import com.example.schedules.ExtractedSchedule
 import com.example.schedules.data.local.ScheduleEntity
 import java.time.format.TextStyle
 import java.util.Locale

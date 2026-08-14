@@ -17,6 +17,9 @@ interface IScheduleRepository {
     
     /** Removes a schedule from the database */
     suspend fun deleteSchedule(schedule: ScheduleEntity)
+
+    /** Removes all schedules from the database */
+    suspend fun clearAllSchedules()
     
     /** 
      * The main way to add or edit a schedule.

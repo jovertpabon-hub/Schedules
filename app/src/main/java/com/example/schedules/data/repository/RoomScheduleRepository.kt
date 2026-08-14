@@ -25,6 +25,9 @@ class RoomScheduleRepository(private val scheduleDao: ScheduleDao) : IScheduleRe
     override suspend fun deleteSchedule(schedule: ScheduleEntity) = 
         scheduleDao.removeSchedule(schedule)
 
+    override suspend fun clearAllSchedules() =
+        scheduleDao.clearAll()
+
     // --- Complex Logic & Validation ---
 
     /**
