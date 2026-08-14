@@ -1,6 +1,8 @@
 package com.example.schedules
 
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +13,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -33,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -74,6 +78,12 @@ fun MainScheduleApp() {
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
 
+    val pdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.importPdf(context, it) }
+    }
+
     // Observe UI Events from ViewModel
     LaunchedEffect(Unit) {
         viewModel.uiEvents.collectLatest { event ->
@@ -111,13 +121,22 @@ fun MainScheduleApp() {
             )
         },
         floatingActionButton = {
-            AddClassFab(
-                onClick = {
-                    editingClass = null
-                    editingDay = visibleDay
-                    showDialog = true
+            Column(horizontalAlignment = Alignment.End) {
+                FloatingActionButton(
+                    onClick = { pdfLauncher.launch("application/pdf") },
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = "Import PDF")
                 }
-            )
+                AddClassFab(
+                    onClick = {
+                        editingClass = null
+                        editingDay = visibleDay
+                        showDialog = true
+                    }
+                )
+            }
         }
     ) { paddingValues ->
         MainPagerContent(

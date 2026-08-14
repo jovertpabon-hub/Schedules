@@ -1,8 +1,11 @@
 package com.example.schedules.ui.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.schedules.ScheduleExtractor
 import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.ClassList
 import com.example.schedules.data.models.ClassStatus
@@ -11,7 +14,9 @@ import com.example.schedules.data.models.DayScheduleData
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
+import com.example.schedules.data.models.toEntity
 import com.example.schedules.data.repository.IScheduleRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +68,7 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
     val inputErrorMessage: StateFlow<String?> = _inputErrorMessage.asStateFlow()
 
     // Whether the app is currently "refreshing" data
-    private val _isDataLoading = MutableStateFlow(true)
+    private val _isDataLoading = MutableStateFlow(false)
     val isDataLoading: StateFlow<Boolean> = _isDataLoading.asStateFlow()
 
     // Stream of one-time events (like Snackbars)
@@ -107,17 +112,6 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
                 
                 // Update the state—this triggers the UI to redraw!
                 _weekSchedule.value = WeekSchedule(finalWeekData)
-
-                // Initial load complete
-                if (_isDataLoading.value && allEntities.isNotEmpty()) {
-                    _isDataLoading.value = false
-                } else if (_isDataLoading.value) {
-                    // Even if empty, we stop loading after a short delay to avoid flickering
-                    // or just stop it immediately if that's preferred.
-                    // Let's add a small delay to show the skeleton for a bit if it's too fast.
-                    delay(500.milliseconds)
-                    _isDataLoading.value = false
-                }
             }
         }
     }
@@ -214,6 +208,32 @@ class ScheduleViewModel(private val repository: IScheduleRepository) : ViewModel
             delay(1000.milliseconds) // Simulate network delay
             _isDataLoading.value = false
             _uiEvents.emit(UiEvent.ShowMessage("Schedules synchronized"))
+        }
+    }
+
+    fun importPdf(context: Context, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isDataLoading.value = true
+            try {
+                val rawText = ScheduleExtractor.extractTextFromPdf(context, uri)
+                val extractedSchedules = ScheduleExtractor.parsePdfToExtractedSchedules(rawText)
+
+                if (extractedSchedules.isEmpty()) {
+                    _uiEvents.emit(UiEvent.ShowMessage("No schedules found in PDF"))
+                } else {
+                    var successCount = 0
+                    extractedSchedules.forEach { extracted ->
+                        val entity = extracted.toEntity()
+                        repository.validateAndSaveSchedule(entity)
+                            .onSuccess { successCount++ }
+                    }
+                    _uiEvents.emit(UiEvent.ShowMessage("Imported $successCount classes from PDF"))
+                }
+            } catch (e: Exception) {
+                _uiEvents.emit(UiEvent.ShowMessage("Error importing PDF: ${e.message}"))
+            } finally {
+                _isDataLoading.value = false
+            }
         }
     }
 
