@@ -22,9 +22,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -184,7 +192,10 @@ private fun RemainingClassesView(classes: List<CourseClass>) {
             )
         }
 
-        CardInstructionText("🍯 Tap card to return to timer")
+        CardInstructionText(
+            text = "Tap card to return to timer",
+            icon = Icons.Default.Timer
+        )
     }
 }
 
@@ -255,7 +266,10 @@ private fun CountdownTimerView(status: ScheduleStatus) {
             OngoingProgressIndicator(status.progressPercent)
         }
 
-        CardInstructionText("🐝 Tap card to view upcoming schedule")
+        CardInstructionText(
+            text = "Tap card to view upcoming schedule",
+            icon = Icons.AutoMirrored.Filled.EventNote
+        )
     }
 }
 
@@ -281,13 +295,24 @@ private fun OngoingProgressIndicator(progress: Float) {
 }
 
 @Composable
-private fun CardInstructionText(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelSmall,
-        fontSize = 10.sp,
-        color = MaterialTheme.colorScheme.outline
-    )
+private fun CardInstructionText(text: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(12.dp),
+            tint = MaterialTheme.colorScheme.outline
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.outline
+        )
+    }
 }
 
 @Composable
@@ -371,13 +396,15 @@ private fun ClassDetailsInfoGrid(course: CourseClass) {
         ) {
             InfoBadge(
                 modifier = Modifier.weight(1f),
-                label = "🕒 START TIME",
-                value = course.startTime.format(ScheduleConstants.TimeFormatter)
+                label = "START TIME",
+                value = course.startTime.format(ScheduleConstants.TimeFormatter),
+                icon = Icons.Default.AccessTime
             )
             InfoBadge(
                 modifier = Modifier.weight(1f),
-                label = "🕒 END TIME",
-                value = course.endTime.format(ScheduleConstants.TimeFormatter)
+                label = "END TIME",
+                value = course.endTime.format(ScheduleConstants.TimeFormatter),
+                icon = Icons.Default.AccessTime
             )
         }
 
@@ -387,13 +414,15 @@ private fun ClassDetailsInfoGrid(course: CourseClass) {
         ) {
             InfoBadge(
                 modifier = Modifier.weight(1f),
-                label = "📍 ROOM",
-                value = course.room
+                label = "ROOM",
+                value = course.room,
+                icon = Icons.Default.LocationOn
             )
             InfoBadge(
                 modifier = Modifier.weight(1f),
-                label = "👤 INSTRUCTOR",
-                value = course.instructor
+                label = "INSTRUCTOR",
+                value = course.instructor,
+                icon = Icons.Default.Person
             )
         }
     }
