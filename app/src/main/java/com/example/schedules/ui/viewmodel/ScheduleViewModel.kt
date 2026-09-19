@@ -326,7 +326,7 @@ class ScheduleViewModel(
         courseClass = null,
         dayName = LocalDate.now().dayOfWeek.name,
         status = ClassStatus.NONE,
-        remainingFormatted = "See you tomorrow"
+        remainingFormatted = "Uwian na"
     )
 
     private fun formatTimeRemaining(seconds: Long): String {

@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Timer
@@ -97,7 +98,11 @@ fun NowTabScreen(
             if (status.courseClass != null) {
                 NowTabClassDetails(status.courseClass)
             } else {
-                NoClassesMessage()
+                EmptyDayView(
+                    modifier = Modifier.weight(1f),
+                    mainMessage = "All clear for now!",
+                    secondaryMessage = "You've finished your classes or none are scheduled today."
+                )
             }
         }
     }
@@ -109,7 +114,7 @@ private fun NowTabHeader(status: ScheduleStatus) {
         text = when (status.status) {
             ClassStatus.ONGOING -> "CLASS IN PROGRESS"
             ClassStatus.UPCOMING -> "NEXT CLASS (${status.dayName.uppercase(Locale.US)})"
-            ClassStatus.NONE -> "NO CLASSES SCHEDULED"
+            ClassStatus.NONE -> "SCHEDULE COMPLETED"
         },
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
@@ -184,12 +189,25 @@ private fun RemainingClassesView(classes: List<CourseClass>) {
                 }
             }
         } else {
-            Text(
-                text = "No remaining classes scheduled.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.Center
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EventAvailable,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = "No more classes today!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
         CardInstructionText(
@@ -246,7 +264,7 @@ private fun CountdownTimerView(status: ScheduleStatus) {
             text = when (status.status) {
                 ClassStatus.ONGOING -> "TIME REMAINING"
                 ClassStatus.UPCOMING -> "COUNTDOWN TO NEXT CLASS"
-                ClassStatus.NONE -> "NO CLASSES SCHEDULED"
+                ClassStatus.NONE -> "FREEDOM!"
             },
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
@@ -426,18 +444,6 @@ private fun ClassDetailsInfoGrid(course: CourseClass) {
             )
         }
     }
-}
-
-@Composable
-private fun ColumnScope.NoClassesMessage() {
-    Spacer(modifier = Modifier.weight(1f))
-    Text(
-        text = "No remaining classes scheduled.",
-        style = MaterialTheme.typography.bodyLarge,
-        textAlign = TextAlign.Center,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-    Spacer(modifier = Modifier.weight(1f))
 }
 
 @Composable

@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -268,6 +271,56 @@ fun InfoBadge(
 }
 
 @Composable
+fun EmptyDayView(
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Default.EventAvailable,
+    mainMessage: String = "All caught up!",
+    secondaryMessage: String = "No classes scheduled. Enjoy your break!"
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            modifier = Modifier.size(80.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = MaterialTheme.shapes.extraLarge
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = mainMessage,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = secondaryMessage,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
 fun DayMiniCard(
     dayData: DayScheduleData,
     onClick: () -> Unit,
@@ -295,13 +348,35 @@ fun DayMiniCard(
             )
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             if (dayData.classes.isEmpty()) {
-                Text(
-                    text = "No classes",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Coffee,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "No classes",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
             } else {
-                dayData.classes.forEach { item ->
+                val maxVisible = 4
+                val classesToShow = if (dayData.classes.size > maxVisible) {
+                    dayData.classes.take(maxVisible - 1)
+                } else {
+                    dayData.classes
+                }
+
+                classesToShow.forEach { item ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -320,7 +395,17 @@ fun DayMiniCard(
                         )
                     }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                }
 
+                if (dayData.classes.size > maxVisible) {
+                    val remainingCount = dayData.classes.size - (maxVisible - 1)
+                    Text(
+                        text = "+$remainingCount more",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
             }
         }
@@ -355,10 +440,10 @@ fun DetailedDayCard(
             )
 
             if (dayData.classes.isEmpty()) {
-                Text(
-                    text = "No classes scheduled for this day",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                EmptyDayView(
+                    modifier = Modifier.weight(1f),
+                    mainMessage = "Nothing here!",
+                    secondaryMessage = "You have a free day! Relax or catch up on studies."
                 )
             } else {
                 LazyColumn(
