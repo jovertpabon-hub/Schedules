@@ -4,32 +4,30 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarDuration
@@ -41,11 +39,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
-import com.example.schedules.data.models.ScheduleTab
+import com.example.schedules.data.models.ScheduleScreen
 import com.example.schedules.ui.components.CardsViewTab
 import com.example.schedules.ui.components.NowTabScreen
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
@@ -68,9 +64,7 @@ import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import com.example.schedules.ui.viewmodel.UiEvent
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScheduleApp() {
@@ -81,6 +75,7 @@ fun MainScheduleApp() {
     )
 
     // UI States
+    var currentScreen by remember { mutableStateOf(ScheduleScreen.NOW) }
     var showDialog by remember { mutableStateOf(false) }
     var editingClass by remember { mutableStateOf<CourseClass?>(null) }
     var editingDay by remember { mutableStateOf("") }
@@ -88,8 +83,6 @@ fun MainScheduleApp() {
     var showClearAllDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    val pagerState = rememberPagerState(pageCount = { ScheduleTab.entries.size })
-    val coroutineScope = rememberCoroutineScope()
     val isRefreshing by viewModel.isDataLoading.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
@@ -126,16 +119,6 @@ fun MainScheduleApp() {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            ScheduleBottomBar(
-                pagerState = pagerState,
-                onTabSelected = { tab ->
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(tab.ordinal)
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             MultiActionFab(
                 isExpanded = isFabExpanded,
@@ -174,9 +157,10 @@ fun MainScheduleApp() {
             )
         }
     ) { paddingValues ->
-        MainPagerContent(
+        MainScreenContent(
             paddingValues = paddingValues,
-            pagerState = pagerState,
+            currentScreen = currentScreen,
+            onScreenChange = { currentScreen = it },
             viewModel = viewModel,
             isRefreshing = isRefreshing,
             visibleDay = visibleDay,
@@ -285,40 +269,12 @@ private fun MultiActionFab(
     }
 }
 
-@Composable
-private fun ScheduleBottomBar(
-    pagerState: PagerState,
-    onTabSelected: (ScheduleTab) -> Unit
-) {
-    val currentPage by remember { derivedStateOf { pagerState.currentPage } }
-
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp
-    ) {
-        ScheduleTab.entries.forEach { tab ->
-            NavigationBarItem(
-                selected = currentPage == tab.ordinal,
-                onClick = { onTabSelected(tab) },
-                icon = { Icon(imageVector = tab.icon, contentDescription = tab.title) },
-                label = { Text(tab.title) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
-    }
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun MainPagerContent(
+private fun MainScreenContent(
     paddingValues: PaddingValues,
-    pagerState: PagerState,
+    currentScreen: ScheduleScreen,
+    onScreenChange: (ScheduleScreen) -> Unit,
     viewModel: ScheduleViewModel,
     isRefreshing: Boolean,
     visibleDay: String,
@@ -330,23 +286,32 @@ private fun MainPagerContent(
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.weight(1f),
-            userScrollEnabled = false,
-            beyondViewportPageCount = 1,
-        ) { page ->
-            when (ScheduleTab.entries[page]) {
-                ScheduleTab.NOW -> {
+        AnimatedContent(
+            targetState = currentScreen,
+            transitionSpec = {
+                if (targetState == ScheduleScreen.GRID) {
+                    (fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { it }))
+                        .togetherWith(fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { -it }))
+                } else {
+                    (fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { -it }))
+                        .togetherWith(fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { it }))
+                }
+            },
+            label = "ScreenTransition",
+            modifier = Modifier.weight(1f)
+        ) { screen ->
+            when (screen) {
+                ScheduleScreen.NOW -> {
                     val currentStatus by viewModel.liveStatus.collectAsState()
                     val todayRemainingClasses by viewModel.remainingClassesToday.collectAsState()
                     NowTabScreen(
                         status = currentStatus,
                         todayRemainingClasses = todayRemainingClasses.items,
-                        isLoading = isRefreshing
+                        isLoading = isRefreshing,
+                        onOpenCardsView = { onScreenChange(ScheduleScreen.GRID) }
                     )
                 }
-                ScheduleTab.GRID -> {
+                ScheduleScreen.GRID -> {
                     val weekData by viewModel.weekSchedule.collectAsState()
                     CardsViewTab(
                         weekSchedule = weekData,
@@ -368,7 +333,8 @@ private fun MainPagerContent(
                                 viewModel.deleteClass(entity)
                             }
                         },
-                        onVisibleDayChanged = onVisibleDayChanged
+                        onVisibleDayChanged = onVisibleDayChanged,
+                        onBackToMain = { onScreenChange(ScheduleScreen.NOW) }
                     )
                 }
             }

@@ -1,10 +1,6 @@
 package com.example.schedules.data.models
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.vector.ImageVector
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -17,9 +13,9 @@ object ScheduleConstants {
     const val DEFAULT_ID = 0L
 }
 
-enum class ScheduleTab(val title: String, val icon: ImageVector) {
-    NOW("Now", Icons.Default.Schedule),
-    GRID("Cards View", Icons.Default.GridView)
+enum class ScheduleScreen {
+    NOW,
+    GRID
 }
 
 @Immutable

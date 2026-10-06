@@ -5,13 +5,13 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,7 +63,8 @@ import java.util.Locale
 fun NowTabScreen(
     status: ScheduleStatus,
     todayRemainingClasses: List<CourseClass> = emptyList(),
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    onOpenCardsView: () -> Unit = {}
 ) {
     if (isLoading) {
         NowTabScreenSkeleton()
@@ -83,7 +84,10 @@ fun NowTabScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            NowTabHeader(status)
+            NowTabHeader(
+                status = status,
+                onOpenCardsView = onOpenCardsView
+            )
 
             HorizontalDivider(
                 thickness = 2.dp,
@@ -96,7 +100,10 @@ fun NowTabScreen(
             )
 
             if (status.courseClass != null) {
-                NowTabClassDetails(status.courseClass)
+                NowTabClassDetails(
+                    course = status.courseClass,
+                    onOpenCardsView = onOpenCardsView
+                )
             } else {
                 EmptyDayView(
                     modifier = Modifier.weight(1f),
@@ -109,18 +116,54 @@ fun NowTabScreen(
 }
 
 @Composable
-private fun NowTabHeader(status: ScheduleStatus) {
-    Text(
-        text = when (status.status) {
-            ClassStatus.ONGOING -> "CLASS IN PROGRESS"
-            ClassStatus.UPCOMING -> "NEXT CLASS (${status.dayName.uppercase(Locale.US)})"
-            ClassStatus.NONE -> "SCHEDULE COMPLETED"
-        },
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        letterSpacing = 1.sp
-    )
+private fun NowTabHeader(
+    status: ScheduleStatus,
+    onOpenCardsView: () -> Unit = {}
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = when (status.status) {
+                ClassStatus.ONGOING -> "CLASS IN PROGRESS"
+                ClassStatus.UPCOMING -> "NEXT CLASS (${status.dayName.uppercase(Locale.US)})"
+                ClassStatus.NONE -> "SCHEDULE COMPLETED"
+            },
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            letterSpacing = 1.sp,
+            modifier = Modifier.weight(1f)
+        )
+
+        Surface(
+            onClick = onOpenCardsView,
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_coffee),
+                    contentDescription = "Show Cards View",
+                    modifier = Modifier.size(28.dp)
+                )
+                Text(
+                    text = "Cards",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -334,7 +377,10 @@ private fun CardInstructionText(text: String, icon: ImageVector) {
 }
 
 @Composable
-private fun NowTabClassDetails(course: CourseClass) {
+private fun NowTabClassDetails(
+    course: CourseClass,
+    onOpenCardsView: () -> Unit
+) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -353,7 +399,10 @@ private fun NowTabClassDetails(course: CourseClass) {
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ClassDetailsHeader(course)
+            ClassDetailsHeader(
+                course = course,
+                onOpenCardsView = onOpenCardsView
+            )
 
             HorizontalDivider(
                 thickness = 0.5.dp,
@@ -366,7 +415,10 @@ private fun NowTabClassDetails(course: CourseClass) {
 }
 
 @Composable
-private fun ClassDetailsHeader(course: CourseClass) {
+private fun ClassDetailsHeader(
+    course: CourseClass,
+    onOpenCardsView: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -392,13 +444,20 @@ private fun ClassDetailsHeader(course: CourseClass) {
             )
         }
 
-        Image(
-            painter = painterResource(R.drawable.honey_pot),
-            contentDescription = "Honey Pot Icon",
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .size(42.dp)
-        )
+        Surface(
+            onClick = onOpenCardsView,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_coffee),
+                contentDescription = "Show Cards View",
+                modifier = Modifier
+                    .padding(6.dp)
+                    .size(36.dp)
+            )
+        }
     }
 }
 
