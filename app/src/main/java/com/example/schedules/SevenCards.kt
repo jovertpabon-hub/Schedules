@@ -83,7 +83,6 @@ fun MainScheduleApp() {
     var showClearAllDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    val isRefreshing by viewModel.isDataLoading.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
 
@@ -162,7 +161,6 @@ fun MainScheduleApp() {
             currentScreen = currentScreen,
             onScreenChange = { currentScreen = it },
             viewModel = viewModel,
-            isRefreshing = isRefreshing,
             visibleDay = visibleDay,
             onEditClass = { course, day ->
                 editingClass = course
@@ -276,7 +274,6 @@ private fun MainScreenContent(
     currentScreen: ScheduleScreen,
     onScreenChange: (ScheduleScreen) -> Unit,
     viewModel: ScheduleViewModel,
-    isRefreshing: Boolean,
     visibleDay: String,
     onEditClass: (CourseClass, String) -> Unit,
     onVisibleDayChanged: (String) -> Unit
@@ -307,7 +304,6 @@ private fun MainScreenContent(
                     NowTabScreen(
                         status = currentStatus,
                         todayRemainingClasses = todayRemainingClasses.items,
-                        isLoading = isRefreshing,
                         onOpenCardsView = { onScreenChange(ScheduleScreen.GRID) }
                     )
                 }
@@ -315,8 +311,6 @@ private fun MainScreenContent(
                     val weekData by viewModel.weekSchedule.collectAsState()
                     CardsViewTab(
                         weekSchedule = weekData,
-                        isRefreshing = isRefreshing,
-                        onRefresh = { viewModel.refreshData() },
                         onEdit = onEditClass,
                         onDelete = { course ->
                             course.id?.let { id ->

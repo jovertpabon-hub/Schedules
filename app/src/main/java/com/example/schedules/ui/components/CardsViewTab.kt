@@ -28,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,8 +47,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun CardsViewTab(
     weekSchedule: WeekSchedule,
-    isRefreshing: Boolean = false,
-    onRefresh: () -> Unit = {},
     onEdit: (CourseClass, String) -> Unit = { _, _ -> },
     onDelete: (CourseClass) -> Unit = {},
     onVisibleDayChanged: (String) -> Unit = {},
@@ -110,111 +107,80 @@ fun CardsViewTab(
             )
         }
 
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
+        AnimatedContent(
+            targetState = cardState,
+            transitionSpec = {
+                if (targetState == CardDetailState.PAGER_DETAIL) {
+                    (fadeIn(animationSpec = tween(300)) + scaleIn(initialScale = 0.92f))
+                        .togetherWith(fadeOut(animationSpec = tween(300)))
+                } else {
+                    fadeIn(animationSpec = tween(300))
+                        .togetherWith(fadeOut(animationSpec = tween(300)) + scaleOut(targetScale = 0.92f))
+                }
+            },
+            label = "CardViewTransition",
             modifier = Modifier.weight(1f)
-        ) {
-            AnimatedContent(
-                targetState = cardState,
-                transitionSpec = {
-                    if (targetState == CardDetailState.PAGER_DETAIL) {
-                        (fadeIn(animationSpec = tween(300)) + scaleIn(initialScale = 0.92f))
-                            .togetherWith(fadeOut(animationSpec = tween(300)))
-                    } else {
-                        fadeIn(animationSpec = tween(300))
-                            .togetherWith(fadeOut(animationSpec = tween(300)) + scaleOut(targetScale = 0.92f))
-                    }
-                },
-                label = "CardViewTransition"
-            ) { state ->
-                when (state) {
-                    CardDetailState.GRID_LIST -> {
-                        if (isRefreshing) {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(2),
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                items(6) {
-                                    DayMiniCardSkeleton()
-                                }
-                                item(span = { GridItemSpan(2) }) {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        DayMiniCardSkeleton(modifier = Modifier.fillMaxWidth(0.5f))
-                                    }
-                                }
-                            }
-                        } else {
-                            val weekData = weekSchedule.days
-                            val weekdays = remember(weekData) { weekData.take(6) }
-                            val sunday = remember(weekData) { weekData.lastOrNull() }
+        ) { state ->
+            when (state) {
+                CardDetailState.GRID_LIST -> {
+                    val weekData = weekSchedule.days
+                    val weekdays = remember(weekData) { weekData.take(6) }
+                    val sunday = remember(weekData) { weekData.lastOrNull() }
 
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(2),
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        itemsIndexed(
+                            items = weekdays,
+                            key = { _, item -> item.dayName }
+                        ) { index, dayData ->
+                            DayMiniCard(
+                                dayData = dayData,
+                                onClick = {
+                                    coroutineScope.launch { pagerState.scrollToPage(index) }
+                                    cardState = CardDetailState.PAGER_DETAIL
+                                }
+                            )
+                        }
+                        if (sunday != null) {
+                            item(
+                                span = { GridItemSpan(2) },
+                                key = "Sunday"
                             ) {
-                                itemsIndexed(
-                                    items = weekdays,
-                                    key = { _, item -> item.dayName }
-                                ) { index, dayData ->
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     DayMiniCard(
-                                        dayData = dayData,
+                                        dayData = sunday,
+                                        modifier = Modifier.fillMaxWidth(0.5f),
                                         onClick = {
-                                            coroutineScope.launch { pagerState.scrollToPage(index) }
+                                            coroutineScope.launch { pagerState.scrollToPage(6) }
                                             cardState = CardDetailState.PAGER_DETAIL
                                         }
                                     )
                                 }
-                                if (sunday != null) {
-                                    item(
-                                        span = { GridItemSpan(2) },
-                                        key = "Sunday"
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            DayMiniCard(
-                                                dayData = sunday,
-                                                modifier = Modifier.fillMaxWidth(0.5f),
-                                                onClick = {
-                                                    coroutineScope.launch { pagerState.scrollToPage(6) }
-                                                    cardState = CardDetailState.PAGER_DETAIL
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
-                    CardDetailState.PAGER_DETAIL -> {
-                        if (isRefreshing) {
-                            DetailedDayCardSkeleton()
-                        } else {
-                            HorizontalPager(
-                                state = pagerState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
-                                pageSpacing = 16.dp
-                            ) { page ->
-                                val dayData = weekSchedule.days[page]
-                                DetailedDayCard(
-                                    dayData = dayData,
-                                    onEdit = { onEdit(it, dayData.dayName) },
-                                    onDelete = onDelete
-                                )
-                            }
-                        }
+                }
+                CardDetailState.PAGER_DETAIL -> {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
+                        pageSpacing = 16.dp
+                    ) { page ->
+                        val dayData = weekSchedule.days[page]
+                        DetailedDayCard(
+                            dayData = dayData,
+                            onEdit = { onEdit(it, dayData.dayName) },
+                            onDelete = onDelete
+                        )
                     }
                 }
             }

@@ -33,7 +33,6 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Locale
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -77,9 +76,6 @@ class ScheduleViewModel(
     private val _inputErrorMessage = MutableStateFlow<String?>(null)
     val inputErrorMessage: StateFlow<String?> = _inputErrorMessage.asStateFlow()
 
-    // Whether the app is currently "refreshing" data
-    private val _isDataLoading = MutableStateFlow(false)
-    val isDataLoading: StateFlow<Boolean> = _isDataLoading.asStateFlow()
 
     // Stream of one-time events (like Snackbars)
     private val _uiEvents = MutableSharedFlow<UiEvent>()
@@ -208,22 +204,8 @@ class ScheduleViewModel(
 
     // --- User Actions (CRUD) ---
 
-    /**
-     * Simulates a data refresh.
-     * In a real app, this might fetch new data from a server.
-     */
-    fun refreshData() {
-        viewModelScope.launch {
-            _isDataLoading.value = true
-            delay(1000.milliseconds) // Simulate network delay
-            _isDataLoading.value = false
-            _uiEvents.emit(UiEvent.ShowMessage("Schedules synchronized"))
-        }
-    }
-
     fun importPdf(uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
-            _isDataLoading.value = true
             try {
                 val rawText = pdfExtractor.extractText(uri)
                 val extractedSchedules = scheduleParser.parse(rawText)
@@ -241,8 +223,6 @@ class ScheduleViewModel(
                 }
             } catch (e: Exception) {
                 _uiEvents.emit(UiEvent.ShowMessage("Error importing PDF: ${e.message}"))
-            } finally {
-                _isDataLoading.value = false
             }
         }
     }
