@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -12,18 +11,14 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -51,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -61,8 +57,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
-import com.example.schedules.data.models.ScheduleScreen
-import com.example.schedules.ui.components.CardsViewTab
 import com.example.schedules.ui.components.NowTabScreen
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
 import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
@@ -80,12 +74,16 @@ fun MainScheduleApp() {
         factory = ScheduleViewModel.Factory(repository, appContext)
     )
 
-    // UI States
-    var currentScreen by remember { mutableStateOf(ScheduleScreen.NOW) }
+    val todayName = remember {
+        val name = java.time.LocalDate.now().dayOfWeek.name
+        ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(name, ignoreCase = true) } ?: ScheduleConstants.DaysOfWeek[0]
+    }
+
+    // Single Main Screen Selected Day State (Monday - Sunday)
+    var selectedDay by remember { mutableStateOf(todayName) }
     var showDialog by remember { mutableStateOf(false) }
     var editingClass by remember { mutableStateOf<CourseClass?>(null) }
     var editingDay by remember { mutableStateOf("") }
-    var visibleDay by remember { mutableStateOf(ScheduleConstants.DaysOfWeek[0]) }
     var showClearAllDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
@@ -154,7 +152,7 @@ fun MainScheduleApp() {
                         onClick = {
                             isFabExpanded = false
                             editingClass = null
-                            editingDay = visibleDay
+                            editingDay = selectedDay
                             showDialog = true
                         }
                     )
@@ -165,16 +163,14 @@ fun MainScheduleApp() {
         Box(modifier = Modifier.fillMaxSize()) {
             MainScreenContent(
                 paddingValues = paddingValues,
-                currentScreen = currentScreen,
-                onScreenChange = { currentScreen = it },
                 viewModel = viewModel,
-                visibleDay = visibleDay,
+                selectedDay = selectedDay,
+                onSelectedDayChanged = { selectedDay = it },
                 onEditClass = { course, day ->
                     editingClass = course
                     editingDay = day
                     showDialog = true
-                },
-                onVisibleDayChanged = { visibleDay = it }
+                }
             )
 
             AnimatedVisibility(
@@ -286,7 +282,6 @@ private fun MultiActionFab(
             }
         }
 
-        // Rounded square / stadium FAB in primary vibrant accent color anchored to bottom right
         FloatingActionButton(
             onClick = onExpandClick,
             shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
@@ -307,68 +302,41 @@ private fun MultiActionFab(
 @Composable
 private fun MainScreenContent(
     paddingValues: PaddingValues,
-    currentScreen: ScheduleScreen,
-    onScreenChange: (ScheduleScreen) -> Unit,
     viewModel: ScheduleViewModel,
-    visibleDay: String,
-    onEditClass: (CourseClass, String) -> Unit,
-    onVisibleDayChanged: (String) -> Unit
+    selectedDay: String,
+    onSelectedDayChanged: (String) -> Unit,
+    onEditClass: (CourseClass, String) -> Unit
 ) {
+    val currentStatus by viewModel.liveStatus.collectAsState()
+    val weekSchedule by viewModel.weekSchedule.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        AnimatedContent(
-            targetState = currentScreen,
-            transitionSpec = {
-                if (targetState == ScheduleScreen.GRID) {
-                    (fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { it }))
-                        .togetherWith(fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { -it }))
-                } else {
-                    (fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { -it }))
-                        .togetherWith(fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { it }))
-                }
-            },
-            label = "ScreenTransition",
-            modifier = Modifier.weight(1f)
-        ) { screen ->
-            when (screen) {
-                ScheduleScreen.NOW -> {
-                    val currentStatus by viewModel.liveStatus.collectAsState()
-                    val todayRemainingClasses by viewModel.remainingClassesToday.collectAsState()
-                    NowTabScreen(
-                        status = currentStatus,
-                        todayRemainingClasses = todayRemainingClasses.items,
-                        onOpenCardsView = { onScreenChange(ScheduleScreen.GRID) }
+        NowTabScreen(
+            status = currentStatus,
+            weekSchedule = weekSchedule,
+            selectedDay = selectedDay,
+            onSelectedDayChanged = onSelectedDayChanged,
+            onEditClass = onEditClass,
+            onDeleteClass = { course ->
+                course.id?.let { id ->
+                    val entity = ScheduleEntity(
+                        id = id,
+                        dayName = selectedDay,
+                        courseCode = course.courseCode,
+                        courseName = course.courseName,
+                        startTime = course.startTime,
+                        endTime = course.endTime,
+                        room = course.room,
+                        instructor = course.instructor
                     )
-                }
-                ScheduleScreen.GRID -> {
-                    val weekData by viewModel.weekSchedule.collectAsState()
-                    CardsViewTab(
-                        weekSchedule = weekData,
-                        onEdit = onEditClass,
-                        onDelete = { course ->
-                            course.id?.let { id ->
-                                val entity = ScheduleEntity(
-                                    id = id,
-                                    dayName = visibleDay,
-                                    courseCode = course.courseCode,
-                                    courseName = course.courseName,
-                                    startTime = course.startTime,
-                                    endTime = course.endTime,
-                                    room = course.room,
-                                    instructor = course.instructor
-                                )
-                                viewModel.deleteClass(entity)
-                            }
-                        },
-                        onVisibleDayChanged = onVisibleDayChanged,
-                        onBackToMain = { onScreenChange(ScheduleScreen.NOW) }
-                    )
+                    viewModel.deleteClass(entity)
                 }
             }
-        }
+        )
     }
 }
 
