@@ -61,7 +61,9 @@ fun AddOrEditClassDialog(
 
     val validationError by viewModel.inputErrorMessage.collectAsState()
     
-    val isFormValid = code.isNotBlank() && name.isNotBlank() && room.isNotBlank() && instructor.isNotBlank()
+    val isFormValid = remember(code, name, room, instructor) {
+        code.isNotBlank() && name.isNotBlank() && room.isNotBlank() && instructor.isNotBlank()
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(

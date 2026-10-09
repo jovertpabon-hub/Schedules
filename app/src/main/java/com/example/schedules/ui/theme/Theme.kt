@@ -6,27 +6,41 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AmberPrimaryDark,
-    onPrimary = AmberOnPrimaryDark,
-    primaryContainer = AmberContainerDark,
-    onPrimaryContainer = OnAmberContainerDark,
-    surface = WarmSurfaceDark,
-    surfaceVariant = WarmSurfaceVariantDark,
-    background = WarmSurfaceDark,
-    onBackground = OnAmberContainerDark,
-    onSurface = OnAmberContainerDark
+    primary = PrimaryDark,
+    onPrimary = OnPrimaryDark,
+    primaryContainer = PrimaryContainerDark,
+    onPrimaryContainer = OnPrimaryContainerDark,
+    secondary = SecondaryDark,
+    onSecondary = OnSecondaryDark,
+    secondaryContainer = SecondaryContainerDark,
+    onSecondaryContainer = OnSecondaryContainerDark,
+    surface = SurfaceDark,
+    onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    background = SurfaceDark,
+    onBackground = OnSurfaceDark,
+    outline = OutlineDark,
+    outlineVariant = OutlineVariantDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = AmberPrimaryLight,
-    onPrimary = AmberOnPrimaryLight,
-    primaryContainer = AmberContainerLight,
-    onPrimaryContainer = OnAmberContainerLight,
-    surface = WarmSurfaceLight,
-    surfaceVariant = WarmSurfaceVariantLight,
-    background = WarmSurfaceLight,
-    onBackground = OnAmberContainerLight,
-    onSurface = OnAmberContainerLight
+    primary = PrimaryLight,
+    onPrimary = OnPrimaryLight,
+    primaryContainer = PrimaryContainerLight,
+    onPrimaryContainer = OnPrimaryContainerLight,
+    secondary = SecondaryLight,
+    onSecondary = OnSecondaryLight,
+    secondaryContainer = SecondaryContainerLight,
+    onSecondaryContainer = OnSecondaryContainerLight,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    background = SurfaceLight,
+    onBackground = OnSurfaceLight,
+    outline = OutlineLight,
+    outlineVariant = OutlineVariantLight
 )
 
     /* Other default colors to override

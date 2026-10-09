@@ -2,18 +2,42 @@ package com.example.schedules.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light Theme Colors (Honey Latte & Milk)
-val AmberPrimaryLight = Color(0xFFC88200)         // Warm Honey Gold
-val AmberOnPrimaryLight = Color(0xFFFFFFFF)       // White on primary
-val AmberContainerLight = Color(0xFFFFF0D4)       // Soft Honey & Cream Container
-val OnAmberContainerLight = Color(0xFF382100)     // Dark Espresso/Honey on container
-val WarmSurfaceLight = Color(0xFFFFFDF8)           // Warm Cream Light Surface
-val WarmSurfaceVariantLight = Color(0xFFF4EDE2)    // Warm Oat/Foam Variant Surface
+// 5-Tone Coffee Palette (Lead UI/UX Designer Design System)
+val DarkMocha = Color(0xFF623528)          // Primary text, screen titles, dark card borders, primary readable labels
+val DeepEspresso = Color(0xFF4D2A00)       // Hero card headers, dark container surfaces, primary icon fills
+val WarmRoast = Color(0xFFCC6F00)          // Primary action elements (FAB), active state highlights, focus indicators
+val GoldenCrema = Color(0xFFF2A900)        // Progress indicators, status badges, highlighted timer digits
+val SteamedMilk = Color(0xFFF9E6A8)        // Card backgrounds, secondary informational containers, subtle fills
+val WarmCoffeeCream = Color(0xFFFFFBF2)    // Background surface
 
-// Dark Theme Colors (Warm Amber Roast & Espresso Ground)
-val AmberPrimaryDark = Color(0xFFFFBA42)          // Bright Golden Honey Highlight
-val AmberOnPrimaryDark = Color(0xFF452B00)        // Dark Brown on primary
-val AmberContainerDark = Color(0xFF634000)        // Honey-Roasted Coffee Container
-val OnAmberContainerDark = Color(0xFFFFDF9E)      // Light Golden Cream on container
-val WarmSurfaceDark = Color(0xFF1E1B16)            // Deep Roasted Surface (Warm Tinted)
-val WarmSurfaceVariantDark = Color(0xFF2E2A23)     // Warm Espresso Variant Surface
+// Light Theme - 5-Tone Coffee Palette Mapping
+val SurfaceLight = WarmCoffeeCream
+val OnSurfaceLight = DarkMocha
+val SurfaceVariantLight = SteamedMilk
+val OnSurfaceVariantLight = DarkMocha
+val PrimaryLight = WarmRoast
+val OnPrimaryLight = Color.White
+val PrimaryContainerLight = SteamedMilk
+val OnPrimaryContainerLight = DarkMocha
+val SecondaryLight = GoldenCrema
+val OnSecondaryLight = DeepEspresso
+val SecondaryContainerLight = SteamedMilk
+val OnSecondaryContainerLight = DarkMocha
+val OutlineLight = DarkMocha
+val OutlineVariantLight = Color(0xFFD4B982)
+
+// Dark Theme - Rich Espresso Dark Theme Mapping
+val SurfaceDark = Color(0xFF1F1206)
+val OnSurfaceDark = SteamedMilk
+val SurfaceVariantDark = Color(0xFF382104)
+val OnSurfaceVariantDark = GoldenCrema
+val PrimaryDark = WarmRoast
+val OnPrimaryDark = WarmCoffeeCream
+val PrimaryContainerDark = DeepEspresso
+val OnPrimaryContainerDark = SteamedMilk
+val SecondaryDark = GoldenCrema
+val OnSecondaryDark = DeepEspresso
+val SecondaryContainerDark = Color(0xFF593100)
+val OnSecondaryContainerDark = SteamedMilk
+val OutlineDark = WarmRoast
+val OutlineVariantDark = DeepEspresso

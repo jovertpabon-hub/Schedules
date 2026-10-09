@@ -8,20 +8,34 @@ import java.util.Locale
 
 class PatternBasedScheduleParser : IScheduleParser {
 
-    private val subjectRegex = Regex(
-        """^(\S+)\s+(\S+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(.+)""",
-        RegexOption.IGNORE_CASE
-    )
+    companion object {
+        private val SUBJECT_REGEX = Regex(
+            """^(\S+)\s+(\S+)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(.+)""",
+            RegexOption.IGNORE_CASE
+        )
 
-    private val schedSlotRegex = Regex(
-        """(\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+([A-Za-z]+)\s+([A-Za-z0-9\-\s]+)""",
-        RegexOption.IGNORE_CASE
-    )
+        private val SCHED_SLOT_REGEX = Regex(
+            """(\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+([A-Za-z]+)\s+([A-Za-z0-9\-\s]+)""",
+            RegexOption.IGNORE_CASE
+        )
 
-    private val timeRangeRegex = Regex(
-        """(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*-\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)""",
-        RegexOption.IGNORE_CASE
-    )
+        private val TIME_RANGE_REGEX = Regex(
+            """(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*-\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)""",
+            RegexOption.IGNORE_CASE
+        )
+
+        private val SUFFIX_CLEAN_REGEX = Regex(
+            """\s+[A-Z0-9]+\s+[0-9][A-Z]$""",
+            RegexOption.IGNORE_CASE
+        )
+
+        private val WHITESPACE_REGEX = Regex("""\s+""")
+
+        private val SECTION_CODE_REGEX = Regex(
+            """[0-9]?[A-Z]+[0-9]?[A-Z]?""",
+            RegexOption.IGNORE_CASE
+        )
+    }
 
     override fun parse(text: String): List<ExtractedSchedule> {
         val courseClasses = mutableListOf<ExtractedSchedule>()
@@ -29,23 +43,22 @@ class PatternBasedScheduleParser : IScheduleParser {
         var currentCode = ""
         var currentName = ""
 
-        for (line in text.lines()) {
+        text.lineSequence().forEach { line ->
             val trimmed = line.trim()
-            if (trimmed.isBlank() || isNoiseLine(trimmed)) continue
+            if (trimmed.isNotEmpty() && !isNoiseLine(trimmed)) {
+                val subjectMatch = SUBJECT_REGEX.find(trimmed)
 
-            val subjectMatch = subjectRegex.find(trimmed)
+                if (subjectMatch != null) {
+                    currentCode = subjectMatch.groupValues[2]
+                    currentName = subjectMatch.groupValues[3]
 
-            if (subjectMatch != null) {
-                currentCode = subjectMatch.groupValues[2]
-                currentName = subjectMatch.groupValues[3]
+                    val rawSchedPart = subjectMatch.groupValues[5]
+                    val schedPartClean = rawSchedPart.replace(SUFFIX_CLEAN_REGEX, "").trim()
 
-                val rawSchedPart = subjectMatch.groupValues[5]
-                val schedPartClean = rawSchedPart.replace(Regex("""\s+[A-Z0-9]+\s+[0-9][A-Z]$""", RegexOption.IGNORE_CASE), "").trim()
-
-                processAndAddSchedule(currentCode, currentName, schedPartClean, courseClasses)
-
-            } else if (currentCode.isNotEmpty()) {
-                processAndAddSchedule(currentCode, currentName, trimmed, courseClasses)
+                    processAndAddSchedule(currentCode, currentName, schedPartClean, courseClasses)
+                } else if (currentCode.isNotEmpty()) {
+                    processAndAddSchedule(currentCode, currentName, trimmed, courseClasses)
+                }
             }
         }
 
@@ -59,7 +72,7 @@ class PatternBasedScheduleParser : IScheduleParser {
         textToSearch: String,
         outputList: MutableList<ExtractedSchedule>
     ) {
-        val matches = schedSlotRegex.findAll(textToSearch)
+        val matches = SCHED_SLOT_REGEX.findAll(textToSearch)
 
         for (match in matches) {
             val timeStr = match.groupValues[1].trim()
@@ -67,8 +80,8 @@ class PatternBasedScheduleParser : IScheduleParser {
             var roomPart = match.groupValues[3].trim()
 
             if (roomPart.contains(" ")) {
-                val parts = roomPart.split(Regex("""\s+"""))
-                if (parts.size > 1 && parts.last().matches(Regex("""[0-9]?[A-Z]+[0-9]?[A-Z]?""", RegexOption.IGNORE_CASE))) {
+                val parts = roomPart.split(WHITESPACE_REGEX)
+                if (parts.size > 1 && parts.last().matches(SECTION_CODE_REGEX)) {
                     roomPart = parts.dropLast(1).joinToString(" ")
                 }
             }
@@ -114,7 +127,7 @@ class PatternBasedScheduleParser : IScheduleParser {
     }
 
     private fun parseTimeRange(timeStr: String): Pair<LocalTime, LocalTime>? {
-        val match = timeRangeRegex.find(timeStr.trim()) ?: return null
+        val match = TIME_RANGE_REGEX.find(timeStr.trim()) ?: return null
 
         val startHourRaw = match.groupValues[1]
         val startAmPmRaw = match.groupValues[2].ifEmpty { null }
@@ -138,9 +151,9 @@ class PatternBasedScheduleParser : IScheduleParser {
     }
 
     private fun convertToLocalTime(timeStr: String, amPm: String): LocalTime {
-        val parts = timeStr.split(":")
-        var hour = parts[0].toInt()
-        val minute = if (parts.size > 1) parts[1].toInt() else 0
+        val colonIndex = timeStr.indexOf(':')
+        var hour = if (colonIndex != -1) timeStr.substring(0, colonIndex).toInt() else timeStr.toInt()
+        val minute = if (colonIndex != -1) timeStr.substring(colonIndex + 1).toInt() else 0
         val isPm = amPm.equals("pm", ignoreCase = true)
 
         if (isPm && hour < 12) hour += 12

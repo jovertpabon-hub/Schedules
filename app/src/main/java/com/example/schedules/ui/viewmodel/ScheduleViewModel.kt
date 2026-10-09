@@ -51,11 +51,13 @@ sealed class UiEvent {
  */
 class ScheduleViewModel(
     private val repository: IScheduleRepository,
-    context: Context // Passing context for AndroidPdfExtractor instantiation
+    context: Context
 ) : ViewModel() {
 
-    // Component instantiation as requested
-    private val pdfExtractor: IPdfExtractor = AndroidPdfExtractor(context)
+    private val appContext = context.applicationContext
+
+    // Component instantiation using application Context
+    private val pdfExtractor: IPdfExtractor = AndroidPdfExtractor(appContext)
     private val scheduleParser: IScheduleParser = PatternBasedScheduleParser()
 
     // --- UI States (Things the user sees) ---
@@ -96,27 +98,20 @@ class ScheduleViewModel(
      * it automatically updates our _weekSchedule state.
      */
     private fun monitorDatabaseChanges() {
-        // launch starts a background task that lives as long as this ViewModel exists
         viewModelScope.launch {
             repository.getAllSchedules().collect { allEntities ->
-                // Group the raw database rows by their day name
-                val groupedByDay = allEntities.groupBy { it.dayName }
+                // Group the raw database rows by lowercase day name for O(1) map lookups
+                val groupedByDay = allEntities.groupBy { it.dayName.lowercase(Locale.ROOT) }
                 
-                // Transform raw database rows into UI-friendly "CourseClass" objects
-                val formattedDayData = groupedByDay.map { (dayName, entities) ->
+                // Ensure every day of the week exists in the list, preserving standard DayOfWeek order
+                val finalWeekData = ScheduleConstants.DaysOfWeek.map { dayName ->
+                    val dayEntities = groupedByDay[dayName.lowercase(Locale.ROOT)] ?: emptyList()
                     DayScheduleData(
                         dayName = dayName,
-                        classes = entities.map { it.toUiModel() }.sortedBy { it.startTime }
+                        classes = dayEntities.map { it.toUiModel() }
                     )
                 }
                 
-                // Ensure every day of the week exists in the list, even if empty
-                val finalWeekData = ScheduleConstants.DaysOfWeek.map { day ->
-                    formattedDayData.find { it.dayName.equals(day, ignoreCase = true) } 
-                        ?: DayScheduleData(day, emptyList())
-                }
-                
-                // Update the state—this triggers the UI to redraw!
                 _weekSchedule.value = WeekSchedule(finalWeekData)
             }
         }
@@ -124,25 +119,28 @@ class ScheduleViewModel(
 
     /**
      * Step 2: Live Updates
-     * A timer that runs every second to update the "Time Remaining" for the current class.
+     * A timer that updates "Time Remaining" for the current class.
+     * Only emits state updates when values actually change to prevent unnecessary recompositions.
      */
     private fun startLiveUpdatesTimer() {
         viewModelScope.launch {
-            // collectLatest cancels the old timer loop whenever the week data changes
             weekSchedule.collectLatest { schedule ->
                 if (schedule.days.isEmpty()) {
                     _liveStatus.value = createEmptyStatus()
+                    _remainingClassesToday.value = ClassList(emptyList())
                     return@collectLatest
                 }
                 
-                // Infinite loop that runs while the ViewModel is active
                 while (true) {
                     val (newStatus, remainingList) = calculateCurrentStatus(schedule.days)
                     
-                    _liveStatus.value = newStatus
-                    _remainingClassesToday.value = ClassList(remainingList)
+                    if (_liveStatus.value != newStatus) {
+                        _liveStatus.value = newStatus
+                    }
+                    if (_remainingClassesToday.value.items != remainingList) {
+                        _remainingClassesToday.value = ClassList(remainingList)
+                    }
 
-                    // If no classes are happening, we don't need to update every second (save battery)
                     val delayTime = if (newStatus.status == ClassStatus.NONE) 30.seconds else 1.seconds
                     delay(delayTime)
                 }
@@ -337,7 +335,7 @@ class ScheduleViewModel(
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ScheduleViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return ScheduleViewModel(repository, context) as T
+                return ScheduleViewModel(repository, context.applicationContext) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

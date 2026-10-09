@@ -3,18 +3,18 @@ package com.example.schedules.data.pdf
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AndroidPdfExtractor(private val context: Context) : IPdfExtractor {
+class AndroidPdfExtractor(context: Context) : IPdfExtractor {
+
+    private val appContext = context.applicationContext
 
     override suspend fun extractText(uri: Uri): String = withContext(Dispatchers.IO) {
-        PDFBoxResourceLoader.init(context)
         try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            appContext.contentResolver.openInputStream(uri)?.use { inputStream ->
                 PDDocument.load(inputStream).use { pdDocument ->
                     val stripper = PDFTextStripper()
                     stripper.sortByPosition = true

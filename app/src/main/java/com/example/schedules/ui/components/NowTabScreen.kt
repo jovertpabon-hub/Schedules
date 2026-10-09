@@ -6,7 +6,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,12 +21,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -45,6 +50,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +66,12 @@ import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
+import com.example.schedules.ui.theme.DarkMocha
+import com.example.schedules.ui.theme.DeepEspresso
+import com.example.schedules.ui.theme.GoldenCrema
+import com.example.schedules.ui.theme.SteamedMilk
+import com.example.schedules.ui.theme.WarmCoffeeCream
+import com.example.schedules.ui.theme.WarmRoast
 import java.util.Locale
 
 @Composable
@@ -68,13 +83,23 @@ fun NowTabScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFFFFBF2),
+                        SteamedMilk.copy(alpha = 0.75f),
+                        GoldenCrema.copy(alpha = 0.35f),
+                        WarmRoast.copy(alpha = 0.12f)
+                    )
+                )
+            )
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(12.dp),
+                .padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -83,29 +108,62 @@ fun NowTabScreen(
                 onOpenCardsView = onOpenCardsView
             )
 
-            HorizontalDivider(
-                thickness = 2.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-            )
+            // Coffee Aroma Vapor Graphics
+            CoffeeAromaVapor(modifier = Modifier.height(28.dp))
 
             NowTabCountdownCard(
                 status = status,
                 todayRemainingClasses = todayRemainingClasses
             )
 
-            if (status.courseClass != null) {
+            if (status.status == ClassStatus.NONE) {
+                ScheduleCompletedStateView()
+            } else if (status.courseClass != null) {
                 NowTabClassDetails(
                     course = status.courseClass,
+                    dayName = status.dayName,
                     onOpenCardsView = onOpenCardsView
                 )
             } else {
                 EmptyDayView(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     mainMessage = "All clear for now!",
-                    secondaryMessage = "You've finished your classes or none are scheduled today."
+                    secondaryMessage = "You've finished your classes for today"
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CoffeeAromaVapor(modifier: Modifier = Modifier) {
+    val vaporColor = GoldenCrema.copy(alpha = 0.75f)
+    val vaporColorHighlight = remember(vaporColor) { vaporColor.copy(alpha = 0.9f) }
+    val path1 = remember { Path() }
+    val path2 = remember { Path() }
+    val path3 = remember { Path() }
+    val strokeWidth1 = remember { Stroke(width = 3.5f, cap = androidx.compose.ui.graphics.StrokeCap.Round) }
+    val strokeWidth2 = remember { Stroke(width = 4.5f, cap = androidx.compose.ui.graphics.StrokeCap.Round) }
+
+    Canvas(modifier = modifier.fillMaxWidth()) {
+        val width = size.width
+        val height = size.height
+
+        path1.reset()
+        path1.moveTo(width * 0.35f, height)
+        path1.cubicTo(width * 0.3f, height * 0.7f, width * 0.4f, height * 0.4f, width * 0.33f, 0f)
+
+        path2.reset()
+        path2.moveTo(width * 0.5f, height)
+        path2.cubicTo(width * 0.55f, height * 0.65f, width * 0.45f, height * 0.35f, width * 0.52f, 0f)
+
+        path3.reset()
+        path3.moveTo(width * 0.65f, height)
+        path3.cubicTo(width * 0.7f, height * 0.7f, width * 0.6f, height * 0.4f, width * 0.67f, 0f)
+
+        drawPath(path1, color = vaporColor, style = strokeWidth1)
+        drawPath(path2, color = vaporColorHighlight, style = strokeWidth2)
+        drawPath(path3, color = vaporColor, style = strokeWidth1)
     }
 }
 
@@ -119,41 +177,42 @@ private fun NowTabHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = when (status.status) {
-                ClassStatus.ONGOING -> "CLASS IN PROGRESS"
-                ClassStatus.UPCOMING -> "NEXT CLASS (${status.dayName.uppercase(Locale.US)})"
-                ClassStatus.NONE -> "SCHEDULE COMPLETED"
-            },
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            letterSpacing = 1.sp,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = when (status.status) {
+                    ClassStatus.ONGOING -> "CLASS IN PROGRESS"
+                    ClassStatus.UPCOMING -> "NEXT CLASS (${status.dayName.uppercase(Locale.US)})"
+                    ClassStatus.NONE -> "SCHEDULE COMPLETED"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = DarkMocha,
+                letterSpacing = 0.8.sp
+            )
+        }
 
         Surface(
             onClick = onOpenCardsView,
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+            shape = RoundedCornerShape(50.dp),
+            color = SteamedMilk,
+            border = BorderStroke(1.dp, DarkMocha.copy(alpha = 0.4f)),
             modifier = Modifier.padding(start = 8.dp)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Image(
                     painter = painterResource(R.drawable.ic_coffee),
-                    contentDescription = "Show Cards View",
-                    modifier = Modifier.size(28.dp)
+                    contentDescription = "Show Schedule Cards",
+                    modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "Cards",
+                    text = "Schedule",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = DarkMocha
                 )
             }
         }
@@ -167,17 +226,21 @@ private fun NowTabCountdownCard(
 ) {
     var showUpcomingList by remember { mutableStateOf(false) }
 
+    // Hero card container: Deep Espresso (#4D2A00) for hero card header/surface per UI/UX Designer spec
+    val cardContainerColor = DeepEspresso
+
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = cardContainerColor
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                0.5.dp,
-                MaterialTheme.colorScheme.outline,
-                shape = MaterialTheme.shapes.small
+                1.5.dp,
+                WarmRoast.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(28.dp)
             )
             .clickable { showUpcomingList = !showUpcomingList }
     ) {
@@ -204,21 +267,21 @@ private fun RemainingClassesView(classes: List<CourseClass>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(18.dp),
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
             text = "TODAY'S REMAINING CLASSES",
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            letterSpacing = 0.5.sp
+            fontWeight = FontWeight.ExtraBold,
+            color = SteamedMilk,
+            letterSpacing = 0.8.sp
         )
 
         if (classes.isNotEmpty()) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 classes.forEach { classItem ->
@@ -227,21 +290,23 @@ private fun RemainingClassesView(classes: List<CourseClass>) {
             }
         } else {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.EventAvailable,
                     contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                    modifier = Modifier.size(28.dp),
+                    tint = GoldenCrema
                 )
                 Text(
                     text = "No more classes today!",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = SteamedMilk,
                     textAlign = TextAlign.Center
                 )
             }
@@ -249,7 +314,8 @@ private fun RemainingClassesView(classes: List<CourseClass>) {
 
         CardInstructionText(
             text = "Tap card to return to timer",
-            icon = Icons.Default.Timer
+            icon = Icons.Default.Timer,
+            textColor = SteamedMilk.copy(alpha = 0.8f)
         )
     }
 }
@@ -257,33 +323,52 @@ private fun RemainingClassesView(classes: List<CourseClass>) {
 @Composable
 private fun ClassRowItem(classItem: CourseClass) {
     Surface(
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-        shape = MaterialTheme.shapes.extraSmall
+        color = SteamedMilk,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.4f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 6.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "${classItem.courseCode} - ${classItem.courseName}",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                // Dark Mocha (#623528) for subject codes against Steamed Milk (#F9E6A8)
+                Text(
+                    text = classItem.courseCode,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DarkMocha
+                )
+                Text(
+                    text = classItem.courseName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkMocha,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
-            Spacer(modifier = Modifier.fillMaxWidth(0.04f))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            Text(
-                text = "${classItem.startTime.format(ScheduleConstants.TimeFormatter)} - ${
-                    classItem.endTime.format(ScheduleConstants.TimeFormatter)
-                }",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Surface(
+                color = DeepEspresso,
+                shape = RoundedCornerShape(50.dp),
+                border = BorderStroke(0.5.dp, GoldenCrema.copy(alpha = 0.4f))
+            ) {
+                Text(
+                    text = "${classItem.startTime.format(ScheduleConstants.TimeFormatter)} - ${
+                        classItem.endTime.format(ScheduleConstants.TimeFormatter)
+                    }",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = SteamedMilk,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
         }
     }
 }
@@ -293,210 +378,592 @@ private fun CountdownTimerView(status: ScheduleStatus) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp, horizontal = 16.dp),
+            .padding(vertical = 22.dp, horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text(
-            text = when (status.status) {
-                ClassStatus.ONGOING -> "TIME REMAINING"
-                ClassStatus.UPCOMING -> "COUNTDOWN TO NEXT CLASS"
-                ClassStatus.NONE -> "FREEDOM!"
-            },
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            letterSpacing = 0.5.sp
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = when (status.status) {
+                    ClassStatus.ONGOING -> "TIME REMAINING"
+                    ClassStatus.UPCOMING -> "NEXT CLASS"
+                    ClassStatus.NONE -> "SCHEDULE COMPLETED"
+                },
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = SteamedMilk,
+                letterSpacing = 0.8.sp
+            )
 
+            // Status badge in Golden Crema (#F2A900) or Warm Roast (#CC6F00)
+            Surface(
+                shape = RoundedCornerShape(50.dp),
+                color = when (status.status) {
+                    ClassStatus.ONGOING -> GoldenCrema
+                    ClassStatus.UPCOMING -> GoldenCrema
+                    ClassStatus.NONE -> GoldenCrema
+                },
+                shadowElevation = 3.dp
+            ) {
+                Text(
+                    text = when (status.status) {
+                        ClassStatus.ONGOING -> "IN PROGRESS"
+                        ClassStatus.UPCOMING -> "UPCOMING"
+                        ClassStatus.NONE -> "FREEDOM!"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DeepEspresso,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
+        }
+
+        // Timer digits in Golden Crema (#F2A900) over Deep Espresso (#4D2A00) hero card
         Text(
-            text = status.remainingFormatted,
+            text = if (status.status == ClassStatus.NONE) "Uwian na! 🎉" else status.remainingFormatted,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            style = MaterialTheme.typography.displayLarge,
+            fontWeight = FontWeight.Black,
+            color = GoldenCrema
         )
 
+        // Progress Bar with Warm Roast (#CC6F00) filled progress bar
         if (status.status == ClassStatus.ONGOING) {
             OngoingProgressIndicator(status.progressPercent)
         }
 
         CardInstructionText(
             text = "Tap card to view upcoming schedule",
-            icon = Icons.AutoMirrored.Filled.EventNote
+            icon = Icons.AutoMirrored.Filled.EventNote,
+            textColor = SteamedMilk.copy(alpha = 0.8f)
         )
     }
 }
 
 @Composable
 private fun OngoingProgressIndicator(progress: Float) {
-    Spacer(modifier = Modifier.height(2.dp))
-    LinearProgressIndicator(
-        progress = { progress },
-        modifier = Modifier
-            .fillMaxWidth(0.85f)
-            .height(8.dp)
-            .clip(CircleShape)
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                MaterialTheme.shapes.small
-            ),
-        color = MaterialTheme.colorScheme.primary,
-        trackColor = MaterialTheme.colorScheme.primaryContainer,
-        gapSize = 0.dp,
-        drawStopIndicator = {}
-    )
+    val percentInt = (progress * 100).toInt().coerceIn(0, 100)
+
+    Column(
+        modifier = Modifier.fillMaxWidth(0.92f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Class Progress",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = SteamedMilk.copy(alpha = 0.9f)
+            )
+            Surface(
+                color = GoldenCrema,
+                shape = RoundedCornerShape(50.dp)
+            ) {
+                Text(
+                    text = "$percentInt%",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DeepEspresso,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+                )
+            }
+        }
+
+        // Warm Roast (#CC6F00) filled progress bar over Deep Espresso container
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(14.dp)
+                .clip(CircleShape)
+                .border(
+                    1.dp,
+                    GoldenCrema.copy(alpha = 0.4f),
+                    CircleShape
+                ),
+            color = WarmRoast,
+            trackColor = SteamedMilk.copy(alpha = 0.2f),
+            gapSize = 0.dp,
+            drawStopIndicator = {}
+        )
+    }
 }
 
 @Composable
-private fun CardInstructionText(text: String, icon: ImageVector) {
+private fun CardInstructionText(text: String, icon: ImageVector, textColor: Color = DarkMocha) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(12.dp),
-            tint = MaterialTheme.colorScheme.outline
+            modifier = Modifier.size(14.dp),
+            tint = textColor
         )
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
-            fontSize = 10.sp,
-            color = MaterialTheme.colorScheme.outline
+            fontWeight = FontWeight.Medium,
+            color = textColor
         )
+    }
+}
+
+@Composable
+private fun ScheduleCompletedStateView() {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = DeepEspresso
+        ),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.5.dp, GoldenCrema.copy(alpha = 0.5f), RoundedCornerShape(28.dp))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .background(WarmRoast.copy(alpha = 0.25f), CircleShape)
+                    .border(2.dp, GoldenCrema, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_coffee),
+                    contentDescription = "Brewing Coffee Cup",
+                    modifier = Modifier.size(56.dp)
+                )
+            }
+
+            // FREEDOM! badge in Golden Crema
+            Surface(
+                shape = RoundedCornerShape(50.dp),
+                color = GoldenCrema,
+                shadowElevation = 4.dp,
+                border = BorderStroke(1.dp, WarmRoast)
+            ) {
+                Text(
+                    text = "☕ FREEDOM! ☕",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = DeepEspresso,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+
+            Text(
+                text = "All classes completed for today. Time to enjoy a warm cup of coffee and unwind!",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = SteamedMilk,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
 @Composable
 private fun NowTabClassDetails(
     course: CourseClass,
+    dayName: String,
     onOpenCardsView: () -> Unit
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = SteamedMilk
         ),
+        shape = RoundedCornerShape(28.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                MaterialTheme.shapes.medium
+                1.5.dp,
+                DarkMocha.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(28.dp)
             )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ClassDetailsHeader(
-                course = course,
-                onOpenCardsView = onOpenCardsView
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Surface(
+                        color = DeepEspresso,
+                        shape = RoundedCornerShape(50.dp),
+                        border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.4f))
+                    ) {
+                        Text(
+                            text = course.courseCode,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = SteamedMilk,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)
+                        )
+                    }
+
+                    Text(
+                        text = course.courseName,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DarkMocha,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Surface(
+                    onClick = onOpenCardsView,
+                    shape = CircleShape,
+                    color = DeepEspresso,
+                    border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.4f)),
+                    modifier = Modifier.padding(start = 12.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_coffee),
+                        contentDescription = "Show Schedule Cards",
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(26.dp)
+                    )
+                }
+            }
 
             HorizontalDivider(
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant
+                thickness = 1.dp,
+                color = DarkMocha.copy(alpha = 0.2f)
             )
 
-            ClassDetailsInfoGrid(course)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ClassDetailRow(
+                    icon = Icons.Default.LocationOn,
+                    label = "ROOM",
+                    value = course.room
+                )
+
+                ClassDetailRow(
+                    icon = Icons.Default.Person,
+                    label = "INSTRUCTOR",
+                    value = course.instructor
+                )
+
+                ClassDetailRow(
+                    icon = Icons.Default.AccessTime,
+                    label = "TIME SLOT",
+                    value = "${course.startTime.format(ScheduleConstants.TimeFormatter)} - ${
+                        course.endTime.format(ScheduleConstants.TimeFormatter)
+                    }"
+                )
+
+                ClassDetailRow(
+                    icon = Icons.Default.CalendarToday,
+                    label = "SCHEDULED DAY",
+                    value = dayName
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ClassDetailsHeader(
-    course: CourseClass,
-    onOpenCardsView: () -> Unit
+private fun ClassDetailRow(
+    icon: ImageVector,
+    label: String,
+    value: String
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        color = WarmCoffeeCream,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, DarkMocha.copy(alpha = 0.25f)),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = course.courseCode,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = course.courseName,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+            Surface(
+                color = DeepEspresso,
+                shape = CircleShape,
+                border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.4f)),
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = SteamedMilk,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
-        Surface(
-            onClick = onOpenCardsView,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.padding(start = 8.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_coffee),
-                contentDescription = "Show Cards View",
-                modifier = Modifier
-                    .padding(6.dp)
-                    .size(36.dp)
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                // Dark Mocha (#623528) for readable labels against Steamed Milk / Warm Coffee Cream
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkMocha.copy(alpha = 0.8f),
+                    letterSpacing = 0.5.sp
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkMocha,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
 
+// ==========================================
+// Figma Presentation Showcase (16:9)
+// ==========================================
+
+@androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.O)
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Figma Presentation - 5-Tone Coffee Theme (16:9)",
+    widthDp = 1280,
+    heightDp = 720,
+    showBackground = true
+)
 @Composable
-private fun ClassDetailsInfoGrid(course: CourseClass) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+fun CoffeeAppPresentationScreen() {
+    com.example.schedules.ui.theme.SchedulesTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            DeepEspresso,
+                            Color(0xFF3B1D02),
+                            Color(0xFF261201),
+                            Color(0xFF140A00)
+                        )
+                    )
+                )
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
         ) {
-            InfoBadge(
-                modifier = Modifier.weight(1f),
-                label = "START TIME",
-                value = course.startTime.format(ScheduleConstants.TimeFormatter),
-                icon = Icons.Default.AccessTime
-            )
-            InfoBadge(
-                modifier = Modifier.weight(1f),
-                label = "END TIME",
-                value = course.endTime.format(ScheduleConstants.TimeFormatter),
-                icon = Icons.Default.AccessTime
-            )
-        }
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                color = GoldenCrema,
+                                shape = RoundedCornerShape(50.dp)
+                            ) {
+                                Text(
+                                    text = "FIGMA DESIGN SYSTEM",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Black,
+                                    color = DeepEspresso,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                )
+                            }
+                            Text(
+                                text = "• 5-Tone Coffee Palette Integration",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = SteamedMilk
+                            )
+                        }
+                        Text(
+                            text = "Professional Student Scheduling App UI",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = SteamedMilk
+                        )
+                    }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            InfoBadge(
-                modifier = Modifier.weight(1f),
-                label = "ROOM",
-                value = course.room,
-                icon = Icons.Default.LocationOn
-            )
-            InfoBadge(
-                modifier = Modifier.weight(1f),
-                label = "INSTRUCTOR",
-                value = course.instructor,
-                icon = Icons.Default.Person
-            )
+                    Surface(
+                        color = WarmRoast,
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, GoldenCrema)
+                    ) {
+                        Text(
+                            text = "Aspect Ratio 16:9",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(GoldenCrema, CircleShape)
+                            ) { }
+                            Text(
+                                text = "Screen 1: Class in Progress (Deep Espresso Hero & Warm Roast Progress)",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = SteamedMilk
+                            )
+                        }
+
+                        Card(
+                            shape = RoundedCornerShape(24.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                            border = BorderStroke(2.dp, GoldenCrema.copy(alpha = 0.5f)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                        ) {
+                            NowTabScreen(
+                                status = ScheduleStatus(
+                                    status = ClassStatus.ONGOING,
+                                    dayName = "Monday",
+                                    remainingFormatted = "00:52:38",
+                                    progressPercent = 0.65f,
+                                    courseClass = CourseClass(
+                                        id = 1,
+                                        courseCode = "CS 101",
+                                        courseName = "Data Structures & Algorithms",
+                                        startTime = java.time.LocalTime.of(9, 0),
+                                        endTime = java.time.LocalTime.of(10, 30),
+                                        room = "Lab 302",
+                                        instructor = "Dr. Alan Turing"
+                                    )
+                                )
+                            )
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(GoldenCrema, CircleShape)
+                            ) { }
+                            Text(
+                                text = "Screen 2: Schedule Completed (FREEDOM! / Uwian na)",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = SteamedMilk
+                            )
+                        }
+
+                        Card(
+                            shape = RoundedCornerShape(24.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                            border = BorderStroke(2.dp, GoldenCrema.copy(alpha = 0.5f)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                        ) {
+                            NowTabScreen(
+                                status = ScheduleStatus(
+                                    status = ClassStatus.NONE,
+                                    dayName = "Monday",
+                                    remainingFormatted = "Uwian na",
+                                    progressPercent = 1.0f,
+                                    courseClass = null
+                                )
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "5-Tone Palette: Dark Mocha (#623528) • Deep Espresso (#4D2A00) • Warm Roast (#CC6F00) • Golden Crema (#F2A900) • Steamed Milk (#F9E6A8)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SteamedMilk.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "Material 3 • Lead UI/UX Designer System",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GoldenCrema
+                    )
+                }
+            }
         }
     }
 }
-
-

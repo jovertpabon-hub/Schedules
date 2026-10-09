@@ -17,8 +17,13 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -69,9 +74,10 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun MainScheduleApp() {
     val context = LocalContext.current
-    val repository = (context.applicationContext as SchedulesApplication).repository
+    val appContext = context.applicationContext
+    val repository = (appContext as SchedulesApplication).repository
     val viewModel: ScheduleViewModel = viewModel(
-        factory = ScheduleViewModel.Factory(repository, context)
+        factory = ScheduleViewModel.Factory(repository, appContext)
     )
 
     // UI States
@@ -156,19 +162,40 @@ fun MainScheduleApp() {
             )
         }
     ) { paddingValues ->
-        MainScreenContent(
-            paddingValues = paddingValues,
-            currentScreen = currentScreen,
-            onScreenChange = { currentScreen = it },
-            viewModel = viewModel,
-            visibleDay = visibleDay,
-            onEditClass = { course, day ->
-                editingClass = course
-                editingDay = day
-                showDialog = true
-            },
-            onVisibleDayChanged = { visibleDay = it }
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            MainScreenContent(
+                paddingValues = paddingValues,
+                currentScreen = currentScreen,
+                onScreenChange = { currentScreen = it },
+                viewModel = viewModel,
+                visibleDay = visibleDay,
+                onEditClass = { course, day ->
+                    editingClass = course
+                    editingDay = day
+                    showDialog = true
+                },
+                onVisibleDayChanged = { visibleDay = it }
+            )
+
+            AnimatedVisibility(
+                visible = isFabExpanded,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(200)),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
+                            isFabExpanded = false
+                        }
+                )
+            }
+        }
 
         if (showDialog) {
             AddOrEditClassDialog(
@@ -197,7 +224,7 @@ fun MainScheduleApp() {
 data class FabItem(
     val icon: ImageVector,
     val label: String,
-    val containerColor: androidx.compose.ui.graphics.Color,
+    val containerColor: Color,
     val onClick: () -> Unit
 )
 
@@ -223,7 +250,7 @@ private fun MultiActionFab(
         ) {
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items.forEach { item ->
                     Row(
@@ -231,21 +258,26 @@ private fun MultiActionFab(
                         modifier = Modifier.padding(end = 4.dp)
                     ) {
                         Surface(
-                            shape = MaterialTheme.shapes.small,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant,
                             tonalElevation = 2.dp,
+                            shadowElevation = 2.dp,
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Text(
                                 text = item.label,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         SmallFloatingActionButton(
                             onClick = item.onClick,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                             containerColor = item.containerColor,
-                            contentColor = MaterialTheme.colorScheme.onSurface
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
                         ) {
                             Icon(item.icon, contentDescription = item.label)
                         }
@@ -254,9 +286,13 @@ private fun MultiActionFab(
             }
         }
 
+        // Rounded square / stadium FAB in primary vibrant accent color anchored to bottom right
         FloatingActionButton(
             onClick = onExpandClick,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
             containerColor = if (isExpanded) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+            contentColor = if (isExpanded) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary,
+            elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
             modifier = Modifier.rotate(rotation)
         ) {
             Icon(

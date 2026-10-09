@@ -31,6 +31,12 @@ interface ScheduleDao {
     fun fetchSchedulesForDay(dayName: String): Flow<List<ScheduleEntity>>
 
     /**
+     * One-shot fetch for a specific day without Flow observation overhead.
+     */
+    @Query("SELECT * FROM schedules WHERE dayName = :dayName ORDER BY startTime")
+    suspend fun getSchedulesForDayDirect(dayName: String): List<ScheduleEntity>
+
+    /**
      * Adds a new schedule entry to the database.
      * OnConflictStrategy.REPLACE means if we try to add a class with an ID that already exists,
      * it will overwrite the old one with this new information.

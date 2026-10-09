@@ -4,7 +4,6 @@ import com.example.schedules.data.local.ScheduleDao
 import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.ScheduleConstants
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 
 /**
  * Implementation of the Schedule Repository using Room Database.
@@ -42,9 +41,8 @@ class RoomScheduleRepository(private val scheduleDao: ScheduleDao) : IScheduleRe
             return Result.failure(Exception("End time must be after start time"))
         }
 
-        // Step 2: Get all classes already scheduled for this specific day
-        // We use .first() because we just need a snapshot of the current list once.
-        val existingClasses = scheduleDao.fetchSchedulesForDay(schedule.dayName).first()
+        // Step 2: Get all classes already scheduled for this specific day using direct query
+        val existingClasses = scheduleDao.getSchedulesForDayDirect(schedule.dayName)
 
         // Step 3: Check for Time Overlaps
         // A conflict occurs if (NewStart < ExistingEnd) AND (NewEnd > ExistingStart)
