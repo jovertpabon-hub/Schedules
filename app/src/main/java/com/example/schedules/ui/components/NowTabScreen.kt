@@ -1,6 +1,12 @@
 package com.example.schedules.ui.components
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.example.schedules.data.notifications.ScheduleNotificationHelper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -119,11 +125,11 @@ fun NowTabScreen(
     }
 
     // Default starting view: Main Overview Box only. Expand details on click.
-    var isDetailsExpanded by remember { mutableStateOf(false) }
+    var isDetailsExpanded by remember { mutableStateOf(true) }
 
     // Reset details expansion when day selection changes
     LaunchedEffect(selectedDay) {
-        isDetailsExpanded = false
+        isDetailsExpanded = true
     }
 
     Box(
@@ -287,7 +293,7 @@ private fun NowTabHeader(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = if (isToday) "Today ($selectedDay)" else selectedDay,
+                        text = if (isToday) "Today" else selectedDay,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = DarkMocha
@@ -600,7 +606,7 @@ private fun CountdownTimerView(
             }
 
             Text(
-                text = if (status.status == ClassStatus.NONE) "All Done! 🎉" else status.remainingFormatted,
+                text = if (status.status == ClassStatus.NONE) "All Done!" else status.remainingFormatted,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Black,
@@ -893,9 +899,27 @@ private fun NowTabClassDetails(
                             border = BorderStroke(0.5.dp, DarkMocha.copy(alpha = 0.3f))
                         )
 
+                        val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.RequestPermission()
+                        ) { isGranted ->
+                            if (isGranted) {
+                                ScheduleNotificationHelper.showClassReminderNotification(context, course)
+                                Toast.makeText(context, "Reminder notification sent for ${course.courseCode}!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Notification permission is required for class reminders", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
                         AssistChip(
                             onClick = {
-                                Toast.makeText(context, "Reminder active for class", Toast.LENGTH_SHORT).show()
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    ScheduleNotificationHelper.showClassReminderNotification(context, course)
+                                    Toast.makeText(context, "Reminder notification sent for ${course.courseCode}!", Toast.LENGTH_SHORT).show()
+                                }
                             },
                             label = { Text("Reminder", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) },
                             leadingIcon = {

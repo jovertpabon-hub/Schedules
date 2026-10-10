@@ -72,7 +72,6 @@ class ScheduleViewModel(
 
     // The list of classes left for the current day
     private val _remainingClassesToday = MutableStateFlow(ClassList(emptyList()))
-    val remainingClassesToday: StateFlow<ClassList> = _remainingClassesToday.asStateFlow()
 
     // Error messages shown when adding/editing
     private val _inputErrorMessage = MutableStateFlow<String?>(null)

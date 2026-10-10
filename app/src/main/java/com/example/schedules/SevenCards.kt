@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -60,6 +62,7 @@ import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.ui.components.NowTabScreen
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
 import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
+import com.example.schedules.ui.dialogs.NotificationSettingsDialog
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import com.example.schedules.ui.viewmodel.UiEvent
 import kotlinx.coroutines.flow.collectLatest
@@ -79,12 +82,12 @@ fun MainScheduleApp() {
         ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(name, ignoreCase = true) } ?: ScheduleConstants.DaysOfWeek[0]
     }
 
-    // Single Main Screen Selected Day State (Monday - Sunday)
     var selectedDay by remember { mutableStateOf(todayName) }
     var showDialog by remember { mutableStateOf(false) }
     var editingClass by remember { mutableStateOf<CourseClass?>(null) }
     var editingDay by remember { mutableStateOf("") }
     var showClearAllDialog by remember { mutableStateOf(false) }
+    var showNotificationSettings by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -96,7 +99,6 @@ fun MainScheduleApp() {
         uri?.let { viewModel.importPdf(it) }
     }
 
-    // Observe UI Events from ViewModel
     LaunchedEffect(Unit) {
         viewModel.uiEvents.collectLatest { event ->
             when (event) {
@@ -128,6 +130,15 @@ fun MainScheduleApp() {
                 onExpandClick = { isFabExpanded = !isFabExpanded },
                 items = listOf(
                     FabItem(
+                        icon = Icons.Default.Settings,
+                        label = "Settings",
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        onClick = {
+                            isFabExpanded = false
+                            showNotificationSettings = true
+                        }
+                    ),
+                    FabItem(
                         icon = Icons.Default.DeleteSweep,
                         label = "Clear All",
                         containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -138,7 +149,7 @@ fun MainScheduleApp() {
                     ),
                     FabItem(
                         icon = Icons.Default.PictureAsPdf,
-                        label = "Import PDF",
+                        label = "Import COE",
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         onClick = {
                             isFabExpanded = false
@@ -214,6 +225,12 @@ fun MainScheduleApp() {
                 }
             )
         }
+
+        if (showNotificationSettings) {
+            NotificationSettingsDialog(
+                onDismiss = { showNotificationSettings = false }
+            )
+        }
     }
 }
 
@@ -264,7 +281,7 @@ private fun MultiActionFab(
                                 text = item.label,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
