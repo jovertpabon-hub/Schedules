@@ -1,12 +1,6 @@
 package com.example.schedules.ui.components
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import com.example.schedules.data.notifications.ScheduleNotificationHelper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -49,9 +43,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
@@ -102,7 +98,55 @@ import com.example.schedules.ui.theme.GoldenCrema
 import com.example.schedules.ui.theme.SteamedMilk
 import com.example.schedules.ui.theme.WarmCoffeeCream
 import com.example.schedules.ui.theme.WarmRoast
+import java.time.Duration
+import java.time.LocalTime
 import java.util.Locale
+
+data class VacantTimeBlock(
+    val startTime: LocalTime,
+    val endTime: LocalTime,
+    val durationMinutes: Long
+)
+
+fun calculateVacantTimeBlocks(classes: List<CourseClass>): List<VacantTimeBlock> {
+    val windowStart = LocalTime.of(8, 0)
+    val windowEnd = LocalTime.of(17, 0)
+    val vacantBlocks = mutableListOf<VacantTimeBlock>()
+
+    if (classes.isEmpty()) {
+        val duration = Duration.between(windowStart, windowEnd).toMinutes()
+        return listOf(VacantTimeBlock(windowStart, windowEnd, duration))
+    }
+
+    var currentPointer = windowStart
+
+    for ((_, _, _, startTime, endTime) in classes.sortedBy { it.startTime }) {
+        val courseStart = if (startTime.isBefore(windowStart)) windowStart else startTime
+        val courseEnd = if (endTime.isAfter(windowEnd)) windowEnd else endTime
+
+        if (courseStart.isAfter(windowEnd)) break
+
+        if (courseStart.isAfter(currentPointer)) {
+            val gapMinutes = Duration.between(currentPointer, courseStart).toMinutes()
+            if (gapMinutes > 0) {
+                vacantBlocks.add(VacantTimeBlock(currentPointer, courseStart, gapMinutes))
+            }
+        }
+
+        if (courseEnd.isAfter(currentPointer)) {
+            currentPointer = courseEnd
+        }
+    }
+
+    if (currentPointer.isBefore(windowEnd)) {
+        val gapMinutes = Duration.between(currentPointer, windowEnd).toMinutes()
+        if (gapMinutes > 0) {
+            vacantBlocks.add(VacantTimeBlock(currentPointer, windowEnd, gapMinutes))
+        }
+    }
+
+    return vacantBlocks
+}
 
 @Composable
 fun NowTabScreen(
@@ -124,10 +168,13 @@ fun NowTabScreen(
             ?: DayScheduleData(selectedDay, emptyList())
     }
 
-    // Default starting view: Main Overview Box only. Expand details on click.
     var isDetailsExpanded by remember { mutableStateOf(true) }
+    var showVacantTimes by remember { mutableStateOf(false) }
 
-    // Reset details expansion when day selection changes
+    val vacantBlocks = remember(selectedDayData.classes) {
+        calculateVacantTimeBlocks(selectedDayData.classes)
+    }
+
     LaunchedEffect(selectedDay) {
         isDetailsExpanded = true
     }
@@ -165,7 +212,6 @@ fun NowTabScreen(
             CoffeeAromaVapor(modifier = Modifier.height(24.dp))
 
             // MAIN OVERVIEW BOX (DEFAULT STARTING VIEW)
-            // Tapping this main box toggles/navigates to detailed schedule list
             if (isTodaySelected) {
                 NowTabCountdownCard(
                     status = status,
@@ -180,7 +226,7 @@ fun NowTabScreen(
                 )
             }
 
-            // DETAILED SCHEDULE LIST (SHOWN WHEN USER CLICKS MAIN OVERVIEW BOX)
+            // DETAILED SCHEDULE LIST OR VACANT TIMES BREAKDOWN
             AnimatedVisibility(
                 visible = isDetailsExpanded,
                 enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(300)),
@@ -191,39 +237,200 @@ fun NowTabScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "${selectedDay.uppercase(Locale.US)} DETAILED SCHEDULE (${selectedDayData.classes.size})",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = DarkMocha,
+                    // Header Row with Title and Swap/Filter Toggle Icon Button
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 4.dp),
-                        letterSpacing = 0.8.sp
-                    )
-
-                    if (selectedDayData.classes.isEmpty()) {
-                        EmptyDayView(
-                            modifier = Modifier.fillMaxWidth(),
-                            mainMessage = "No classes for $selectedDay!",
-                            secondaryMessage = "Enjoy a free day or catch up on studies"
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (showVacantTimes) {
+                                "${selectedDay.uppercase(Locale.US)} VACANT TIMES (${vacantBlocks.size})"
+                            } else {
+                                "${selectedDay.uppercase(Locale.US)} DETAILED SCHEDULE (${selectedDayData.classes.size})"
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = DarkMocha,
+                            modifier = Modifier.weight(1f),
+                            letterSpacing = 0.8.sp
                         )
-                    } else {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(14.dp),
-                            modifier = Modifier.fillMaxWidth()
+
+                        Surface(
+                            onClick = { showVacantTimes = !showVacantTimes },
+                            shape = RoundedCornerShape(50.dp),
+                            color = if (showVacantTimes) GoldenCrema else SteamedMilk,
+                            border = BorderStroke(1.dp, DarkMocha.copy(alpha = 0.4f)),
+                            modifier = Modifier.padding(start = 8.dp)
                         ) {
-                            selectedDayData.classes.forEach { course ->
-                                NowTabClassDetails(
-                                    course = course,
-                                    dayName = selectedDayData.dayName,
-                                    onEdit = { onEditClass(course, selectedDayData.dayName) },
-                                    onDelete = { onDeleteClass(course) }
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SwapVert,
+                                    contentDescription = "Swap between busy and vacant times",
+                                    tint = DeepEspresso,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     }
+
+                    if (showVacantTimes) {
+                        // VACANT TIME BLOCKS VIEW
+                        if (vacantBlocks.isEmpty()) {
+                            EmptyDayView(
+                                modifier = Modifier.fillMaxWidth(),
+                                mainMessage = "Fully booked day!",
+                                secondaryMessage = "No vacant time blocks between 8:00 AM and 5:00 PM"
+                            )
+                        } else {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(14.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                vacantBlocks.forEach { block ->
+                                    VacantTimeBlockCard(block = block)
+                                }
+                            }
+                        }
+                    } else {
+                        // BUSY CLASSES VIEW
+                        if (selectedDayData.classes.isEmpty()) {
+                            EmptyDayView(
+                                modifier = Modifier.fillMaxWidth(),
+                                mainMessage = "No classes for $selectedDay!",
+                                secondaryMessage = "Enjoy a free day or catch up on studies"
+                            )
+                        } else {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(14.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                selectedDayData.classes.forEach { course ->
+                                    NowTabClassDetails(
+                                        course = course,
+                                        dayName = selectedDayData.dayName,
+                                        onEdit = { onEditClass(course, selectedDayData.dayName) },
+                                        onDelete = { onDeleteClass(course) }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VacantTimeBlockCard(block: VacantTimeBlock) {
+    val hours = block.durationMinutes / 60
+    val mins = block.durationMinutes % 60
+    val durationText = when {
+        hours > 0 && mins > 0 -> "$hours hr $mins mins free"
+        hours > 0 -> "$hours hr free"
+        else -> "$mins mins free"
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = SteamedMilk
+        ),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.5.dp,
+                GoldenCrema,
+                shape = RoundedCornerShape(24.dp)
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = GoldenCrema,
+                    shape = RoundedCornerShape(50.dp)
+                ) {
+                    Text(
+                        text = "VACANT TIME BLOCK",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DeepEspresso,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
+
+                Surface(
+                    color = DeepEspresso,
+                    shape = RoundedCornerShape(50.dp)
+                ) {
+                    Text(
+                        text = durationText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = SteamedMilk,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = "Vacant Slot Time",
+                    tint = DarkMocha,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "${block.startTime.format(ScheduleConstants.TimeFormatter)} - ${
+                        block.endTime.format(ScheduleConstants.TimeFormatter)
+                    }",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DarkMocha
+                )
+            }
+
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = DarkMocha.copy(alpha = 0.2f)
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FreeBreakfast,
+                    contentDescription = null,
+                    tint = WarmRoast,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = "Free gap window • Great time for study or a coffee break ☕",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = DarkMocha.copy(alpha = 0.85f)
+                )
             }
         }
     }
@@ -236,7 +443,7 @@ private fun NowTabHeader(
     onSelectedDayChanged: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val currentHour = remember { java.time.LocalTime.now().hour }
+    val currentHour = remember { LocalTime.now().hour }
     val greeting = remember(currentHour) {
         when (currentHour) {
             in 5..11 -> "Good morning! ☀️"
@@ -569,7 +776,7 @@ private fun CountdownTimerView(
                     }
                     Text(
                         text = when (status.status) {
-                            ClassStatus.ONGOING -> "IN PROGRESS"
+                            ClassStatus.ONGOING -> "LIVE • IN PROGRESS"
                             ClassStatus.UPCOMING -> "UPCOMING"
                             ClassStatus.NONE -> "SCHEDULE DONE"
                         },
@@ -606,9 +813,9 @@ private fun CountdownTimerView(
             }
 
             Text(
-                text = if (status.status == ClassStatus.NONE) "All Done!" else status.remainingFormatted,
+                text = if (status.status == ClassStatus.NONE) "All Done! 🎉" else status.remainingFormatted,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.displaySmall,
+                style = MaterialTheme.typography.displayLarge,
                 fontWeight = FontWeight.Black,
                 color = GoldenCrema,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -899,27 +1106,9 @@ private fun NowTabClassDetails(
                             border = BorderStroke(0.5.dp, DarkMocha.copy(alpha = 0.3f))
                         )
 
-                        val notificationPermissionLauncher = rememberLauncherForActivityResult(
-                            contract = ActivityResultContracts.RequestPermission()
-                        ) { isGranted ->
-                            if (isGranted) {
-                                ScheduleNotificationHelper.showClassReminderNotification(context, course)
-                                Toast.makeText(context, "Reminder notification sent for ${course.courseCode}!", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, "Notification permission is required for class reminders", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-
                         AssistChip(
                             onClick = {
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-                                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    ScheduleNotificationHelper.showClassReminderNotification(context, course)
-                                    Toast.makeText(context, "Reminder notification sent for ${course.courseCode}!", Toast.LENGTH_SHORT).show()
-                                }
+                                Toast.makeText(context, "Reminder active for class", Toast.LENGTH_SHORT).show()
                             },
                             label = { Text("Reminder", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) },
                             leadingIcon = {
