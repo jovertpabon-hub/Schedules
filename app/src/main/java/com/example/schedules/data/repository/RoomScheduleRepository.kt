@@ -28,6 +28,7 @@ class RoomScheduleRepository(
 
     override suspend fun saveScheduleDirectly(schedule: ScheduleEntity) {
         scheduleDao.saveSchedule(schedule)
+        scheduleDao.updateInstructorByCourseCode(schedule.courseCode, schedule.instructor)
         registerReminderForSchedule(schedule)
     }
 
@@ -81,9 +82,10 @@ class RoomScheduleRepository(
             return Result.failure(Exception("Course ${schedule.courseCode} is already scheduled for this day"))
         }
 
-        // Step 5: Save to Database & Register Notification Reminder with Custom Offset
+        // Step 5: Save to Database & Propagate instructor update across same course code sessions
         return try {
             scheduleDao.saveSchedule(schedule)
+            scheduleDao.updateInstructorByCourseCode(schedule.courseCode, schedule.instructor)
             registerReminderForSchedule(schedule)
             Result.success(Unit)
         } catch (error: Exception) {

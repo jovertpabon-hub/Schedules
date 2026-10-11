@@ -59,6 +59,12 @@ interface ScheduleDao {
     suspend fun removeSchedule(scheduleToDelete: ScheduleEntity)
 
     /**
+     * Updates the instructor name for all schedule entries sharing the same course code.
+     */
+    @Query("UPDATE schedules SET instructor = :instructor WHERE courseCode = :courseCode")
+    suspend fun updateInstructorByCourseCode(courseCode: String, instructor: String)
+
+    /**
      * Removes all schedule entries from the database.
      */
     @Query("DELETE FROM schedules")

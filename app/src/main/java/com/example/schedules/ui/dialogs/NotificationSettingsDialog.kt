@@ -42,6 +42,7 @@ fun NotificationSettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
         title = { Text("Notification Settings", fontWeight = FontWeight.Bold) },
         text = {
             Column(
