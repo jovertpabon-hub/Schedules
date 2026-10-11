@@ -2,11 +2,15 @@ package com.example.schedules.ui.components
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -69,20 +73,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.schedules.R
@@ -101,6 +111,81 @@ import com.example.schedules.ui.theme.WarmRoast
 import java.time.Duration
 import java.time.LocalTime
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
+
+fun Modifier.shimmerEffect(): Modifier = composed {
+    var size by remember { mutableStateOf(IntSize.Zero) }
+    val transition = rememberInfiniteTransition(label = "ShimmerTransition")
+    val startOffsetX by transition.animateFloat(
+        initialValue = -2 * size.width.toFloat(),
+        targetValue = 2 * size.width.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ShimmerOffset"
+    )
+
+    background(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFEBEBF4),
+                Color(0xFFF4F4F9),
+                Color(0xFFEBEBF4)
+            ),
+            start = Offset(startOffsetX, 0f),
+            end = Offset(startOffsetX + size.width.toFloat(), size.height.toFloat())
+        )
+    ).onGloballyPositioned {
+        size = it.size
+    }
+}
+
+@Composable
+fun SkeletonClassCard() {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = SteamedMilk),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(90.dp)
+            .border(1.5.dp, DarkMocha.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .height(20.dp)
+                        .clip(RoundedCornerShape(50.dp))
+                        .shimmerEffect()
+                )
+                Box(
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(20.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .shimmerEffect()
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .width(160.dp)
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .shimmerEffect()
+            )
+        }
+    }
+}
 
 data class VacantTimeBlock(
     val startTime: LocalTime,
@@ -157,6 +242,7 @@ fun NowTabScreen(
     onEditClass: (CourseClass, String) -> Unit = { _, _ -> },
     onDeleteClass: (CourseClass) -> Unit = {}
 ) {
+    val haptic = LocalHapticFeedback.current
     val todayName = remember {
         val name = java.time.LocalDate.now().dayOfWeek.name
         ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(name, ignoreCase = true) } ?: "Monday"
@@ -170,12 +256,16 @@ fun NowTabScreen(
 
     var isDetailsExpanded by remember { mutableStateOf(true) }
     var showVacantTimes by remember { mutableStateOf(false) }
+    var isLoadingDayData by remember { mutableStateOf(false) }
 
     val vacantBlocks = remember(selectedDayData.classes) {
         calculateVacantTimeBlocks(selectedDayData.classes)
     }
 
     LaunchedEffect(selectedDay) {
+        isLoadingDayData = true
+        kotlinx.coroutines.delay(180.milliseconds)
+        isLoadingDayData = false
         isDetailsExpanded = true
     }
 
@@ -211,26 +301,32 @@ fun NowTabScreen(
             // Coffee Aroma Vapor Graphics
             CoffeeAromaVapor(modifier = Modifier.height(24.dp))
 
-            // MAIN OVERVIEW BOX (DEFAULT STARTING VIEW)
+            // MAIN OVERVIEW BOX (DEFAULT STARTING VIEW WITH DYNAMIC COLOR TRANSITION)
             if (isTodaySelected) {
                 NowTabCountdownCard(
                     status = status,
                     isExpanded = isDetailsExpanded,
-                    onToggleExpand = { isDetailsExpanded = !isDetailsExpanded }
+                    onToggleExpand = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        isDetailsExpanded = !isDetailsExpanded
+                    }
                 )
             } else {
                 DaySummaryHeroCard(
                     dayData = selectedDayData,
                     isExpanded = isDetailsExpanded,
-                    onToggleExpand = { isDetailsExpanded = !isDetailsExpanded }
+                    onToggleExpand = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        isDetailsExpanded = !isDetailsExpanded
+                    }
                 )
             }
 
-            // DETAILED SCHEDULE LIST OR VACANT TIMES BREAKDOWN
+            // DETAILED SCHEDULE LIST OR VACANT TIMES BREAKDOWN WITH SPRING EXPANSION
             AnimatedVisibility(
                 visible = isDetailsExpanded,
-                enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(300)),
-                exit = fadeOut(animationSpec = tween(300)) + shrinkVertically(animationSpec = tween(300))
+                enter = fadeIn(animationSpec = tween(200)) + expandVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
+                exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -259,7 +355,10 @@ fun NowTabScreen(
                         )
 
                         Surface(
-                            onClick = { showVacantTimes = !showVacantTimes },
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                showVacantTimes = !showVacantTimes
+                            },
                             shape = RoundedCornerShape(50.dp),
                             color = if (showVacantTimes) GoldenCrema else SteamedMilk,
                             border = BorderStroke(1.dp, DarkMocha.copy(alpha = 0.4f)),
@@ -280,7 +379,16 @@ fun NowTabScreen(
                         }
                     }
 
-                    if (showVacantTimes) {
+                    if (isLoadingDayData) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            repeat(3) {
+                                SkeletonClassCard()
+                            }
+                        }
+                    } else if (showVacantTimes) {
                         // VACANT TIME BLOCKS VIEW
                         if (vacantBlocks.isEmpty()) {
                             EmptyDayView(
@@ -573,17 +681,53 @@ private fun DaySummaryHeroCard(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit
 ) {
+    val cardContainerColor by animateColorAsState(
+        targetValue = if (isExpanded) SteamedMilk else DeepEspresso,
+        animationSpec = tween(300),
+        label = "DayHeroContainer"
+    )
+
+    val borderColor by animateColorAsState(
+        targetValue = if (isExpanded) DarkMocha.copy(alpha = 0.3f) else GoldenCrema.copy(alpha = 0.5f),
+        animationSpec = tween(300),
+        label = "DayHeroBorder"
+    )
+
+    val textColorPrimary by animateColorAsState(
+        targetValue = if (isExpanded) DarkMocha else SteamedMilk,
+        animationSpec = tween(300),
+        label = "DayHeroTextPrimary"
+    )
+
+    val textColorAccent by animateColorAsState(
+        targetValue = if (isExpanded) DeepEspresso else GoldenCrema,
+        animationSpec = tween(300),
+        label = "DayHeroTextAccent"
+    )
+
+    val badgeBgColor by animateColorAsState(
+        targetValue = if (isExpanded) DeepEspresso else GoldenCrema,
+        animationSpec = tween(300),
+        label = "DayHeroBadgeBg"
+    )
+
+    val badgeTextColor by animateColorAsState(
+        targetValue = if (isExpanded) SteamedMilk else DeepEspresso,
+        animationSpec = tween(300),
+        label = "DayHeroBadgeText"
+    )
+
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = DeepEspresso
+            containerColor = cardContainerColor
         ),
         shape = RoundedCornerShape(28.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isExpanded) 2.dp else 6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 1.5.dp,
-                GoldenCrema.copy(alpha = 0.5f),
+                borderColor,
                 shape = RoundedCornerShape(28.dp)
             )
             .clickable { onToggleExpand() }
@@ -604,13 +748,13 @@ private fun DaySummaryHeroCard(
                     text = "${dayData.dayName.uppercase(Locale.US)} OVERVIEW",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.ExtraBold,
-                    color = SteamedMilk,
+                    color = textColorPrimary,
                     letterSpacing = 0.8.sp
                 )
 
                 Surface(
                     shape = RoundedCornerShape(50.dp),
-                    color = GoldenCrema,
+                    color = badgeBgColor,
                     shadowElevation = 3.dp
                 ) {
                     Text(
@@ -621,7 +765,7 @@ private fun DaySummaryHeroCard(
                         },
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = DeepEspresso,
+                        color = badgeTextColor,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                     )
                 }
@@ -636,7 +780,7 @@ private fun DaySummaryHeroCard(
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Black,
-                    color = GoldenCrema
+                    color = textColorAccent
                 )
             } else {
                 Text(
@@ -644,14 +788,14 @@ private fun DaySummaryHeroCard(
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = GoldenCrema
+                    color = textColorAccent
                 )
             }
 
             CardInstructionText(
                 text = if (isExpanded) "Tap box to hide detailed schedule" else "Tap box to view detailed schedule",
                 icon = Icons.AutoMirrored.Filled.EventNote,
-                textColor = SteamedMilk.copy(alpha = 0.8f)
+                textColor = textColorPrimary.copy(alpha = 0.8f)
             )
         }
     }
@@ -695,19 +839,29 @@ private fun NowTabCountdownCard(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit
 ) {
-    val cardContainerColor = DeepEspresso
+    val cardContainerColor by animateColorAsState(
+        targetValue = if (isExpanded) SteamedMilk else DeepEspresso,
+        animationSpec = tween(300),
+        label = "CountdownCardColor"
+    )
+
+    val borderColor by animateColorAsState(
+        targetValue = if (isExpanded) DarkMocha.copy(alpha = 0.3f) else GoldenCrema.copy(alpha = 0.5f),
+        animationSpec = tween(300),
+        label = "CountdownBorderColor"
+    )
 
     Card(
         colors = CardDefaults.cardColors(
             containerColor = cardContainerColor
         ),
         shape = RoundedCornerShape(28.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isExpanded) 2.dp else 6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 1.5.dp,
-                GoldenCrema.copy(alpha = 0.5f),
+                borderColor,
                 shape = RoundedCornerShape(28.dp)
             )
             .clickable { onToggleExpand() }
@@ -721,6 +875,30 @@ private fun CountdownTimerView(
     status: ScheduleStatus,
     isExpanded: Boolean
 ) {
+    val textColorPrimary by animateColorAsState(
+        targetValue = if (isExpanded) DarkMocha else SteamedMilk,
+        animationSpec = tween(300),
+        label = "TimerTextPrimary"
+    )
+
+    val textColorAccent by animateColorAsState(
+        targetValue = if (isExpanded) DeepEspresso else GoldenCrema,
+        animationSpec = tween(300),
+        label = "TimerTextAccent"
+    )
+
+    val badgeBgColor by animateColorAsState(
+        targetValue = if (isExpanded) DeepEspresso else GoldenCrema,
+        animationSpec = tween(300),
+        label = "TimerBadgeBg"
+    )
+
+    val badgeTextColor by animateColorAsState(
+        targetValue = if (isExpanded) SteamedMilk else DeepEspresso,
+        animationSpec = tween(300),
+        label = "TimerBadgeText"
+    )
+
     val infiniteTransition = rememberInfiniteTransition(label = "LiveBeaconTransition")
     val beaconPulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.35f,
@@ -752,13 +930,13 @@ private fun CountdownTimerView(
                 },
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.ExtraBold,
-                color = SteamedMilk,
+                color = textColorPrimary,
                 letterSpacing = 0.8.sp
             )
 
             Surface(
                 shape = RoundedCornerShape(50.dp),
-                color = GoldenCrema,
+                color = badgeBgColor,
                 shadowElevation = 3.dp
             ) {
                 Row(
@@ -771,18 +949,18 @@ private fun CountdownTimerView(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(WarmRoast.copy(alpha = beaconPulseAlpha))
+                                .background(if (isExpanded) GoldenCrema.copy(alpha = beaconPulseAlpha) else WarmRoast.copy(alpha = beaconPulseAlpha))
                         )
                     }
                     Text(
                         text = when (status.status) {
-                            ClassStatus.ONGOING -> "LIVE • IN PROGRESS"
+                            ClassStatus.ONGOING -> "IN PROGRESS"
                             ClassStatus.UPCOMING -> "UPCOMING"
                             ClassStatus.NONE -> "SCHEDULE DONE"
                         },
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = DeepEspresso
+                        color = badgeTextColor
                     )
                 }
             }
@@ -796,14 +974,14 @@ private fun CountdownTimerView(
                 Canvas(modifier = Modifier.size(160.dp)) {
                     val strokeWidth = 8.dp.toPx()
                     drawArc(
-                        color = SteamedMilk.copy(alpha = 0.2f),
+                        color = textColorPrimary.copy(alpha = 0.2f),
                         startAngle = 135f,
                         sweepAngle = 270f,
                         useCenter = false,
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
                     drawArc(
-                        color = GoldenCrema,
+                        color = textColorAccent,
                         startAngle = 135f,
                         sweepAngle = 270f * status.progressPercent.coerceIn(0f, 1f),
                         useCenter = false,
@@ -815,28 +993,52 @@ private fun CountdownTimerView(
             Text(
                 text = if (status.status == ClassStatus.NONE) "All Done! 🎉" else status.remainingFormatted,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.displayLarge,
+                style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Black,
-                color = GoldenCrema,
+                color = textColorAccent,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
 
         if (status.status == ClassStatus.ONGOING) {
-            OngoingProgressIndicator(status.progressPercent)
+            OngoingProgressIndicator(
+                progress = status.progressPercent,
+                isExpanded = isExpanded
+            )
         }
 
         CardInstructionText(
             text = if (isExpanded) "Tap box to hide detailed schedule" else "Tap box to view detailed schedule",
             icon = Icons.AutoMirrored.Filled.EventNote,
-            textColor = SteamedMilk.copy(alpha = 0.8f)
+            textColor = textColorPrimary.copy(alpha = 0.8f)
         )
     }
 }
 
 @Composable
-private fun OngoingProgressIndicator(progress: Float) {
+private fun OngoingProgressIndicator(
+    progress: Float,
+    isExpanded: Boolean = false
+) {
     val percentInt = (progress * 100).toInt().coerceIn(0, 100)
+
+    val textColor by animateColorAsState(
+        targetValue = if (isExpanded) DarkMocha else SteamedMilk,
+        animationSpec = tween(300),
+        label = "ProgressTextColor"
+    )
+
+    val badgeBg by animateColorAsState(
+        targetValue = if (isExpanded) DeepEspresso else GoldenCrema,
+        animationSpec = tween(300),
+        label = "ProgressBadgeBg"
+    )
+
+    val badgeText by animateColorAsState(
+        targetValue = if (isExpanded) SteamedMilk else DeepEspresso,
+        animationSpec = tween(300),
+        label = "ProgressBadgeText"
+    )
 
     Column(
         modifier = Modifier.fillMaxWidth(0.92f),
@@ -852,17 +1054,17 @@ private fun OngoingProgressIndicator(progress: Float) {
                 text = "Class Progress",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = SteamedMilk.copy(alpha = 0.9f)
+                color = textColor.copy(alpha = 0.9f)
             )
             Surface(
-                color = GoldenCrema,
+                color = badgeBg,
                 shape = RoundedCornerShape(50.dp)
             ) {
                 Text(
                     text = "$percentInt%",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    color = DeepEspresso,
+                    color = badgeText,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
                 )
             }
@@ -876,11 +1078,11 @@ private fun OngoingProgressIndicator(progress: Float) {
                 .clip(CircleShape)
                 .border(
                     1.dp,
-                    GoldenCrema.copy(alpha = 0.4f),
+                    if (isExpanded) DarkMocha.copy(alpha = 0.3f) else GoldenCrema.copy(alpha = 0.4f),
                     CircleShape
                 ),
-            color = WarmRoast,
-            trackColor = SteamedMilk.copy(alpha = 0.2f),
+            color = if (isExpanded) DeepEspresso else WarmRoast,
+            trackColor = textColor.copy(alpha = 0.2f),
             gapSize = 0.dp,
             drawStopIndicator = {}
         )
@@ -915,6 +1117,7 @@ private fun NowTabClassDetails(
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
+    val haptic = LocalHapticFeedback.current
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(
@@ -930,7 +1133,10 @@ private fun NowTabClassDetails(
                 DarkMocha.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(24.dp)
             )
-            .clickable { isExpanded = !isExpanded }
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                isExpanded = !isExpanded
+            }
     ) {
         Column(
             modifier = Modifier
