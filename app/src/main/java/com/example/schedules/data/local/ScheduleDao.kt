@@ -24,6 +24,12 @@ interface ScheduleDao {
     fun fetchAllSchedules(): Flow<List<ScheduleEntity>>
 
     /**
+     * One-shot fetch for all schedules without Flow observation.
+     */
+    @Query("SELECT * FROM schedules")
+    suspend fun fetchAllSchedulesDirect(): List<ScheduleEntity>
+
+    /**
      * Filters and retrieves schedules for a specific day (e.g., "Monday").
      * The :dayName syntax tells Room to use the function's parameter in the SQL query.
      */
@@ -37,13 +43,16 @@ interface ScheduleDao {
     suspend fun getSchedulesForDayDirect(dayName: String): List<ScheduleEntity>
 
     /**
-     * Adds a new schedule entry to the database.
-     * OnConflictStrategy.REPLACE means if we try to add a class with an ID that already exists,
-     * it will overwrite the old one with this new information.
-     * 'suspend' means this must be run inside a coroutine (in the background).
+     * One-shot fetch by primary key ID.
+     */
+    @Query("SELECT * FROM schedules WHERE id = :id LIMIT 1")
+    suspend fun getScheduleById(id: Long): ScheduleEntity?
+
+    /**
+     * Adds a new schedule entry to the database and returns its row ID.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun saveSchedule(newSchedule: ScheduleEntity)
+    suspend fun saveSchedule(newSchedule: ScheduleEntity): Long
 
     /**
      * Updates an existing schedule entry in the database.

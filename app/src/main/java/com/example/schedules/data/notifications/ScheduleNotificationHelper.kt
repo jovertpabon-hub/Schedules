@@ -83,15 +83,17 @@ object ScheduleNotificationHelper {
         if (targetMillis <= System.currentTimeMillis()) return
 
         val intent = Intent(context, ScheduleAlarmReceiver::class.java).apply {
+            putExtra("schedule_id", schedule.id)
             putExtra("course_code", schedule.courseCode)
             putExtra("course_name", schedule.courseName)
             putExtra("room", schedule.room)
             putExtra("start_time", schedule.startTime.format(ScheduleConstants.TimeFormatter))
         }
 
+        val requestCode = schedule.id.toInt()
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            schedule.hashCode(),
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -104,7 +106,7 @@ object ScheduleNotificationHelper {
             }
             Log.d(
                 "ScheduleNotification",
-                "Exact alarm scheduled for ${schedule.courseCode} at millis $targetMillis ($offsetMinutes mins before start time ${schedule.startTime})"
+                "Exact alarm scheduled for ${schedule.courseCode} (id=${schedule.id}) at millis $targetMillis ($offsetMinutes mins before start time ${schedule.startTime})"
             )
         } catch (e: SecurityException) {
             Log.e("ScheduleNotification", "Failed to schedule exact alarm", e)
@@ -114,14 +116,16 @@ object ScheduleNotificationHelper {
     fun cancelClassReminder(context: Context, schedule: ScheduleEntity) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, ScheduleAlarmReceiver::class.java)
+        val requestCode = schedule.id.toInt()
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            schedule.hashCode(),
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.cancel(pendingIntent)
-        Log.d("ScheduleNotification", "Cancelled alarm for ${schedule.courseCode}")
+        pendingIntent.cancel()
+        Log.d("ScheduleNotification", "Cancelled alarm for ${schedule.courseCode} (id=${schedule.id}, requestCode=$requestCode)")
     }
 
     private fun calculateTargetMillis(dayName: String, time: java.time.LocalTime): Long {
