@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -60,6 +61,7 @@ import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.ui.components.NowTabScreen
+import com.example.schedules.ui.components.SkeletonDashboardLayout
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
 import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
 import com.example.schedules.ui.dialogs.NotificationSettingsDialog
@@ -326,34 +328,42 @@ private fun MainScreenContent(
 ) {
     val currentStatus by viewModel.liveStatus.collectAsState()
     val weekSchedule by viewModel.weekSchedule.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    Column(
+    Crossfade(
+        targetState = isLoading,
+        animationSpec = tween(durationMillis = 500),
+        label = "DashboardLoadingTransition",
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-    ) {
-        NowTabScreen(
-            status = currentStatus,
-            weekSchedule = weekSchedule,
-            selectedDay = selectedDay,
-            onSelectedDayChanged = onSelectedDayChanged,
-            onEditClass = onEditClass,
-            onDeleteClass = { course ->
-                course.id?.let { id ->
-                    val entity = ScheduleEntity(
-                        id = id,
-                        dayName = selectedDay,
-                        courseCode = course.courseCode,
-                        courseName = course.courseName,
-                        startTime = course.startTime,
-                        endTime = course.endTime,
-                        room = course.room,
-                        instructor = course.instructor
-                    )
-                    viewModel.deleteClass(entity)
+    ) { loading ->
+        if (loading) {
+            SkeletonDashboardLayout()
+        } else {
+            NowTabScreen(
+                status = currentStatus,
+                weekSchedule = weekSchedule,
+                selectedDay = selectedDay,
+                onSelectedDayChanged = onSelectedDayChanged,
+                onEditClass = onEditClass,
+                onDeleteClass = { course ->
+                    course.id?.let { id ->
+                        val entity = ScheduleEntity(
+                            id = id,
+                            dayName = selectedDay,
+                            courseCode = course.courseCode,
+                            courseName = course.courseName,
+                            startTime = course.startTime,
+                            endTime = course.endTime,
+                            room = course.room,
+                            instructor = course.instructor
+                        )
+                        viewModel.deleteClass(entity)
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 

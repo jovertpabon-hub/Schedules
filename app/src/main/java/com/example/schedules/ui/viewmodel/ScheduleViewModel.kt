@@ -66,6 +66,10 @@ class ScheduleViewModel(
     private val _weekSchedule = MutableStateFlow(WeekSchedule(emptyList()))
     val weekSchedule: StateFlow<WeekSchedule> = _weekSchedule.asStateFlow()
 
+    // Loading state for initial startup skeleton presentation
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     // Information about the class happening RIGHT NOW (or the next one)
     private val _liveStatus = MutableStateFlow(createEmptyStatus())
     val liveStatus: StateFlow<ScheduleStatus> = _liveStatus.asStateFlow()
@@ -112,6 +116,7 @@ class ScheduleViewModel(
                 }
                 
                 _weekSchedule.value = WeekSchedule(finalWeekData)
+                _isLoading.value = false
             }
         }
     }
