@@ -13,6 +13,7 @@ room = "2.8.4"
 ksp = "2.3.10"
 pdfbox = "2.0.27.0"
 
+
 [libraries]
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }

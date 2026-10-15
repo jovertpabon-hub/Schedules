@@ -301,7 +301,7 @@ private fun MultiActionFab(
 
         FloatingActionButton(
             onClick = onExpandClick,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(36.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
             containerColor = if (isExpanded) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
             contentColor = if (isExpanded) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary,
             elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),

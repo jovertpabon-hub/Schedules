@@ -3,11 +3,7 @@ package com.example.schedules.ui.components
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -24,6 +20,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -41,6 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarToday
@@ -70,6 +68,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,12 +77,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -205,25 +204,20 @@ fun NowTabScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFFFFBF2),
-                        SteamedMilk.copy(alpha = 0.75f),
-                        GoldenCrema.copy(alpha = 0.35f),
-                        WarmRoast.copy(alpha = 0.12f)
-                    )
-                )
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.bg_6),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -788,7 +782,13 @@ private fun NowTabHeader(
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(SteamedMilk)
+                modifier = Modifier
+                    .background(SteamedMilk)
+                    .border(
+                        width = 1.dp,
+                        color = GoldenCrema
+                    )
+
             ) {
                 ScheduleConstants.DaysOfWeek.forEach { day ->
                     val dayData = weekSchedule.days.firstOrNull { it.dayName.equals(day, ignoreCase = true) }
@@ -844,7 +844,7 @@ private fun DaySummaryHeroCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = DeepEspresso
+            containerColor = Color.Transparent
         ),
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -856,13 +856,25 @@ private fun DaySummaryHeroCard(
                 shape = RoundedCornerShape(24.dp)
             )
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 20.dp, horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .clip(RoundedCornerShape(24.dp))
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.card_bg),
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp, horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -921,6 +933,7 @@ private fun DaySummaryHeroCard(
                 icon = Icons.AutoMirrored.Filled.EventNote,
                 textColor = SteamedMilk.copy(alpha = 0.8f)
             )
+          }
         }
     }
 }
@@ -931,19 +944,32 @@ private fun NowTabCountdownCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = DeepEspresso
+            containerColor = Color.Transparent
         ),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(32.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                1.dp,
-                GoldenCrema.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(24.dp)
+                2.dp,
+                GoldenCrema.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(32.dp)
             )
     ) {
-        CountdownTimerView(status = status)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.card_bg),
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            CountdownTimerView(status = status)
+        }
     }
 }
 
@@ -956,40 +982,41 @@ private fun CountdownTimerView(
     val badgeBgColor = GoldenCrema
     val badgeTextColor = DeepEspresso
 
-    val infiniteTransition = rememberInfiniteTransition(label = "LiveBeaconTransition")
-    val beaconPulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "BeaconPulseAlpha"
-    )
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 20.dp, horizontal = 20.dp),
+            .padding(vertical = 24.dp, horizontal = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Header Section
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = when (status.status) {
-                    ClassStatus.ONGOING -> "TIME REMAINING"
-                    ClassStatus.UPCOMING -> "NEXT CLASS"
-                    ClassStatus.NONE -> "TODAY'S OVERVIEW"
-                },
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = textColorPrimary,
-                letterSpacing = 0.8.sp
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = textColorPrimary
+                )
+                Text(
+                    text = when (status.status) {
+                        ClassStatus.ONGOING -> "TIME REMAINING"
+                        ClassStatus.UPCOMING -> "NEXT CLASS"
+                        ClassStatus.NONE -> "TODAY'S OVERVIEW"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = textColorPrimary,
+                    letterSpacing = 0.8.sp
+                )
+            }
 
             Surface(
                 shape = RoundedCornerShape(50.dp),
@@ -1001,14 +1028,18 @@ private fun CountdownTimerView(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                 ) {
-                    if (status.status == ClassStatus.ONGOING) {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(WarmRoast.copy(alpha = beaconPulseAlpha))
-                        )
-                    }
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when (status.status) {
+                                    ClassStatus.ONGOING -> Color(0xFFE88900)
+                                    ClassStatus.UPCOMING -> DeepEspresso
+                                    ClassStatus.NONE -> DeepEspresso
+                                }
+                            )
+                    )
                     Text(
                         text = when (status.status) {
                             ClassStatus.ONGOING -> "IN PROGRESS"
@@ -1023,109 +1054,306 @@ private fun CountdownTimerView(
             }
         }
 
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.padding(vertical = 4.dp)
+        // Main Timer & Class Progress Section (Responsive)
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            if (status.status == ClassStatus.ONGOING) {
-                Canvas(modifier = Modifier.size(130.dp)) {
-                    val strokeWidth = 7.dp.toPx()
-                    drawArc(
-                        color = textColorPrimary.copy(alpha = 0.2f),
-                        startAngle = 135f,
-                        sweepAngle = 270f,
-                        useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            val isWide = maxWidth > 420.dp
+
+            if (isWide && status.status == ClassStatus.ONGOING) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Left portion: Circular Countdown Timer
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(150.dp)
+                    ) {
+                        Canvas(modifier = Modifier.size(150.dp)) {
+                            val strokeWidth = 10.dp.toPx()
+                            drawArc(
+                                color = Color(0xFF79552D).copy(alpha = 0.5f),
+                                startAngle = 0f,
+                                sweepAngle = 360f,
+                                useCenter = false,
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                            )
+                            drawArc(
+                                color = textColorAccent,
+                                startAngle = -90f,
+                                sweepAngle = 360f * status.progressPercent.coerceIn(0f, 1f),
+                                useCenter = false,
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                            )
+                        }
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccessTime,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = SteamedMilk.copy(alpha = 0.8f)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = status.remainingFormatted,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Black,
+                                color = SteamedMilk
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text("HRS", style = MaterialTheme.typography.labelSmall, fontSize = 9.sp, color = SteamedMilk.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
+                                Text("MIN", style = MaterialTheme.typography.labelSmall, fontSize = 9.sp, color = SteamedMilk.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
+                                Text("SEC", style = MaterialTheme.typography.labelSmall, fontSize = 9.sp, color = SteamedMilk.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    // Subtle Vertical Divider
+                    VerticalDivider(
+                        modifier = Modifier
+                            .height(130.dp)
+                            .width(1.dp),
+                        color = textColorPrimary.copy(alpha = 0.2f)
                     )
-                    drawArc(
-                        color = textColorAccent,
-                        startAngle = 135f,
-                        sweepAngle = 270f * status.progressPercent.coerceIn(0f, 1f),
-                        useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
+
+                    // Right portion: Class Progress + Percentage + Progress Bar + Schedule Pill
+                    val progress = status.progressPercent
+                    val percentInt = (progress * 100).toInt().coerceIn(0, 100)
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = SteamedMilk
+                                )
+                                Text(
+                                    text = "Class Progress",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SteamedMilk
+                                )
+                            }
+                            Text(
+                                text = "$percentInt%",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = SteamedMilk
+                            )
+                        }
+
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(12.dp)
+                                .clip(CircleShape)
+                                .border(
+                                    0.5.dp,
+                                    GoldenCrema.copy(alpha = 0.4f),
+                                    CircleShape
+                                ),
+                            color = GoldenCrema,
+                            trackColor = Color(0xFF79552D)
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(50.dp),
+                            color = Color(0xFF4B2605).copy(alpha = 0.7f),
+                            border = BorderStroke(1.dp, SteamedMilk.copy(alpha = 0.25f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(13.dp),
+                                    tint = SteamedMilk
+                                )
+                                Text(
+                                    text = "Unified Chronological Schedule",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SteamedMilk
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Stacked layout for narrow screens or non-ongoing state
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        if (status.status == ClassStatus.ONGOING) {
+                            Canvas(modifier = Modifier.size(140.dp)) {
+                                val strokeWidth = 9.dp.toPx()
+                                drawArc(
+                                    color = Color(0xFF79552D).copy(alpha = 0.5f),
+                                    startAngle = 0f,
+                                    sweepAngle = 360f,
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                )
+                                drawArc(
+                                    color = textColorAccent,
+                                    startAngle = -90f,
+                                    sweepAngle = 360f * status.progressPercent.coerceIn(0f, 1f),
+                                    useCenter = false,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                )
+                            }
+                        }
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccessTime,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = SteamedMilk.copy(alpha = 0.8f)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (status.status == ClassStatus.NONE) "All Done!" else status.remainingFormatted,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Black,
+                                color = SteamedMilk
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text("HRS", style = MaterialTheme.typography.labelSmall, fontSize = 9.sp, color = SteamedMilk.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
+                                Text("MIN", style = MaterialTheme.typography.labelSmall, fontSize = 9.sp, color = SteamedMilk.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
+                                Text("SEC", style = MaterialTheme.typography.labelSmall, fontSize = 9.sp, color = SteamedMilk.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    if (status.status == ClassStatus.ONGOING) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(0.95f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            val progress = status.progressPercent
+                            val percentInt = (progress * 100).toInt().coerceIn(0, 100)
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = SteamedMilk
+                                    )
+                                    Text(
+                                        text = "Class Progress",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SteamedMilk
+                                    )
+                                }
+                                Text(
+                                    text = "$percentInt%",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Black,
+                                    color = SteamedMilk
+                                )
+                            }
+
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(12.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        0.5.dp,
+                                        GoldenCrema.copy(alpha = 0.4f),
+                                        CircleShape
+                                    ),
+                                color = GoldenCrema,
+                                trackColor = Color(0xFF79552D)
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(50.dp),
+                        color = Color(0xFF4B2605).copy(alpha = 0.7f),
+                        border = BorderStroke(1.dp, textColorPrimary.copy(alpha = 0.25f)),
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = textColorPrimary
+                            )
+                            Text(
+                                text = "Unified Chronological Schedule",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = textColorPrimary
+                            )
+                        }
+                    }
                 }
             }
-
-            Text(
-                text = if (status.status == ClassStatus.NONE) "All Done! 🎉" else status.remainingFormatted,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black,
-                color = textColorAccent,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
         }
-
-        if (status.status == ClassStatus.ONGOING) {
-            OngoingProgressIndicator(
-                progress = status.progressPercent
-            )
-        }
-
-        CardInstructionText(
-            text = "Unified Chronological Schedule",
-            icon = Icons.AutoMirrored.Filled.EventNote,
-            textColor = textColorPrimary.copy(alpha = 0.8f)
-        )
-    }
-}
-
-@Composable
-private fun OngoingProgressIndicator(
-    progress: Float
-) {
-    val percentInt = (progress * 100).toInt().coerceIn(0, 100)
-    val textColor = SteamedMilk
-    val badgeBg = GoldenCrema
-    val badgeText = DeepEspresso
-
-    Column(
-        modifier = Modifier.fillMaxWidth(0.92f),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Class Progress",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = textColor.copy(alpha = 0.9f)
-            )
-            Surface(
-                color = badgeBg,
-                shape = RoundedCornerShape(50.dp)
-            ) {
-                Text(
-                    text = "$percentInt%",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = badgeText,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 1.dp)
-                )
-            }
-        }
-
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .clip(CircleShape)
-                .border(
-                    0.5.dp,
-                    GoldenCrema.copy(alpha = 0.4f),
-                    CircleShape
-                ),
-            color = WarmRoast,
-            trackColor = textColor.copy(alpha = 0.2f),
-            gapSize = 0.dp,
-            drawStopIndicator = {}
-        )
     }
 }
 
@@ -1445,16 +1673,20 @@ private fun NowTabClassDetails(
                                 ),
                                 border = BorderStroke(0.5.dp, DarkMocha.copy(alpha = 0.3f))
                             )
-
                             AssistChip(
                                 onClick = {
-                                    Toast.makeText(context, "Reminder active for class", Toast.LENGTH_SHORT).show()
+                                    clipboardManager.setText(AnnotatedString(course.instructor))
+                                    Toast.makeText(
+                                        context,
+                                        "Instructor ${course.instructor} copied",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 },
-                                label = { Text("Reminder", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) },
+                                label = { Text("Copy Instructor", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) },
                                 leadingIcon = {
                                     Icon(
-                                        imageVector = Icons.Default.NotificationsActive,
-                                        contentDescription = "Reminder",
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = "Copy Instructor",
                                         modifier = Modifier.size(13.dp)
                                     )
                                 },
@@ -1465,6 +1697,7 @@ private fun NowTabClassDetails(
                                 ),
                                 border = BorderStroke(0.5.dp, DarkMocha.copy(alpha = 0.3f))
                             )
+
                         }
                     }
                 }
