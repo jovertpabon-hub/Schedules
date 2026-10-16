@@ -97,8 +97,7 @@ class PatternBasedScheduleParser : IScheduleParser {
                         startTime = timeRange.first,
                         endTime = timeRange.second,
                         room = roomPart.ifEmpty { "TBA" },
-                        dayOfWeek = day,
-                        instructor = "Unknown"
+                        dayOfWeek = day
                     )
                 )
             }

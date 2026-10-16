@@ -18,7 +18,6 @@ fun ExtractedSchedule.toEntity(): ScheduleEntity {
         courseName = this.courseName,
         startTime = this.startTime,
         endTime = this.endTime,
-        room = this.room.ifEmpty { "TBA" },
-        instructor = this.instructor.ifEmpty { "Unknown" }
+        room = this.room.ifEmpty { "TBA" }
     )
 }

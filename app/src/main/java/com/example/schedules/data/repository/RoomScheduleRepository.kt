@@ -29,7 +29,6 @@ class RoomScheduleRepository(
     override suspend fun saveScheduleDirectly(schedule: ScheduleEntity) {
         val savedId = scheduleDao.saveSchedule(schedule)
         val entityWithId = if (schedule.id == ScheduleConstants.DEFAULT_ID) schedule.copy(id = savedId) else schedule
-        scheduleDao.updateInstructorByCourseCode(entityWithId.courseCode, entityWithId.instructor)
         registerReminderForSchedule(entityWithId)
     }
 
@@ -92,7 +91,6 @@ class RoomScheduleRepository(
         return try {
             val savedId = scheduleDao.saveSchedule(schedule)
             val entityWithId = if (schedule.id == ScheduleConstants.DEFAULT_ID) schedule.copy(id = savedId) else schedule
-            scheduleDao.updateInstructorByCourseCode(entityWithId.courseCode, entityWithId.instructor)
             registerReminderForSchedule(entityWithId)
             Result.success(Unit)
         } catch (error: Exception) {

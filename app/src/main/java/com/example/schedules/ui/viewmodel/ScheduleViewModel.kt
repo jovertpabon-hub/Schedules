@@ -256,8 +256,7 @@ class ScheduleViewModel(
                 courseName = name,
                 startTime = start,
                 endTime = end,
-                room = room,
-                instructor = instructor
+                room = room
             )
 
             // Tell the repository to validate and save
@@ -325,8 +324,7 @@ class ScheduleViewModel(
         courseName = this.courseName,
         startTime = this.startTime,
         endTime = this.endTime,
-        room = this.room,
-        instructor = this.instructor
+        room = this.room
     )
 
     /**

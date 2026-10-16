@@ -156,43 +156,35 @@ fun SkeletonHeroCard(
     modifier: Modifier = Modifier,
     isOngoing: Boolean = true
 ) {
-
     Card(
         colors = CardDefaults.cardColors(
-            containerColor =
-                MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         shape = RoundedCornerShape(32.dp),
         modifier = modifier
             .fillMaxWidth()
             .border(
                 2.dp,
-                MaterialTheme.colorScheme.outline.copy(
-                    alpha = 0.15f
-                ),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                 RoundedCornerShape(32.dp)
             )
     ) {
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    vertical = 24.dp,
-                    horizontal = 22.dp
+                    horizontal = 20.dp,
+                    vertical = 22.dp
                 ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
 
             // HEADER
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 SkeletonBox(
                     width = 115.dp,
                     height = 16.dp
@@ -200,97 +192,92 @@ fun SkeletonHeroCard(
 
                 SkeletonBox(
                     width = 95.dp,
-                    height = 28.dp,
+                    height = 26.dp,
                     shape = CircleShape
                 )
             }
 
-            // TIMER
-
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .size(140.dp),
-                contentAlignment = Alignment.Center
+            // HORIZONTAL TIMER + INFORMATION
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(18.dp)
             ) {
 
-                if (isOngoing) {
-
-                    Box(
-                        modifier = Modifier
-                            .size(140.dp)
-                            .border(
-                                9.dp,
-                                MaterialTheme.colorScheme.onSurface
-                                    .copy(alpha = 0.10f),
-                                CircleShape
-                            )
-                    )
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // LEFT: CIRCULAR TIMER
+                Box(
+                    modifier = Modifier.size(125.dp),
+                    contentAlignment = Alignment.Center
                 ) {
 
+                    if (isOngoing) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .border(
+                                    width = 9.dp,
+                                    color = MaterialTheme.colorScheme
+                                        .onSurface.copy(alpha = 0.12f),
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        SkeletonBox(
+                            width = 14.dp,
+                            height = 14.dp,
+                            shape = CircleShape
+                        )
+
+                        SkeletonBox(
+                            width = 78.dp,
+                            height = 23.dp
+                        )
+
+                        SkeletonBox(
+                            width = 60.dp,
+                            height = 10.dp
+                        )
+                    }
+                }
+
+                // RIGHT: CLASS INFORMATION
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     SkeletonBox(
-                        width = 16.dp,
-                        height = 16.dp,
-                        shape = CircleShape
+                        width = 85.dp,
+                        height = 12.dp
                     )
 
                     SkeletonBox(
                         width = 100.dp,
-                        height = 25.dp
+                        height = 12.dp
                     )
 
                     SkeletonBox(
-                        width = 75.dp,
-                        height = 10.dp
-                    )
-                }
-            }
-
-            // CLASS PROGRESS
-
-            if (isOngoing) {
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(0.95f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-
-                        SkeletonBox(
-                            width = 115.dp,
-                            height = 16.dp
-                        )
-
-                        SkeletonBox(
-                            width = 45.dp,
-                            height = 24.dp
-                        )
-                    }
-
-                    SkeletonBox(
-                        height = 12.dp,
-                        shape = CircleShape
+                        width = 110.dp,
+                        height = 12.dp
                     )
                 }
             }
 
             // BOTTOM SCHEDULE PILL
-
-            SkeletonBox(
-                width = 215.dp,
-                height = 32.dp,
-                shape = CircleShape
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                SkeletonBox(
+                    width = 215.dp,
+                    height = 32.dp,
+                    shape = CircleShape
+                )
+            }
         }
     }
 }

@@ -42,7 +42,7 @@ fun AddOrEditClassDialog(
     editingClass: CourseClass?,
     editingDay: String,
     onDismiss: () -> Unit,
-    onConfirm: (Long?, String, String, String, LocalTime, LocalTime, String, String) -> Unit,
+    onConfirm: (Long?, String, String, String, LocalTime, LocalTime, String) -> Unit,
     viewModel: ScheduleViewModel
 ) {
     var day by remember { mutableStateOf(editingDay.ifEmpty { ScheduleConstants.DaysOfWeek[0] }) }
@@ -51,7 +51,6 @@ fun AddOrEditClassDialog(
     var startTime by remember { mutableStateOf(editingClass?.startTime ?: LocalTime.of(8, 0)) }
     var endTime by remember { mutableStateOf(editingClass?.endTime ?: LocalTime.of(9, 0)) }
     var room by remember { mutableStateOf(editingClass?.room ?: "") }
-    var instructor by remember { mutableStateOf(editingClass?.instructor ?: "") }
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -61,8 +60,8 @@ fun AddOrEditClassDialog(
 
     val validationError by viewModel.inputErrorMessage.collectAsState()
     
-    val isFormValid = remember(code, name, room, instructor) {
-        code.isNotBlank() && name.isNotBlank() && room.isNotBlank() && instructor.isNotBlank()
+    val isFormValid = remember(code, name, room) {
+        code.isNotBlank() && name.isNotBlank() && room.isNotBlank()
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -143,7 +142,6 @@ fun AddOrEditClassDialog(
                 }
                 
                 OutlinedTextField(value = room, onValueChange = { room = it }, label = { Text("Room") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = instructor, onValueChange = { instructor = it }, label = { Text("Instructor") }, modifier = Modifier.fillMaxWidth())
 
                 validationError?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -156,7 +154,7 @@ fun AddOrEditClassDialog(
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Button(
                         onClick = { 
-                            onConfirm(editingClass?.id, day, code, name, startTime, endTime, room, instructor)
+                            onConfirm(editingClass?.id, day, code, name, startTime, endTime, room)
                         },
                         enabled = isFormValid
                     ) { 

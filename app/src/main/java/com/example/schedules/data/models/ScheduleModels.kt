@@ -13,10 +13,6 @@ object ScheduleConstants {
     const val DEFAULT_ID = 0L
 }
 
-enum class ScheduleScreen {
-    NOW,
-    GRID
-}
 
 @Immutable
 data class CourseClass(
@@ -25,8 +21,7 @@ data class CourseClass(
     val courseName: String,
     val startTime: LocalTime,
     val endTime: LocalTime,
-    val room: String = "TBA",
-    val instructor: String
+    val room: String = "TBA"
 )
 
 @Immutable

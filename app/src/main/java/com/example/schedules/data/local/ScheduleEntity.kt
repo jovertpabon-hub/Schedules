@@ -13,6 +13,5 @@ data class ScheduleEntity(
     val courseName: String,
     val startTime: LocalTime,
     val endTime: LocalTime,
-    val room: String,
-    val instructor: String
+    val room: String
 )

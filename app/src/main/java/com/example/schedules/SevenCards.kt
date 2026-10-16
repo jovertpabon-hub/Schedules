@@ -211,8 +211,8 @@ fun MainScheduleApp() {
                 editingClass = editingClass,
                 editingDay = editingDay,
                 onDismiss = { showDialog = false },
-                onConfirm = { id, day, code, name, start, end, room, instructor ->
-                    viewModel.addNewOrEditSchedule(id, day, code, name, start, end, room, instructor)
+                onConfirm = { id, day, code, name, start, end, room ->
+                    viewModel.addNewOrEditSchedule(id, day, code, name, start, end, room, "")
                 },
                 viewModel = viewModel
             )
@@ -356,8 +356,7 @@ private fun MainScreenContent(
                             courseName = course.courseName,
                             startTime = course.startTime,
                             endTime = course.endTime,
-                            room = course.room,
-                            instructor = course.instructor
+                            room = course.room
                         )
                         viewModel.deleteClass(entity)
                     }

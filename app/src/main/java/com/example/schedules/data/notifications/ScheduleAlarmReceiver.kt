@@ -33,7 +33,6 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
             startTime = startTime,
             endTime = startTime.plusHours(1),
             room = room,
-            instructor = "Instructor",
         )
 
         // Safety verification check against Database

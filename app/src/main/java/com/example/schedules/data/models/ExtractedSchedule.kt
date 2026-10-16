@@ -10,5 +10,4 @@ data class ExtractedSchedule(
     val endTime: LocalTime,
     val room: String = "TBA",
     val dayOfWeek: DayOfWeek,
-    val instructor: String = "Unknown"
 )
