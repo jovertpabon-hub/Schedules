@@ -53,5 +53,6 @@ data class ScheduleStatus(
     val dayName: String,
     val status: ClassStatus,
     val remainingFormatted: String,
-    val progressPercent: Float = 0f
+    val progressPercent: Float = 0f,
+    val hasClassesToday: Boolean = false
 )

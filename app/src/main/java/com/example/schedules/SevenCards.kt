@@ -68,6 +68,8 @@ import com.example.schedules.ui.dialogs.NotificationSettingsDialog
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import com.example.schedules.ui.viewmodel.UiEvent
 import kotlinx.coroutines.flow.collectLatest
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -79,8 +81,17 @@ fun MainScheduleApp() {
         factory = ScheduleViewModel.Factory(repository, appContext)
     )
 
-    val todayName = remember {
-        val name = java.time.LocalDate.now().dayOfWeek.name
+    var currentDate by remember { mutableStateOf(java.time.LocalDate.now()) }
+    
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentDate = java.time.LocalDate.now()
+            kotlinx.coroutines.delay(1.minutes.inWholeMilliseconds.milliseconds)
+        }
+    }
+
+    val todayName = remember(currentDate) {
+        val name = currentDate.dayOfWeek.name
         ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(name, ignoreCase = true) } ?: ScheduleConstants.DaysOfWeek[0]
     }
 

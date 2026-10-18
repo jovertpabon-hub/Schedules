@@ -145,8 +145,7 @@ class ScheduleViewModel(
                         _remainingClassesToday.value = ClassList(remainingList)
                     }
 
-                    val delayTime = if (newStatus.status == ClassStatus.NONE) 30.seconds else 1.seconds
-                    delay(delayTime)
+                    delay(1.seconds)
                 }
             }
         }
@@ -156,52 +155,19 @@ class ScheduleViewModel(
      * Helper logic to figure out which class is Ongoing or Upcoming.
      */
     private fun calculateCurrentStatus(allDays: List<DayScheduleData>): Pair<ScheduleStatus, List<CourseClass>> {
-        val todayName = LocalDate.now().dayOfWeek.name
+        val currentDate = LocalDate.now()
         val currentTime = LocalTime.now()
+        val todayName = currentDate.dayOfWeek.name
 
         val todaySchedule = allDays.firstOrNull { it.dayName.equals(todayName, ignoreCase = true) }
-        
-        if (todaySchedule == null || todaySchedule.classes.isEmpty()) {
-            return createEmptyStatus() to emptyList()
-        }
+        val todayClasses = todaySchedule?.classes ?: emptyList()
 
-        var foundStatus: ScheduleStatus? = null
-        val remaining = mutableListOf<CourseClass>()
+        val status = ScheduleStatusCalculator.determineScheduleStatus(todayClasses, currentDate, currentTime)
+        val remainingClasses = todayClasses
+            .filter { currentTime.isBefore(it.endTime) }
+            .sortedBy { it.startTime }
 
-        for (course in todaySchedule.classes) {
-            // If the class hasn't ended yet, it's relevant!
-            if (currentTime.isBefore(course.endTime)) {
-                remaining.add(course)
-
-                if (foundStatus == null) {
-                    if (currentTime.isAfter(course.startTime) || currentTime == course.startTime) {
-                        // CLASS IS ONGOING
-                        val timeLeft = Duration.between(currentTime, course.endTime).seconds
-                        val totalDuration = Duration.between(course.startTime, course.endTime).seconds
-                        val progress = if (totalDuration > 0) (totalDuration - timeLeft).toFloat() / totalDuration.toFloat() else 0f
-                        
-                        foundStatus = ScheduleStatus(
-                            courseClass = course,
-                            dayName = todaySchedule.dayName,
-                            status = ClassStatus.ONGOING,
-                            remainingFormatted = formatTimeRemaining(timeLeft),
-                            progressPercent = progress
-                        )
-                    } else {
-                        // CLASS IS UPCOMING
-                        val timeUntilStart = Duration.between(currentTime, course.startTime).seconds
-                        foundStatus = ScheduleStatus(
-                            courseClass = course,
-                            dayName = todaySchedule.dayName,
-                            status = ClassStatus.UPCOMING,
-                            remainingFormatted = formatTimeRemaining(timeUntilStart)
-                        )
-                    }
-                }
-            }
-        }
-
-        return (foundStatus ?: createEmptyStatus()) to remaining
+        return status to remainingClasses
     }
 
     // --- User Actions (CRUD) ---
@@ -302,19 +268,13 @@ class ScheduleViewModel(
 
     // --- Helper Functions ---
 
-    private fun createEmptyStatus() = ScheduleStatus(
+    private fun createEmptyStatus(hasClassesToday: Boolean = false) = ScheduleStatus(
         courseClass = null,
         dayName = LocalDate.now().dayOfWeek.name,
         status = ClassStatus.NONE,
-        remainingFormatted = "Uwian na"
+        remainingFormatted = "00:00:00",
+        hasClassesToday = hasClassesToday
     )
-
-    private fun formatTimeRemaining(seconds: Long): String {
-        val hours = seconds / 3600
-        val minutes = (seconds % 3600) / 60
-        val secs = seconds % 60
-        return String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, secs)
-    }
 
     // Extension function to convert Database Entity -> UI Model
     private fun ScheduleEntity.toUiModel() = CourseClass(
@@ -340,5 +300,77 @@ class ScheduleViewModel(
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
+    }
+}
+
+object ScheduleStatusCalculator {
+    fun determineScheduleStatus(
+        classes: List<CourseClass>,
+        currentDate: LocalDate,
+        currentTime: LocalTime
+    ): ScheduleStatus {
+        val dayName = currentDate.dayOfWeek.name
+
+        if (classes.isEmpty()) {
+            return ScheduleStatus(
+                courseClass = null,
+                dayName = dayName,
+                status = ClassStatus.NONE,
+                remainingFormatted = "00:00:00",
+                progressPercent = 0f,
+                hasClassesToday = false
+            )
+        }
+
+        val sortedClasses = classes.sortedBy { it.startTime }
+
+        for (course in sortedClasses) {
+            // Boundary condition: class is relevant if current time is strictly before end time
+            if (currentTime.isBefore(course.endTime)) {
+                if (!currentTime.isBefore(course.startTime)) {
+                    // ONGOING: currentTime >= course.startTime && currentTime < course.endTime
+                    val timeLeft = maxOf(0L, Duration.between(currentTime, course.endTime).seconds)
+                    val totalDuration = Duration.between(course.startTime, course.endTime).seconds
+                    val progress = if (totalDuration > 0) (totalDuration - timeLeft).toFloat() / totalDuration.toFloat() else 0f
+
+                    return ScheduleStatus(
+                        courseClass = course,
+                        dayName = dayName,
+                        status = ClassStatus.ONGOING,
+                        remainingFormatted = formatTimeRemaining(timeLeft),
+                        progressPercent = progress.coerceIn(0f, 1f),
+                        hasClassesToday = true
+                    )
+                } else {
+                    // UPCOMING: currentTime < course.startTime
+                    val timeUntilStart = maxOf(0L, Duration.between(currentTime, course.startTime).seconds)
+                    return ScheduleStatus(
+                        courseClass = course,
+                        dayName = dayName,
+                        status = ClassStatus.UPCOMING,
+                        remainingFormatted = formatTimeRemaining(timeUntilStart),
+                        progressPercent = 0f,
+                        hasClassesToday = true
+                    )
+                }
+            }
+        }
+
+        // All classes have ended (currentTime >= all course.endTime)
+        return ScheduleStatus(
+            courseClass = null,
+            dayName = dayName,
+            status = ClassStatus.NONE,
+            remainingFormatted = "00:00:00",
+            progressPercent = 0f,
+            hasClassesToday = true
+        )
+    }
+
+    fun formatTimeRemaining(seconds: Long): String {
+        val hours = seconds / 3600
+        val minutes = (seconds % 3600) / 60
+        val secs = seconds % 60
+        return String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, secs)
     }
 }
