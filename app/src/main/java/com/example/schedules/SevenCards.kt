@@ -212,7 +212,7 @@ fun MainScheduleApp() {
                 editingDay = editingDay,
                 onDismiss = { showDialog = false },
                 onConfirm = { id, day, code, name, start, end, room ->
-                    viewModel.addNewOrEditSchedule(id, day, code, name, start, end, room, "")
+                    viewModel.addNewOrEditSchedule(id, day, code, name, start, end, room)
                 },
                 viewModel = viewModel
             )

@@ -236,14 +236,13 @@ class ScheduleViewModel(
         name: String,
         start: LocalTime,
         end: LocalTime,
-        room: String,
-        instructor: String
+        room: String
     ) {
         viewModelScope.launch {
             _inputErrorMessage.value = null // Reset errors
             
             // Basic check: Are all boxes filled?
-            if (day.isBlank() || code.isBlank() || name.isBlank() || room.isBlank() || instructor.isBlank()) {
+            if (day.isBlank() || code.isBlank() || name.isBlank() || room.isBlank()) {
                 _inputErrorMessage.value = "Please fill in all details"
                 _uiEvents.emit(UiEvent.VibrateError)
                 return@launch

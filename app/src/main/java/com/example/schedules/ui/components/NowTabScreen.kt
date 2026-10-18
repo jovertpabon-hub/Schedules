@@ -1415,7 +1415,9 @@ private fun NowTabClassDetails(
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(if (isEveningUnwind) Color(0xFF1E140F) else SteamedMilk)
+                            modifier = Modifier
+                                .background(if (isEveningUnwind) Color(0xFF1E140F) else SteamedMilk)
+                                .border(width = 1.dp, color = GoldenCrema)
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Edit Class", fontWeight = FontWeight.Bold, color = if (isEveningUnwind) SteamedMilk else DarkMocha) },
