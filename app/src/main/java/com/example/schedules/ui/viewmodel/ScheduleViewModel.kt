@@ -11,6 +11,7 @@ import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.DayScheduleData
 import com.example.schedules.data.models.ScheduleConstants
+import com.example.schedules.data.models.ScheduleImportPreview
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
 import com.example.schedules.data.models.toEntity
@@ -80,6 +81,10 @@ class ScheduleViewModel(
     // Error messages shown when adding/editing
     private val _inputErrorMessage = MutableStateFlow<String?>(null)
     val inputErrorMessage: StateFlow<String?> = _inputErrorMessage.asStateFlow()
+
+    // Import Preview State for confirmation step before saving
+    private val _importPreview = MutableStateFlow<ScheduleImportPreview?>(null)
+    val importPreview: StateFlow<ScheduleImportPreview?> = _importPreview.asStateFlow()
 
 
     // Stream of one-time events (like Snackbars)
@@ -181,18 +186,39 @@ class ScheduleViewModel(
                 if (extractedSchedules.isEmpty()) {
                     _uiEvents.emit(UiEvent.ShowMessage("No schedules found in PDF"))
                 } else {
-                    var successCount = 0
-                    extractedSchedules.forEach { extracted ->
-                        val entity = extracted.toEntity()
-                        repository.validateAndSaveSchedule(entity)
-                            .onSuccess { successCount++ }
-                    }
-                    _uiEvents.emit(UiEvent.ShowMessage("Imported $successCount classes from PDF"))
+                    val preview = ScheduleImportPreview.create(
+                        schedules = extractedSchedules,
+                        rawText = rawText,
+                        sourceName = "PDF Document"
+                    )
+                    _importPreview.value = preview
                 }
             } catch (e: Exception) {
                 _uiEvents.emit(UiEvent.ShowMessage("Error importing PDF: ${e.message}"))
             }
         }
+    }
+
+    fun confirmImport() {
+        val preview = _importPreview.value ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                var successCount = 0
+                preview.schedules.forEach { extracted ->
+                    val entity = extracted.toEntity()
+                    repository.validateAndSaveSchedule(entity)
+                        .onSuccess { successCount++ }
+                }
+                _importPreview.value = null
+                _uiEvents.emit(UiEvent.ShowMessage("Imported $successCount classes from PDF"))
+            } catch (e: Exception) {
+                _uiEvents.emit(UiEvent.ShowMessage("Error saving imported schedules: ${e.message}"))
+            }
+        }
+    }
+
+    fun cancelImport() {
+        _importPreview.value = null
     }
 
     fun addNewOrEditSchedule(

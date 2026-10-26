@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.schedules.data.models.ClassStatus
@@ -1352,5 +1353,37 @@ private fun NowTabClassDetails(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun NowTabThumbnailPreview() {
+    val sampleClasses = listOf(
+        CourseClass(id = 1, courseCode = "CS101", courseName = "Intro to Computer Science", startTime = LocalTime.of(9, 0), endTime = LocalTime.of(10, 30), room = "Room 302"),
+        CourseClass(id = 2, courseCode = "MATH202", courseName = "Calculus & Linear Algebra", startTime = LocalTime.of(11, 0), endTime = LocalTime.of(12, 30), room = "Lab 105"),
+        CourseClass(id = 3, courseCode = "PHYS103", courseName = "General Physics Laboratory", startTime = LocalTime.of(14, 0), endTime = LocalTime.of(16, 0), room = "Physics Hall A")
+    )
+
+    val sampleDays = ScheduleConstants.DaysOfWeek.map { dayName ->
+        DayScheduleData(dayName = dayName, classes = if (dayName == "Monday") sampleClasses else emptyList())
+    }
+
+    val sampleStatus = ScheduleStatus(
+        courseClass = sampleClasses[0],
+        dayName = "Monday",
+        status = ClassStatus.ONGOING,
+        remainingFormatted = "00:45:12",
+        progressPercent = 0.5f,
+        hasClassesToday = true
+    )
+
+    MaterialTheme {
+        NowTabScreen(
+            status = sampleStatus,
+            weekSchedule = WeekSchedule(sampleDays),
+            selectedDay = "Monday",
+            onSelectedDayChanged = {}
+        )
     }
 }

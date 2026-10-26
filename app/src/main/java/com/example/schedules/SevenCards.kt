@@ -65,6 +65,7 @@ import com.example.schedules.ui.components.SkeletonDashboardLayout
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
 import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
 import com.example.schedules.ui.dialogs.NotificationSettingsDialog
+import com.example.schedules.ui.dialogs.ScheduleImportPreviewDialog
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import com.example.schedules.ui.viewmodel.UiEvent
 import kotlinx.coroutines.flow.collectLatest
@@ -80,6 +81,8 @@ fun MainScheduleApp() {
     val viewModel: ScheduleViewModel = viewModel(
         factory = ScheduleViewModel.Factory(repository, appContext)
     )
+
+    val importPreview by viewModel.importPreview.collectAsState()
 
     var currentDate by remember { mutableStateOf(java.time.LocalDate.now()) }
     
@@ -242,6 +245,14 @@ fun MainScheduleApp() {
         if (showNotificationSettings) {
             NotificationSettingsDialog(
                 onDismiss = { showNotificationSettings = false }
+            )
+        }
+
+        importPreview?.let { preview ->
+            ScheduleImportPreviewDialog(
+                preview = preview,
+                onConfirm = { viewModel.confirmImport() },
+                onCancel = { viewModel.cancelImport() }
             )
         }
     }

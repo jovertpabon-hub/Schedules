@@ -75,19 +75,7 @@ class RoomScheduleRepository(
             return Result.failure(Exception("This class overlaps with another one on ${schedule.dayName}"))
         }
 
-        // Step 4: Check for Duplicate Course Codes
-        val isDuplicateCode = existingClasses.any { existing ->
-            val isSameClass = schedule.id != ScheduleConstants.DEFAULT_ID && schedule.id == existing.id
-            if (isSameClass) return@any false
-            
-            existing.courseCode == schedule.courseCode 
-        }
-        
-        if (isDuplicateCode) {
-            return Result.failure(Exception("Course ${schedule.courseCode} is already scheduled for this day"))
-        }
-
-        // Step 5: Save to Database & Propagate instructor update across same course code sessions
+        // Step 4: Save to Database & Propagate instructor update across same course code sessions
         return try {
             val savedId = scheduleDao.saveSchedule(schedule)
             val entityWithId = if (schedule.id == ScheduleConstants.DEFAULT_ID) schedule.copy(id = savedId) else schedule
