@@ -87,17 +87,18 @@ class RoomScheduleRepository(
     }
 
     private fun registerReminderForSchedule(schedule: ScheduleEntity) {
+        // Cancel any existing alarm before registering updated reminder
+        ScheduleNotificationHelper.cancelClassReminder(appContext, schedule)
+
         val isEnabled = NotificationPreferences.isNotificationsEnabled(appContext)
         if (!isEnabled) return
 
         val offsetMinutes = NotificationPreferences.getReminderOffsetMinutes(appContext)
-        val adjustedStartTime = schedule.startTime.minusMinutes(offsetMinutes.toLong())
 
         // Schedule exact alarm for future occurrences via AlarmManager
         ScheduleNotificationHelper.scheduleExactClassReminder(
             appContext,
             schedule,
-            adjustedStartTime,
             offsetMinutes
         )
     }

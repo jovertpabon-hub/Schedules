@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.schedules.data.notifications.NotificationPreferences
+import com.example.schedules.data.notifications.ScheduleNotificationHelper
 
 @Composable
 fun NotificationSettingsDialog(
@@ -62,6 +63,7 @@ fun NotificationSettingsDialog(
                         onCheckedChange = {
                             enabled = it
                             NotificationPreferences.setNotificationsEnabled(context, it)
+                            ScheduleNotificationHelper.rescheduleAllReminders(context)
                         }
                     )
                 }
@@ -81,6 +83,7 @@ fun NotificationSettingsDialog(
                             onClick = {
                                 offsetMinutes = minutes
                                 NotificationPreferences.setReminderOffsetMinutes(context, minutes)
+                                ScheduleNotificationHelper.rescheduleAllReminders(context)
                             },
                             enabled = enabled
                         )
@@ -94,7 +97,12 @@ fun NotificationSettingsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = {
+                    ScheduleNotificationHelper.rescheduleAllReminders(context)
+                    onDismiss()
+                }
+            ) {
                 Text("Save & Apply")
             }
         }
