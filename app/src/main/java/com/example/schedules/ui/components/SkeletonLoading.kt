@@ -430,42 +430,58 @@ fun SkeletonDashboardLayout(
         modifier = modifier.fillMaxSize(),
         color = WarmCoffeeCream
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = 16.dp,
-                    vertical = 16.dp
-                ),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // 1. HEADER
-            SkeletonNowHeader()
-
-            // 1b. WEEKDAY CHIPS
-            SkeletonDaySelectionChipsBar()
-
-            // 2. HERO COUNTDOWN CARD
-            SkeletonHeroCard()
-
-            // 3. CLASS SCHEDULE SECTION
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = 16.dp
+                    ),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                SkeletonSectionHeader()
+                // 1. HEADER
+                SkeletonNowHeader()
 
+                // 1b. WEEKDAY CHIPS
+                SkeletonDaySelectionChipsBar()
+
+                // 2. HERO COUNTDOWN CARD
+                SkeletonHeroCard()
+
+                // 3. CLASS SCHEDULE SECTION
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    repeat(classCount.coerceAtLeast(1)) {
-                        SkeletonClassCard()
+                    SkeletonSectionHeader()
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        repeat(classCount.coerceAtLeast(1)) {
+                            SkeletonClassCard()
+                        }
                     }
                 }
+            }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(16.dp)) // Rounded square container
+                    .background(GoldenCrema)
+            ) {
+                SkeletonBox(
+                    modifier = Modifier.matchParentSize(),
+                    shape = RoundedCornerShape(16.dp)
+                )
             }
         }
     }

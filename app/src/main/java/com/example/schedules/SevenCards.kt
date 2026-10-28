@@ -83,6 +83,7 @@ fun MainScheduleApp() {
     )
 
     val importPreview by viewModel.importPreview.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     var currentDate by remember { mutableStateOf(java.time.LocalDate.now()) }
     
@@ -141,50 +142,56 @@ fun MainScheduleApp() {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            MultiActionFab(
-                isExpanded = isFabExpanded,
-                onExpandClick = { isFabExpanded = !isFabExpanded },
-                items = listOf(
-                    FabItem(
-                        icon = Icons.Default.Settings,
-                        label = "Settings",
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        onClick = {
-                            isFabExpanded = false
-                            showNotificationSettings = true
-                        }
-                    ),
-                    FabItem(
-                        icon = Icons.Default.DeleteSweep,
-                        label = "Clear All",
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        onClick = {
-                            isFabExpanded = false
-                            showClearAllDialog = true
-                        }
-                    ),
-                    FabItem(
-                        icon = Icons.Default.PictureAsPdf,
-                        label = "Import COE",
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        onClick = {
-                            isFabExpanded = false
-                            pdfLauncher.launch("application/pdf")
-                        }
-                    ),
-                    FabItem(
-                        icon = Icons.Default.Add,
-                        label = "Add Class",
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        onClick = {
-                            isFabExpanded = false
-                            editingClass = null
-                            editingDay = selectedDay
-                            showDialog = true
-                        }
+            AnimatedVisibility(
+                visible = !isLoading,
+                enter = fadeIn(animationSpec = tween(durationMillis = 500)),
+                exit = fadeOut(animationSpec = tween(durationMillis = 300))
+            ) {
+                MultiActionFab(
+                    isExpanded = isFabExpanded,
+                    onExpandClick = { isFabExpanded = !isFabExpanded },
+                    items = listOf(
+                        FabItem(
+                            icon = Icons.Default.Settings,
+                            label = "Settings",
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            onClick = {
+                                isFabExpanded = false
+                                showNotificationSettings = true
+                            }
+                        ),
+                        FabItem(
+                            icon = Icons.Default.DeleteSweep,
+                            label = "Clear All",
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            onClick = {
+                                isFabExpanded = false
+                                showClearAllDialog = true
+                            }
+                        ),
+                        FabItem(
+                            icon = Icons.Default.PictureAsPdf,
+                            label = "Import COE",
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            onClick = {
+                                isFabExpanded = false
+                                pdfLauncher.launch("application/pdf")
+                            }
+                        ),
+                        FabItem(
+                            icon = Icons.Default.Add,
+                            label = "Add Class",
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            onClick = {
+                                isFabExpanded = false
+                                editingClass = null
+                                editingDay = selectedDay
+                                showDialog = true
+                            }
+                        )
                     )
                 )
-            )
+            }
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
