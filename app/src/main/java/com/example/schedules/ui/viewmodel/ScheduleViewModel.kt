@@ -20,6 +20,9 @@ import com.example.schedules.data.parser.PatternBasedScheduleParser
 import com.example.schedules.data.pdf.AndroidPdfExtractor
 import com.example.schedules.data.pdf.IPdfExtractor
 import com.example.schedules.data.repository.IScheduleRepository
+import com.example.schedules.data.notifications.NotificationPreferences
+import com.example.schedules.data.notifications.NotificationSettingsData
+import com.example.schedules.data.notifications.ScheduleNotificationHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -90,6 +93,10 @@ class ScheduleViewModel(
     // Stream of one-time events (like Snackbars)
     private val _uiEvents = MutableSharedFlow<UiEvent>()
     val uiEvents: SharedFlow<UiEvent> = _uiEvents.asSharedFlow()
+
+    // Notification Settings State
+    private val _notificationSettings = MutableStateFlow(NotificationPreferences.loadAllSettings(appContext))
+    val notificationSettings: StateFlow<NotificationSettingsData> = _notificationSettings.asStateFlow()
 
     // Temporary storage to allow "Undo" after deleting a class
     private var recentlyDeletedClass: ScheduleEntity? = null
@@ -281,6 +288,72 @@ class ScheduleViewModel(
             repository.clearAllSchedules()
             _uiEvents.emit(UiEvent.ShowMessage("All schedules cleared"))
         }
+    }
+
+    // --- Notification Settings Methods ---
+
+    fun updateGlobalNotifications(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setNotificationsEnabled(appContext, enabled), true)
+
+    fun updateDefaultReminderOffset(minutes: Int) =
+        updateNotificationPreference(NotificationPreferences.setReminderOffsetMinutes(appContext, minutes), true)
+
+    fun updatePerClassReminderOffset(classId: Long, offsetMinutes: Int) =
+        updateNotificationPreference(NotificationPreferences.setClassReminderOffset(appContext, classId, offsetMinutes), true)
+
+    fun updateUpcomingClassesEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setUpcomingClassesEnabled(appContext, enabled), true)
+
+    fun updateClassStartingEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setClassStartingEnabled(appContext, enabled), true)
+
+    fun updateScheduleChangesEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setScheduleChangesEnabled(appContext, enabled), false)
+
+    fun updateDailySummaryEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setDailySummaryEnabled(appContext, enabled), true)
+
+    fun updateDailySummaryTime(hour: Int, minute: Int) =
+        updateNotificationPreference(NotificationPreferences.setDailySummaryTime(appContext, hour, minute), true)
+
+    fun updateQuietHoursEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setQuietHoursEnabled(appContext, enabled), false)
+
+    fun updateQuietHoursStart(hour: Int, minute: Int) =
+        updateNotificationPreference(NotificationPreferences.setQuietHoursStart(appContext, hour, minute), false)
+
+    fun updateQuietHoursEnd(hour: Int, minute: Int) =
+        updateNotificationPreference(NotificationPreferences.setQuietHoursEnd(appContext, hour, minute), false)
+
+    fun updateSoundEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setSoundEnabled(appContext, enabled), false)
+
+    fun updateVibrationEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setVibrationEnabled(appContext, enabled), false)
+
+    fun updateShowClassDetails(show: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setShowClassDetails(appContext, show), false)
+
+    fun updateHideLockScreenDetails(hide: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setHideLockScreenDetails(appContext, hide), false)
+
+    fun toggleSchoolDay(dayName: String) {
+        val currentDays = NotificationPreferences.getSchoolDays(appContext).toMutableSet()
+        if (currentDays.contains(dayName)) {
+            if (currentDays.size > 1) currentDays.remove(dayName)
+        } else {
+            currentDays.add(dayName)
+        }
+        updateNotificationPreference(NotificationPreferences.setSchoolDays(appContext, currentDays), true)
+    }
+
+    fun updateWeekendRemindersEnabled(enabled: Boolean) =
+        updateNotificationPreference(NotificationPreferences.setWeekendRemindersEnabled(appContext, enabled), true)
+
+    private fun updateNotificationPreference(changed: Boolean, affectsAlarms: Boolean) {
+        if (!changed) return
+        _notificationSettings.value = NotificationPreferences.loadAllSettings(appContext)
+        if (affectsAlarms) ScheduleNotificationHelper.rescheduleAllReminders(appContext)
     }
 
     private fun restoreDeletedClass() {

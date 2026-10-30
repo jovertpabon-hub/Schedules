@@ -30,11 +30,21 @@ class RoomScheduleRepository(
         val savedId = scheduleDao.saveSchedule(schedule)
         val entityWithId = if (schedule.id == ScheduleConstants.DEFAULT_ID) schedule.copy(id = savedId) else schedule
         registerReminderForSchedule(entityWithId)
+        ScheduleNotificationHelper.showScheduleChangeNotification(
+            appContext,
+            "☕ Schedule Updated",
+            "Restored class ${schedule.courseCode} on ${schedule.dayName}."
+        )
     }
 
     override suspend fun deleteSchedule(schedule: ScheduleEntity) {
         scheduleDao.removeSchedule(schedule)
         ScheduleNotificationHelper.cancelClassReminder(appContext, schedule)
+        ScheduleNotificationHelper.showScheduleChangeNotification(
+            appContext,
+            "☕ Schedule Updated",
+            "Removed class ${schedule.courseCode} on ${schedule.dayName}."
+        )
     }
 
     override suspend fun clearAllSchedules() {
@@ -43,6 +53,11 @@ class RoomScheduleRepository(
             ScheduleNotificationHelper.cancelClassReminder(appContext, schedule)
         }
         scheduleDao.clearAll()
+        ScheduleNotificationHelper.showScheduleChangeNotification(
+            appContext,
+            "☕ Schedule Updated",
+            "All scheduled classes have been cleared."
+        )
     }
 
     // --- Complex Logic & Validation ---
@@ -77,9 +92,17 @@ class RoomScheduleRepository(
 
         // Step 4: Save to Database & Propagate instructor update across same course code sessions
         return try {
+            val isNew = schedule.id == ScheduleConstants.DEFAULT_ID
             val savedId = scheduleDao.saveSchedule(schedule)
-            val entityWithId = if (schedule.id == ScheduleConstants.DEFAULT_ID) schedule.copy(id = savedId) else schedule
+            val entityWithId = if (isNew) schedule.copy(id = savedId) else schedule
             registerReminderForSchedule(entityWithId)
+            
+            val actionText = if (isNew) "Added" else "Updated"
+            ScheduleNotificationHelper.showScheduleChangeNotification(
+                appContext,
+                "☕ Schedule Updated",
+                "$actionText class ${schedule.courseCode} on ${schedule.dayName}."
+            )
             Result.success(Unit)
         } catch (error: Exception) {
             Result.failure(error)
@@ -93,13 +116,9 @@ class RoomScheduleRepository(
         val isEnabled = NotificationPreferences.isNotificationsEnabled(appContext)
         if (!isEnabled) return
 
-        val offsetMinutes = NotificationPreferences.getReminderOffsetMinutes(appContext)
-
-        // Schedule exact alarm for future occurrences via AlarmManager
         ScheduleNotificationHelper.scheduleExactClassReminder(
             appContext,
-            schedule,
-            offsetMinutes
+            schedule
         )
     }
 }

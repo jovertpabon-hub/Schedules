@@ -27,12 +27,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
+import com.example.schedules.data.notifications.NotificationPreferences
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import java.time.LocalTime
 
@@ -143,6 +146,54 @@ fun AddOrEditClassDialog(
                 
                 OutlinedTextField(value = room, onValueChange = { room = it }, label = { Text("Room") }, modifier = Modifier.fillMaxWidth())
 
+                val context = LocalContext.current
+                var customOffset by remember {
+                    mutableIntStateOf(editingClass?.id?.let { NotificationPreferences.getClassReminderOffset(context, it) } ?: -1)
+                }
+                var reminderExpanded by remember { mutableStateOf(false) }
+                val globalDefaultOffset = NotificationPreferences.getReminderOffsetMinutes(context)
+
+                val offsetOptions = listOf(
+                    -1 to "Global Default ($globalDefaultOffset min)",
+                    0 to "At class start time",
+                    5 to "5 min before",
+                    10 to "10 min before",
+                    15 to "15 min before",
+                    30 to "30 min before",
+                    60 to "1 hour before"
+                )
+                val currentOffsetLabel = offsetOptions.firstOrNull { it.first == customOffset }?.second ?: "Global Default ($globalDefaultOffset min)"
+
+                ExposedDropdownMenuBox(
+                    expanded = reminderExpanded,
+                    onExpandedChange = { reminderExpanded = !reminderExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = currentOffsetLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Class Reminder Offset") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = reminderExpanded) },
+                        modifier = Modifier
+                            .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = reminderExpanded,
+                        onDismissRequest = { reminderExpanded = false }
+                    ) {
+                        offsetOptions.forEach { (offset, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    customOffset = offset
+                                    reminderExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 validationError?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
@@ -154,6 +205,9 @@ fun AddOrEditClassDialog(
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Button(
                         onClick = { 
+                            editingClass?.id?.let { id ->
+                                viewModel.updatePerClassReminderOffset(id, customOffset)
+                            }
                             onConfirm(editingClass?.id, day, code, name, startTime, endTime, room)
                         },
                         enabled = isFormValid

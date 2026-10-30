@@ -250,6 +250,7 @@ fun MainScheduleApp() {
 
         if (showNotificationSettings) {
             NotificationSettingsDialog(
+                viewModel = viewModel,
                 onDismiss = { showNotificationSettings = false }
             )
         }

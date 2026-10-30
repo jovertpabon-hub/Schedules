@@ -10,70 +10,93 @@ import com.example.schedules.data.models.ScheduleConstants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalTime
 
 /**
  * Handles incoming alarm broadcasts from AlarmManager.
- * Displays class reminder notification and reschedules next weekly occurrence.
+ * Displays class reminder, class starting, and daily summary notifications,
+ * and automatically reschedules recurring occurrences.
  */
 class ScheduleAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val scheduleId = intent.getLongExtra("schedule_id", -1L)
-        val courseCode = intent.getStringExtra("course_code") ?: "Class"
-        val courseName = intent.getStringExtra("course_name") ?: "Course"
-        val room = intent.getStringExtra("room") ?: "TBA"
-        val startTimeStr = intent.getStringExtra("start_time") ?: "08:00 AM"
-
+        val action = intent.action ?: ScheduleNotificationHelper.ACTION_SCHEDULE_REMINDER
         val receiveTimeMs = System.currentTimeMillis()
-        Log.d("ScheduleAlarmReceiver", "Alarm broadcast received for schedule_id=$scheduleId ($courseCode) at timestamp=$receiveTimeMs")
-
-        val startTime = try {
-            LocalTime.parse(startTimeStr, ScheduleConstants.TimeFormatter)
-        } catch (_: Exception) {
-            LocalTime.now()
-        }
-
-        val dummyCourse = CourseClass(
-            id = scheduleId,
-            courseCode = courseCode,
-            courseName = courseName,
-            startTime = startTime,
-            endTime = startTime.plusHours(1),
-            room = room,
-        )
+        Log.d("ScheduleAlarmReceiver", "Alarm broadcast received action=$action at timestamp=$receiveTimeMs")
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                val dao = ScheduleDatabase.getDatabase(context.applicationContext).scheduleDao()
+
+                if (action == ScheduleNotificationHelper.ACTION_DAILY_SUMMARY) {
+                    val todayName = LocalDate.now().dayOfWeek.name
+                    val dayNameFormatted = ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(todayName, ignoreCase = true) } ?: todayName
+                    val todayEntities = dao.getSchedulesForDayDirect(dayNameFormatted)
+                    val todayClasses = todayEntities.map {
+                        CourseClass(
+                            id = it.id,
+                            courseCode = it.courseCode,
+                            courseName = it.courseName,
+                            startTime = it.startTime,
+                            endTime = it.endTime,
+                            room = it.room
+                        )
+                    }.sortedBy { it.startTime }
+
+                    ScheduleNotificationHelper.showDailySummaryNotification(context, todayClasses)
+                    ScheduleNotificationHelper.scheduleDailySummaryAlarm(context)
+                    return@launch
+                }
+
+                val scheduleId = intent.getLongExtra("schedule_id", -1L)
+                val courseCode = intent.getStringExtra("course_code") ?: "Class"
+                val courseName = intent.getStringExtra("course_name") ?: "Course"
+                val room = intent.getStringExtra("room") ?: "TBA"
+                val startTimeStr = intent.getStringExtra("start_time") ?: "08:00 AM"
+
+                val startTime = try {
+                    LocalTime.parse(startTimeStr, ScheduleConstants.TimeFormatter)
+                } catch (_: Exception) {
+                    LocalTime.now()
+                }
+
+                val dummyCourse = CourseClass(
+                    id = scheduleId,
+                    courseCode = courseCode,
+                    courseName = courseName,
+                    startTime = startTime,
+                    endTime = startTime.plusHours(1),
+                    room = room
+                )
+
                 if (scheduleId != -1L) {
-                    val dao = ScheduleDatabase.getDatabase(context.applicationContext).scheduleDao()
                     val existing = dao.getScheduleById(scheduleId)
                     if (existing == null) {
-                        Log.d("ScheduleAlarmReceiver", "Schedule id=$scheduleId was deleted from database, skipping notification and recurring schedule.")
+                        Log.d("ScheduleAlarmReceiver", "Schedule id=$scheduleId was deleted, skipping broadcast")
                         return@launch
                     }
 
-                    // 1. Post notification
-                    ScheduleNotificationHelper.showClassReminderNotification(context, dummyCourse)
+                    val isStarting = action == ScheduleNotificationHelper.ACTION_CLASS_STARTING
+                    ScheduleNotificationHelper.showClassReminderNotification(
+                        context = context,
+                        course = dummyCourse,
+                        isClassStarting = isStarting
+                    )
 
-                    // 2. Automatically reschedule next weekly occurrence for recurring schedule
+                    // Reschedule next weekly occurrence
                     if (NotificationPreferences.isNotificationsEnabled(context)) {
-                        val offsetMinutes = NotificationPreferences.getReminderOffsetMinutes(context)
-                        ScheduleNotificationHelper.scheduleExactClassReminder(
-                            context,
-                            existing,
-                            offsetMinutes
-                        )
-                        Log.d("ScheduleAlarmReceiver", "Rescheduled next weekly reminder for schedule id=${existing.id} (${existing.courseCode})")
+                        ScheduleNotificationHelper.scheduleExactClassReminder(context, existing)
                     }
                 } else {
                     ScheduleNotificationHelper.showClassReminderNotification(context, dummyCourse)
                 }
             } catch (e: Exception) {
-                Log.e("ScheduleAlarmReceiver", "Error processing alarm broadcast for schedule id=$scheduleId", e)
+                Log.e("ScheduleAlarmReceiver", "Error processing alarm broadcast", e)
             } finally {
                 pendingResult.finish()
             }
         }
     }
 }
+

@@ -20,10 +20,18 @@ import com.example.schedules.ui.theme.SchedulesTheme
 
 class MainActivity : ComponentActivity() {
 
+    private var startupReconciliationPending = false
+
+    companion object {
+        private const val KEY_STARTUP_RECONCILIATION_PENDING = "startup_reconciliation_pending"
+    }
+
     private val requestNotificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
+        val shouldReconcile = isGranted && startupReconciliationPending
+        startupReconciliationPending = false
+        if (shouldReconcile) {
             ScheduleNotificationHelper.rescheduleAllReminders(this)
         }
     }
@@ -31,8 +39,11 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        checkAndRequestNotificationPermission()
-        ScheduleNotificationHelper.rescheduleAllReminders(this)
+        startupReconciliationPending = savedInstanceState?.getBoolean(KEY_STARTUP_RECONCILIATION_PENDING)
+            ?: checkAndRequestNotificationPermission()
+        if (savedInstanceState == null && !startupReconciliationPending) {
+            ScheduleNotificationHelper.rescheduleAllReminders(this)
+        }
 
         setContent {
             SchedulesTheme {
@@ -46,12 +57,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun checkAndRequestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean(KEY_STARTUP_RECONCILIATION_PENDING, startupReconciliationPending)
+        super.onSaveInstanceState(outState)
+    }
+
+    private fun checkAndRequestNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
         }
+
+        requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        return true
     }
 }
 
