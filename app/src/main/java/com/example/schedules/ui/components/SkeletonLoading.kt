@@ -6,14 +6,12 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,7 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +41,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.schedules.ui.theme.AppBackground
 import com.example.schedules.ui.theme.DarkMocha
 import com.example.schedules.ui.theme.DeepEspresso
 import com.example.schedules.ui.theme.GoldenCrema
@@ -141,43 +139,91 @@ fun SkeletonNowHeader() {
 }
 
 // ---------------------------------------------------------
-// WEEKDAY SELECTION CHIPS SKELETON
-// Matches DaySelectionChipsBar
+// WEEKLY CALENDAR STRIP SKELETON
+// Matches WeeklyCalendarStrip
 // ---------------------------------------------------------
 
 @Composable
-fun SkeletonDaySelectionChipsBar() {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 2.dp),
+fun SkeletonWeeklyCalendarStrip() {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = WarmCoffeeCream),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        items(7) { index ->
-            val isSelected = (index == 0)
-            val chipBg = if (isSelected) DeepEspresso else SteamedMilk
-            val border = if (isSelected) BorderStroke(1.5.dp, GoldenCrema) else BorderStroke(1.dp, DarkMocha.copy(alpha = 0.15f))
-
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = chipBg,
-                border = border
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header with title "This week" and calendar icon placeholder
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    SkeletonBox(
-                        width = 30.dp,
-                        height = 14.dp,
-                        shape = RoundedCornerShape(4.dp)
-                    )
+                SkeletonBox(
+                    width = 18.dp,
+                    height = 18.dp,
+                    shape = CircleShape
+                )
+                SkeletonBox(
+                    width = 70.dp,
+                    height = 16.dp
+                )
+            }
 
-                    SkeletonBox(
-                        width = 24.dp,
-                        height = 16.dp,
-                        shape = RoundedCornerShape(50.dp)
-                    )
+            // 7 day items in one horizontal row matching WeeklyCalendarStrip
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(7) { index ->
+                    val isSelected = (index == 0)
+                    val tileBg = if (isSelected) DeepEspresso else SteamedMilk
+
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = tileBg,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            SkeletonBox(
+                                width = 24.dp,
+                                height = 10.dp,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+
+                            SkeletonBox(
+                                width = 18.dp,
+                                height = 16.dp,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .height(6.dp)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.dp)
+                                            .clip(CircleShape)
+                                            .background(GoldenCrema)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -416,6 +462,7 @@ fun SkeletonClassCard(
         }
     }
 }
+
 // ---------------------------------------------------------
 // FULL NOW TAB SKELETON LAYOUT
 // Matches NowTabScreen
@@ -428,60 +475,44 @@ fun SkeletonDashboardLayout(
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = WarmCoffeeCream
+        color = AppBackground
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    horizontal = 16.dp,
+                    vertical = 16.dp
+                ),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 1. HEADER
+            SkeletonNowHeader()
+
+            // 1b. WEEKLY CALENDAR STRIP
+            SkeletonWeeklyCalendarStrip()
+
+            // 2. HERO COUNTDOWN CARD
+            SkeletonHeroCard()
+
+            // 3. CLASS SCHEDULE SECTION
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        horizontal = 16.dp,
-                        vertical = 16.dp
-                    ),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 1. HEADER
-                SkeletonNowHeader()
+                SkeletonSectionHeader()
 
-                // 1b. WEEKDAY CHIPS
-                SkeletonDaySelectionChipsBar()
-
-                // 2. HERO COUNTDOWN CARD
-                SkeletonHeroCard()
-
-                // 3. CLASS SCHEDULE SECTION
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    SkeletonSectionHeader()
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        repeat(classCount.coerceAtLeast(1)) {
-                            SkeletonClassCard()
-                        }
+                    repeat(classCount.coerceAtLeast(1)) {
+                        SkeletonClassCard()
                     }
                 }
-            }
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(16.dp)) // Rounded square container
-                    .background(GoldenCrema)
-            ) {
-                SkeletonBox(
-                    modifier = Modifier.matchParentSize(),
-                    shape = RoundedCornerShape(16.dp)
-                )
             }
         }
     }

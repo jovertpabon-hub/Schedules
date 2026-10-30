@@ -1,13 +1,10 @@
 package com.example.schedules.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -18,7 +15,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -29,8 +25,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,11 +35,13 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -85,6 +81,7 @@ import com.example.schedules.data.models.DayScheduleData
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
+import com.example.schedules.ui.theme.AppBackground
 import com.example.schedules.ui.theme.DarkMocha
 import com.example.schedules.ui.theme.DeepEspresso
 import com.example.schedules.ui.theme.GoldenCrema
@@ -93,10 +90,12 @@ import com.example.schedules.ui.theme.WarmCoffeeCream
 import com.example.schedules.ui.theme.WarmRoast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
@@ -108,7 +107,6 @@ data class VacantTimeBlock(
 
 /**
  * Merges overlapping or contiguous class time intervals into a list of non-overlapping time spans.
- * This ensures clock time is counted correctly and not double-counted when classes overlap.
  */
 fun mergedClassIntervals(classes: List<CourseClass>): List<Pair<LocalTime, LocalTime>> {
     if (classes.isEmpty()) return emptyList()
@@ -122,7 +120,6 @@ fun mergedClassIntervals(classes: List<CourseClass>): List<Pair<LocalTime, Local
     for (i in 1 until sorted.size) {
         val course = sorted[i]
         if (!course.startTime.isAfter(currentEnd)) {
-            // Overlapping or back-to-back: extend current interval
             if (course.endTime.isAfter(currentEnd)) {
                 currentEnd = course.endTime
             }
@@ -136,11 +133,6 @@ fun mergedClassIntervals(classes: List<CourseClass>): List<Pair<LocalTime, Local
     return merged
 }
 
-/**
- * Calculates total clock time occupied by classes.
- * Overlapping class periods are merged into single intervals so clock time is counted only once,
- * keeping class duration consistent with free time gap calculations.
- */
 fun calculateTotalClassHours(classes: List<CourseClass>): String {
     val merged = mergedClassIntervals(classes)
     val totalMinutes = merged.sumOf { (start, end) -> Duration.between(start, end).toMinutes() }
@@ -153,12 +145,6 @@ fun calculateTotalClassHours(classes: List<CourseClass>): String {
     }
 }
 
-/**
- * Calculates vacant time blocks (free time gaps) within an active day window.
- * The default window is 8:00 AM to 5:00 PM (17:00). If classes start earlier or end later,
- * the window is expanded to accommodate them.
- * Overlapping classes are merged first to avoid false gaps or negative durations.
- */
 fun calculateVacantTimeBlocks(classes: List<CourseClass>): List<VacantTimeBlock> {
     val defaultStart = LocalTime.of(8, 0)
     val defaultEnd = LocalTime.of(17, 0)
@@ -225,7 +211,6 @@ fun NowTabScreen(
 ) {
     val haptic = LocalHapticFeedback.current
 
-    // Live time & date ticker so UI stays updated without heavy recomposition overhead
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
     var currentDate by remember { mutableStateOf(LocalDate.now()) }
 
@@ -242,36 +227,28 @@ fun NowTabScreen(
         ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(name, ignoreCase = true) } ?: "Monday"
     }
 
-    val currentHour = currentTime.hour
-    val greeting = remember(currentHour) {
-        when (currentHour) {
-            in 5..11 -> "Good morning! ☀️"
-            in 12..17 -> "Midday boost! ☕"
-            else -> "Evening unwind! 🌙"
-        }
-    }
     var showVacantTimes by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = WarmCoffeeCream
+        color = AppBackground
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // 1. Header with Greeting and Date
+            // Header sitting directly on AppBackground
             NowTabHeader(
                 currentDate = currentDate,
-                greeting = greeting
             )
 
-            // 1b. Primary Navigation: Horizontally scrolling Day Selection Chips
-            DaySelectionChipsBar(
+            // Redesigned Weekly Calendar Strip inside a WarmCoffeeCream surface
+            WeeklyCalendarStrip(
+                currentDate = currentDate,
                 selectedDay = selectedDay,
                 todayName = todayName,
                 weekSchedule = weekSchedule,
@@ -284,18 +261,8 @@ fun NowTabScreen(
             AnimatedContent(
                 targetState = selectedDay,
                 transitionSpec = {
-                    val daysList = ScheduleConstants.DaysOfWeek
-                    val oldIndex = daysList.indexOfFirst { it.equals(initialState, ignoreCase = true) }
-                    val newIndex = daysList.indexOfFirst { it.equals(targetState, ignoreCase = true) }
-                    val isForward = !(oldIndex != -1 && newIndex != -1) || newIndex > oldIndex
-
-                    if (isForward) {
-                        (slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { width -> (width * 0.3f).toInt() } + fadeIn(animationSpec = tween(250)))
-                            .togetherWith(slideOutHorizontally(animationSpec = tween(250, easing = FastOutSlowInEasing)) { width -> (-width * 0.3f).toInt() } + fadeOut(animationSpec = tween(200)))
-                    } else {
-                        (slideInHorizontally(animationSpec = tween(300, easing = FastOutSlowInEasing)) { width -> (-width * 0.3f).toInt() } + fadeIn(animationSpec = tween(250)))
-                            .togetherWith(slideOutHorizontally(animationSpec = tween(250, easing = FastOutSlowInEasing)) { width -> (width * 0.3f).toInt() } + fadeOut(animationSpec = tween(200)))
-                    }.using(SizeTransform(clip = false))
+                    fadeIn(animationSpec = tween(150, easing = FastOutSlowInEasing))
+                        .togetherWith(fadeOut(animationSpec = tween(100, easing = FastOutSlowInEasing)))
                 },
                 label = "DayContentTransition",
                 modifier = Modifier.fillMaxWidth()
@@ -313,11 +280,10 @@ fun NowTabScreen(
                 }
 
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // 2. HERO COUNTDOWN CARD (TODAY) OR DAY OVERVIEW HERO (OTHER DAYS)
                     if (isTodayCurrent) {
                         NowTabCountdownCard(
                             status = status
@@ -328,13 +294,11 @@ fun NowTabScreen(
                         )
                     }
 
-                    // 3. CLASS SCHEDULE OR FREE TIME LIST (PRIMARY CONTENT)
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Section Header & View Toggle Button
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -350,7 +314,7 @@ fun NowTabScreen(
                                 },
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = DarkMocha,
+                                color = DeepEspresso,
                                 letterSpacing = 0.6.sp
                             )
 
@@ -427,7 +391,6 @@ fun NowTabScreen(
                         }
                     }
 
-                    // 4. DAILY SUMMARY DASHBOARD (STATISTICS & TIMELINE - SUPPORTING OVERVIEW)
                     if (showVacantTimes) {
                         DailyOverviewDashboard(
                             dayData = currentDayData,
@@ -444,107 +407,174 @@ fun NowTabScreen(
 
 @Composable
 private fun NowTabHeader(
-    currentDate: LocalDate,
-    greeting: String
+    currentDate: LocalDate
 ) {
     val formattedDate = remember(currentDate) {
-        currentDate.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.US))
+        currentDate.format(
+            DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.US)
+        )
     }
-    val textColor = DarkMocha
+
+    val currentHour = LocalTime.now().hour
+
+    val greeting = when (currentHour) {
+        in 5..11 -> "Good morning!"
+        in 12..17 -> "Good afternoon!"
+        else -> "Good evening!"
+    }
 
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
             text = greeting,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Black,
-            color = textColor
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = formattedDate,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = textColor.copy(alpha = 0.8f),
-            letterSpacing = 0.5.sp
+            color = DarkMocha
         )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CalendarToday,
+                contentDescription = null,
+                tint = DarkMocha.copy(alpha = 0.75f),
+                modifier = Modifier.size(16.dp)
+            )
+
+            Text(
+                text = formattedDate,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = DarkMocha.copy(alpha = 0.75f)
+            )
+        }
     }
 }
 
 @Composable
-private fun DaySelectionChipsBar(
+private fun WeeklyCalendarStrip(
+    currentDate: LocalDate,
     selectedDay: String,
     todayName: String,
     weekSchedule: WeekSchedule,
     onSelectedDayChanged: (String) -> Unit
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 2.dp),
+    val baseMonday = remember(currentDate) {
+        currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = WarmCoffeeCream),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        items(ScheduleConstants.DaysOfWeek) { day ->
-            val isSelected = day.equals(selectedDay, ignoreCase = true)
-            val isToday = day.equals(todayName, ignoreCase = true)
-            val dayData = weekSchedule.days.firstOrNull { it.dayName.equals(day, ignoreCase = true) }
-            val classCount = dayData?.classes?.size ?: 0
-
-            val chipBg = when {
-                isSelected -> DeepEspresso
-                else -> SteamedMilk
-            }
-            val textColor = when {
-                isSelected -> GoldenCrema
-                else -> DarkMocha
-            }
-            val border = when {
-                isSelected -> BorderStroke(1.5.dp, GoldenCrema)
-                else -> BorderStroke(1.dp, DarkMocha.copy(alpha = 0.15f))
-            }
-
-            Surface(
-                onClick = { onSelectedDayChanged(day) },
-                shape = RoundedCornerShape(14.dp),
-                color = chipBg,
-                border = border,
-                shadowElevation = if (isSelected) 3.dp else 0.dp
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header with title "This week" and calendar icon
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = day.take(3).uppercase(Locale.US),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                        color = textColor
-                    )
+                Icon(
+                    imageVector = Icons.Default.Event,
+                    contentDescription = null,
+                    tint = DeepEspresso,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "This week",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = DeepEspresso
+                )
+            }
 
-                    if (isToday) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(if (isSelected) GoldenCrema else WarmRoast)
-                        )
-                    }
+            // 7 day items in one horizontal row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ScheduleConstants.DaysOfWeek.forEachIndexed { index, dayName ->
+                    val dayDate = baseMonday.plusDays(index.toLong())
+                    val dateNumber = dayDate.dayOfMonth.toString()
+                    val isSelected = dayName.equals(selectedDay, ignoreCase = true)
+                    val isToday = dayName.equals(todayName, ignoreCase = true)
+
+                    val dayData = weekSchedule.days.firstOrNull { it.dayName.equals(dayName, ignoreCase = true) }
+                    val classCount = dayData?.classes?.size ?: 0
+                    val hasClasses = classCount > 0
+
+                    val tileBg = if (isSelected) DeepEspresso else SteamedMilk
+                    val weekdayColor = if (isSelected) SteamedMilk.copy(alpha = 0.9f) else DarkMocha.copy(alpha = 0.65f)
+                    val dateColor = if (isSelected) SteamedMilk else DarkMocha
+                    val indicatorColor = if (isSelected) GoldenCrema else WarmRoast
 
                     Surface(
-                        color = if (isSelected) GoldenCrema.copy(alpha = 0.25f) else DarkMocha.copy(alpha = 0.08f),
-                        shape = RoundedCornerShape(50.dp)
+                        onClick = { onSelectedDayChanged(dayName) },
+                        shape = RoundedCornerShape(14.dp),
+                        color = tileBg,
+                        border = if (!isSelected && isToday) BorderStroke(1.dp, WarmRoast.copy(alpha = 0.6f)) else null,
+                        shadowElevation = if (isSelected) 2.dp else 0.dp,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 2.dp)
                     ) {
-                        Text(
-                            text = when (classCount) {
-                                0 -> "Free"
-                                else -> "$classCount"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                        )
+                        Column(
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = dayName.take(3).uppercase(Locale.US),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                color = weekdayColor,
+                                fontSize = 11.sp,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Text(
+                                text = dateNumber,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Black,
+                                color = dateColor,
+                                fontSize = 16.sp,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .height(6.dp)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (hasClasses) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.dp)
+                                            .clip(CircleShape)
+                                            .background(indicatorColor)
+                                    )
+                                } else if (isToday && !isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.dp)
+                                            .clip(CircleShape)
+                                            .background(DarkMocha.copy(alpha = 0.3f))
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -640,7 +670,6 @@ private fun CountdownTimerView(
             .padding(horizontal = 18.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // HEADER: STATUS TITLE
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -691,7 +720,6 @@ private fun CountdownTimerView(
         }
 
         if (status.status == ClassStatus.NONE || status.courseClass == null) {
-            // Clean empty state distinguishing no-classes-today vs all-classes-completed
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -736,7 +764,6 @@ private fun CountdownTimerView(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // LEFT: TIMER DISPLAY (Circular progress ring for ONGOING; subtle border ring for UPCOMING)
                 Box(
                     modifier = Modifier.size(92.dp),
                     contentAlignment = Alignment.Center
@@ -793,12 +820,10 @@ private fun CountdownTimerView(
                     }
                 }
 
-                // RIGHT: CLASS DETAILS
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Course Name
                     Text(
                         text = course.courseName,
                         style = MaterialTheme.typography.titleMedium,
@@ -808,7 +833,6 @@ private fun CountdownTimerView(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    // Start - End Time
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
@@ -827,7 +851,6 @@ private fun CountdownTimerView(
                         )
                     }
 
-                    // Location / Room
                     if (course.room.isNotBlank()) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -888,7 +911,6 @@ private fun DailyOverviewDashboard(
                 letterSpacing = 0.6.sp
             )
 
-            // 3 key metrics
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -913,7 +935,6 @@ private fun DailyOverviewDashboard(
                 )
             }
 
-            // Timeline
             if (dayData.classes.isNotEmpty()) {
                 HorizontalDivider(
                     thickness = 0.5.dp,
@@ -1178,7 +1199,6 @@ private fun NowTabClassDetails(
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
         ) {
-            // Subtle left edge accent bar
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -1198,7 +1218,6 @@ private fun NowTabClassDetails(
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Top Row: Code + Name + More Options
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1273,7 +1292,6 @@ private fun NowTabClassDetails(
                     }
                 }
 
-                // Middle Row: Time Info
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -1292,7 +1310,6 @@ private fun NowTabClassDetails(
                     )
                 }
 
-                // Bottom Row: Room Location & Status Pill
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

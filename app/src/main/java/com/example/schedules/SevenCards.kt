@@ -6,7 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -47,7 +47,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -154,7 +153,7 @@ fun MainScheduleApp() {
                         FabItem(
                             icon = Icons.Default.Settings,
                             label = "Settings",
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             onClick = {
                                 isFabExpanded = false
                                 showNotificationSettings = true
@@ -163,7 +162,7 @@ fun MainScheduleApp() {
                         FabItem(
                             icon = Icons.Default.DeleteSweep,
                             label = "Clear All",
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             onClick = {
                                 isFabExpanded = false
                                 showClearAllDialog = true
@@ -216,7 +215,7 @@ fun MainScheduleApp() {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f))
+                        .background(Color.Black.copy(alpha = 0.9f))
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
@@ -278,9 +277,10 @@ private fun MultiActionFab(
     onExpandClick: () -> Unit,
     items: List<FabItem>
 ) {
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 45f else 0f,
-        label = "rotation"
+    val cornerRadius by animateDpAsState(
+        targetValue = if (isExpanded) 28.dp else 16.dp,
+        animationSpec = tween(durationMillis = 120),
+        label = "FabCornerRadius"
     )
 
     Column(
@@ -332,11 +332,10 @@ private fun MultiActionFab(
 
         FloatingActionButton(
             onClick = onExpandClick,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
             containerColor = if (isExpanded) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
             contentColor = if (isExpanded) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary,
-            elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
-            modifier = Modifier.rotate(rotation)
+            elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,

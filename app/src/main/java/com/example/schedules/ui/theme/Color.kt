@@ -7,8 +7,9 @@ val DarkMocha = Color(0xFF623528)          // Primary text, screen titles, dark 
 val DeepEspresso = Color(0xFF4D2A00)       // Hero card headers, dark container surfaces, primary icon fills
 val WarmRoast = Color(0xFFCC6F00)          // Primary action elements (FAB), active state highlights, focus indicators
 val GoldenCrema = Color(0xFFF2A900)        // Progress indicators, status badges, highlighted timer digits
-val SteamedMilk = Color(0xFFF9E6A8)        // Card backgrounds, secondary informational containers, subtle fills
-val WarmCoffeeCream = Color(0xFFFFFBF2)    // Background surface
+val AppBackground = Color(0xFFD6C0A5)
+val WarmCoffeeCream = Color(0xFFFFF4D6)    // Main cards
+val SteamedMilk = Color(0xFFF0DDAA)        // Card backgrounds, secondary informational containers, subtle fills
 
 // Light Theme - 5-Tone Coffee Palette Mapping
 val SurfaceLight = WarmCoffeeCream
