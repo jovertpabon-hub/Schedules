@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
@@ -46,12 +50,22 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            SchedulesTheme {
+            val preferences = getSharedPreferences("app_preferences", MODE_PRIVATE)
+            var themeMode by remember {
+                mutableStateOf(preferences.getString("theme_mode", "system") ?: "system")
+            }
+            SchedulesTheme(themeMode = themeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScheduleApp()
+                    MainScheduleApp(
+                        themeMode = themeMode,
+                        onThemeModeChange = { selected ->
+                            themeMode = selected
+                            preferences.edit().putString("theme_mode", selected).apply()
+                        }
+                    )
                 }
             }
         }
@@ -78,5 +92,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun MainScheduleAppPreview() {
-    MainScheduleApp()
+    MainScheduleApp(themeMode = "light", onThemeModeChange = {})
 }

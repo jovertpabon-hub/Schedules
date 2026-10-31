@@ -57,9 +57,15 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun SchedulesTheme(
     darkTheme: Boolean = false,
+    themeMode: String = if (darkTheme) "dark" else "light",
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val useDarkTheme = when (themeMode) {
+        "dark" -> true
+        "light" -> false
+        else -> androidx.compose.foundation.isSystemInDarkTheme()
+    }
+    val colorScheme = if (useDarkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
@@ -41,7 +42,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -411,46 +411,59 @@ private fun NowTabHeader(
 ) {
     val formattedDate = remember(currentDate) {
         currentDate.format(
-            DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.US)
-        )
+            DateTimeFormatter.ofPattern("EEEE • MMMM d", Locale.US)
+        ).uppercase(Locale.US)
     }
 
     val currentHour = LocalTime.now().hour
-
     val greeting = when (currentHour) {
         in 5..11 -> "Good morning!"
         in 12..17 -> "Good afternoon!"
         else -> "Good evening!"
     }
 
-    Column(
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = greeting,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = DarkMocha
-        )
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            Icon(
-                imageVector = Icons.Outlined.CalendarToday,
-                contentDescription = null,
-                tint = DarkMocha.copy(alpha = 0.75f),
-                modifier = Modifier.size(16.dp)
-            )
-
+            // Date
             Text(
                 text = formattedDate,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = DarkMocha.copy(alpha = 0.75f)
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = DarkMocha,
+                letterSpacing = 1.sp
             )
+
+            // Main greeting
+            Text(
+                text = greeting,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = DarkMocha
+            )
+        }
+
+        // Coffee icon
+        Surface(
+            modifier = Modifier.size(52.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = SteamedMilk
+        ) {
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Coffee,
+                    contentDescription = "Coffee",
+                    tint = DeepEspresso,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
         }
     }
 }

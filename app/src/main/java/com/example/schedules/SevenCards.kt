@@ -64,6 +64,10 @@ import com.example.schedules.ui.components.SkeletonDashboardLayout
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
 import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
 import com.example.schedules.ui.dialogs.NotificationSettingsDialog
+import com.example.schedules.ui.dialogs.SettingsOverviewDialog
+import com.example.schedules.ui.dialogs.ScheduleSettingsDialog
+import com.example.schedules.ui.dialogs.AppearanceSettingsDialog
+import com.example.schedules.ui.dialogs.AboutSettingsDialog
 import com.example.schedules.ui.dialogs.ScheduleImportPreviewDialog
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import com.example.schedules.ui.viewmodel.UiEvent
@@ -73,7 +77,10 @@ import kotlin.time.Duration.Companion.minutes
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MainScheduleApp() {
+fun MainScheduleApp(
+    themeMode: String,
+    onThemeModeChange: (String) -> Unit
+) {
     val context = LocalContext.current
     val appContext = context.applicationContext
     val repository = (appContext as SchedulesApplication).repository
@@ -104,6 +111,10 @@ fun MainScheduleApp() {
     var editingDay by remember { mutableStateOf("") }
     var showClearAllDialog by remember { mutableStateOf(false) }
     var showNotificationSettings by remember { mutableStateOf(false) }
+    var showSettingsOverview by remember { mutableStateOf(false) }
+    var showScheduleSettings by remember { mutableStateOf(false) }
+    var showAppearanceSettings by remember { mutableStateOf(false) }
+    var showAboutSettings by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -156,7 +167,7 @@ fun MainScheduleApp() {
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             onClick = {
                                 isFabExpanded = false
-                                showNotificationSettings = true
+                                showSettingsOverview = true
                             }
                         ),
                         FabItem(
@@ -248,12 +259,37 @@ fun MainScheduleApp() {
             )
         }
 
-        if (showNotificationSettings) {
-            NotificationSettingsDialog(
-                viewModel = viewModel,
-                onDismiss = { showNotificationSettings = false }
+        if (showSettingsOverview) {
+            SettingsOverviewDialog(
+                onDismiss = { showSettingsOverview = false },
+                onNotifications = {
+                    showSettingsOverview = false
+                    showNotificationSettings = true
+                },
+                onSchedule = {
+                    showSettingsOverview = false
+                    showScheduleSettings = true
+                },
+                onAppearance = {
+                    showSettingsOverview = false
+                    showAppearanceSettings = true
+                },
+                onAbout = {
+                    showSettingsOverview = false
+                    showAboutSettings = true
+                }
             )
         }
+        if (showNotificationSettings) {
+            NotificationSettingsDialog(viewModel = viewModel, onDismiss = { showNotificationSettings = false })
+        }
+        if (showScheduleSettings) {
+            ScheduleSettingsDialog(viewModel = viewModel, onDismiss = { showScheduleSettings = false })
+        }
+        if (showAppearanceSettings) {
+            AppearanceSettingsDialog(themeMode, onThemeModeChange, onDismiss = { showAppearanceSettings = false })
+        }
+        if (showAboutSettings) AboutSettingsDialog(onDismiss = { showAboutSettings = false })
 
         importPreview?.let { preview ->
             ScheduleImportPreviewDialog(
@@ -399,5 +435,5 @@ private fun MainScreenContent(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MainAppPreview() {
-    MainScheduleApp()
+    MainScheduleApp(themeMode = "system", onThemeModeChange = {})
 }

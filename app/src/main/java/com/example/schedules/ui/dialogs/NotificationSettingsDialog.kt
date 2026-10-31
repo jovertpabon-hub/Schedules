@@ -1,44 +1,34 @@
 package com.example.schedules.ui.dialogs
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -59,11 +49,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
-import com.example.schedules.data.notifications.NotificationSettingsData
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
-import java.time.LocalTime
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun NotificationSettingsDialog(
     viewModel: ScheduleViewModel,
@@ -138,28 +125,14 @@ fun NotificationSettingsDialog(
                     // ==========================================
                     // 1. CLASS REMINDERS
                     // ==========================================
-                    SettingsCategoryCard(
-                        title = "Class Reminders",
-                        icon = Icons.Default.Schedule
-                    ) {
+                    SettingsSection(title = "General") {
                         SettingsSwitchRow(
                             title = "Enable Class Reminders",
-                            subtitle = "Master toggle for all class notification alarms",
                             checked = settings.globalEnabled,
-                            onCheckedChange = { viewModel.updateGlobalNotifications(it) }
+                            onCheckedChange = viewModel::updateGlobalNotifications
                         )
 
                         if (settings.globalEnabled) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                            Text(
-                                text = "Default Alert Time Before Class",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
-
                             val intervals = listOf(
                                 0 to "At class start",
                                 5 to "5 min before",
@@ -168,60 +141,33 @@ fun NotificationSettingsDialog(
                                 30 to "30 min before",
                                 60 to "1 hour before"
                             )
-
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                intervals.forEach { (minutes, label) ->
-                                    FilterChip(
-                                        selected = settings.defaultOffsetMinutes == minutes,
-                                        onClick = { viewModel.updateDefaultReminderOffset(minutes) },
-                                        label = { Text(label) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Custom Per-Class Override Button
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { showPerClassDialog = true }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(14.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                            var intervalMenuExpanded by remember { mutableStateOf(false) }
+                            Box {
+                                SettingsActionRow(
+                                    title = "Default Reminder Interval",
+                                    value = intervals.firstOrNull { it.first == settings.defaultOffsetMinutes }?.second ?: "15 min before",
+                                    onClick = { intervalMenuExpanded = true }
+                                )
+                                DropdownMenu(
+                                    expanded = intervalMenuExpanded,
+                                    onDismissRequest = { intervalMenuExpanded = false }
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "Per-Class Specific Reminders",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                        Text(
-                                            text = "Set custom alert offsets for specific classes",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                                    intervals.forEach { (minutes, label) ->
+                                        DropdownMenuItem(
+                                            text = { Text(label) },
+                                            onClick = {
+                                                viewModel.updateDefaultReminderOffset(minutes)
+                                                intervalMenuExpanded = false
+                                            }
                                         )
                                     }
-                                    Icon(
-                                        imageVector = Icons.Default.ChevronRight,
-                                        contentDescription = "Configure",
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
                                 }
                             }
+                            SettingsActionRow(
+                                title = "Custom Per-Class Reminders",
+                                value = "Configure",
+                                onClick = { showPerClassDialog = true }
+                            )
                         }
                     }
 
@@ -234,7 +180,6 @@ fun NotificationSettingsDialog(
                     ) {
                         SettingsSwitchRow(
                             title = "Upcoming Classes",
-                            subtitle = "Remind users before scheduled classes",
                             checked = settings.upcomingClassesEnabled,
                             enabled = settings.globalEnabled,
                             onCheckedChange = { viewModel.updateUpcomingClassesEnabled(it) }
@@ -244,7 +189,6 @@ fun NotificationSettingsDialog(
 
                         SettingsSwitchRow(
                             title = "Class Starting",
-                            subtitle = "Notify when a class is about to begin",
                             checked = settings.classStartingEnabled,
                             enabled = settings.globalEnabled,
                             onCheckedChange = { viewModel.updateClassStartingEnabled(it) }
@@ -254,7 +198,6 @@ fun NotificationSettingsDialog(
 
                         SettingsSwitchRow(
                             title = "Schedule Changes",
-                            subtitle = "Notify when class schedule is added, updated, or removed",
                             checked = settings.scheduleChangesEnabled,
                             enabled = settings.globalEnabled,
                             onCheckedChange = { viewModel.updateScheduleChangesEnabled(it) }
@@ -321,7 +264,6 @@ fun NotificationSettingsDialog(
                     ) {
                         SettingsSwitchRow(
                             title = "Enable Quiet Hours",
-                            subtitle = "Silence optional alerts and deliver class reminders silently",
                             checked = settings.quietHoursEnabled,
                             onCheckedChange = { viewModel.updateQuietHoursEnabled(it) }
                         )
@@ -378,11 +320,10 @@ fun NotificationSettingsDialog(
                     // ==========================================
                     SettingsCategoryCard(
                         title = "Notification Behavior",
-                        icon = Icons.Default.VolumeUp
+                        icon = Icons.AutoMirrored.Filled.VolumeUp
                     ) {
                         SettingsSwitchRow(
                             title = "Sound",
-                            subtitle = "Play sound when alert triggers",
                             checked = settings.soundEnabled,
                             onCheckedChange = { viewModel.updateSoundEnabled(it) }
                         )
@@ -391,7 +332,6 @@ fun NotificationSettingsDialog(
 
                         SettingsSwitchRow(
                             title = "Vibration",
-                            subtitle = "Vibrate phone on alert trigger",
                             checked = settings.vibrationEnabled,
                             onCheckedChange = { viewModel.updateVibrationEnabled(it) }
                         )
@@ -400,7 +340,6 @@ fun NotificationSettingsDialog(
 
                         SettingsSwitchRow(
                             title = "Display Class Details",
-                            subtitle = "Show course code, title, and room in notifications",
                             checked = settings.showClassDetails,
                             onCheckedChange = { viewModel.updateShowClassDetails(it) }
                         )
@@ -409,7 +348,6 @@ fun NotificationSettingsDialog(
 
                         SettingsSwitchRow(
                             title = "Lock Screen Privacy",
-                            subtitle = "Hide class details on lock screen notifications",
                             checked = settings.hideLockScreenDetails,
                             onCheckedChange = { viewModel.updateHideLockScreenDetails(it) }
                         )
@@ -465,7 +403,6 @@ fun NotificationSettingsDialog(
 
                         SettingsSwitchRow(
                             title = "Weekend Reminders",
-                            subtitle = "Enable class reminders on Saturdays and Sundays",
                             checked = settings.weekendRemindersEnabled,
                             onCheckedChange = { viewModel.updateWeekendRemindersEnabled(it) }
                         )
@@ -584,31 +521,59 @@ private fun SettingsCategoryCard(
 }
 
 @Composable
+private fun SettingsSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        content()
+    }
+}
+
+@Composable
+private fun SettingsActionRow(
+    title: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
+@Composable
 private fun SettingsSwitchRow(
     title: String,
-    subtitle: String,
     checked: Boolean,
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
-        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            modifier = Modifier.weight(1f)
+        )
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
