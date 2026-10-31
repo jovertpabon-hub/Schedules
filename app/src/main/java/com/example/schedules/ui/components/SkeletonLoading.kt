@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -121,19 +122,29 @@ fun SkeletonBox(
 
 @Composable
 fun SkeletonNowHeader() {
-    Column(
-        modifier = Modifier.fillMaxWidth()
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        SkeletonBox(
-            width = 160.dp,
-            height = 24.dp
-        )
+        Column {
+            SkeletonBox(
+                width = 170.dp,
+                height = 20.dp
+            )
 
-        Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            SkeletonBox(
+                width = 140.dp,
+                height = 22.dp
+            )
+        }
 
         SkeletonBox(
-            width = 130.dp,
-            height = 14.dp
+            width = 50.dp,
+            height = 50.dp,
+            shape = RoundedCornerShape(6.dp)
         )
     }
 }
@@ -384,80 +395,64 @@ fun SkeletonClassCard(
         ),
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // LEFT ACCENT STRIP
-            Box(
-                modifier = Modifier
-                    .width(5.dp)
-                    .fillMaxHeight()
-                    .background(GoldenCrema)
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            // ROW 1: COURSE CODE + NAME + MENU
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                // ROW 1: COURSE CODE + NAME + MENU
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SkeletonBox(
-                            width = 60.dp,
-                            height = 22.dp,
-                            shape = RoundedCornerShape(6.dp)
-                        )
-
-                        SkeletonBox(
-                            modifier = Modifier.weight(1f),
-                            height = 18.dp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    SkeletonBox(
-                        width = 20.dp,
-                        height = 20.dp,
-                        shape = CircleShape
-                    )
-                }
-
-                // ROW 2: TIME INFO
-                SkeletonBox(
-                    width = 140.dp,
-                    height = 14.dp
-                )
-
-                // ROW 3: ROOM LOCATION + STATUS PILL
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     SkeletonBox(
                         width = 80.dp,
-                        height = 14.dp
+                        height = 20.dp,
+                        shape = RoundedCornerShape(4.dp)
                     )
 
                     SkeletonBox(
-                        width = 64.dp,
-                        height = 18.dp,
-                        shape = RoundedCornerShape(50.dp)
+                        modifier = Modifier.fillMaxWidth(0.7f),
+                        height = 16.dp
                     )
                 }
+
+                SkeletonBox(
+                    width = 24.dp,
+                    height = 24.dp,
+                    shape = CircleShape
+                )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 0.5.dp,
+                color = DarkMocha.copy(alpha = 0.12f)
+            )
+
+            // ROW 2: TIME & ROOM
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SkeletonBox(
+                    width = 130.dp,
+                    height = 14.dp
+                )
+
+                SkeletonBox(
+                    width = 70.dp,
+                    height = 14.dp
+                )
             }
         }
     }

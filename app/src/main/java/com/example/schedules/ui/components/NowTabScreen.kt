@@ -10,29 +10,25 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -41,7 +37,6 @@ import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayCircleFilled
-import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,11 +61,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -207,7 +203,8 @@ fun NowTabScreen(
     selectedDay: String,
     onSelectedDayChanged: (String) -> Unit,
     onEditClass: (CourseClass, String) -> Unit = { _, _ -> },
-    onDeleteClass: (CourseClass) -> Unit = {}
+    onDeleteClass: (CourseClass) -> Unit = {},
+    onAboutClick: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -244,6 +241,13 @@ fun NowTabScreen(
             // Header sitting directly on AppBackground
             NowTabHeader(
                 currentDate = currentDate,
+                onAboutClick = onAboutClick
+            )
+            HorizontalDivider(
+                modifier = Modifier
+                    .height(1.5.dp)
+                    .fillMaxWidth(),
+                color = DarkMocha.copy(alpha= 0.25f)
             )
 
             // Redesigned Weekly Calendar Strip inside a WarmCoffeeCream surface
@@ -293,12 +297,17 @@ fun NowTabScreen(
                             dayData = currentDayData
                         )
                     }
-
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .height(1.5.dp)
+                                .fillMaxWidth(),
+                            color = DarkMocha.copy(alpha= 0.25f)
+                        )
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -306,44 +315,43 @@ fun NowTabScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = if (showVacantTimes) {
-                                    "${currentDay.uppercase(Locale.US)} FREE TIME"
-                                } else {
-                                    "${currentDay.uppercase(Locale.US)} CLASSES"
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = DeepEspresso,
-                                letterSpacing = 0.6.sp
-                            )
-
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = if (showVacantTimes) "Free time" else "$currentDay classes",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DeepEspresso
+                                )
+                                Text(
+                                    text = if (showVacantTimes) "${currentVacantBlocks.size} available gaps" else "${currentDayData.classes.size} scheduled",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = DarkMocha.copy(alpha = 0.72f)
+                                )
+                            }
                             Surface(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    showVacantTimes = !showVacantTimes
-                                },
-                                shape = RoundedCornerShape(50.dp),
-                                color = if (showVacantTimes) DeepEspresso else SteamedMilk,
-                                border = BorderStroke(1.dp, DarkMocha.copy(alpha = 0.2f))
+                                shape = RoundedCornerShape(14.dp),
+                                color = WarmCoffeeCream.copy(alpha = 0.72f)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.SwapVert,
-                                        contentDescription = "Toggle View",
-                                        tint = if (showVacantTimes) SteamedMilk else DeepEspresso,
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                    Text(
-                                        text = if (showVacantTimes) "Show Classes" else "Free Time",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (showVacantTimes) SteamedMilk else DeepEspresso
-                                    )
+                                Row(modifier = Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    listOf(false to "Classes", true to "Free time").forEach { (freeTime, label) ->
+                                        val selected = showVacantTimes == freeTime
+                                        Surface(
+                                            onClick = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                showVacantTimes = freeTime
+                                            },
+                                            shape = RoundedCornerShape(11.dp),
+                                            color = if (selected) SteamedMilk else Color.Transparent
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (selected) DeepEspresso else DarkMocha.copy(alpha = 0.78f)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -357,8 +365,8 @@ fun NowTabScreen(
                                 )
                             } else {
                                 Column(
-                                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     currentVacantBlocks.forEach { block ->
                                         VacantTimeBlockCard(block = block)
@@ -374,8 +382,8 @@ fun NowTabScreen(
                                 )
                             } else {
                                 Column(
-                                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     currentDayData.classes.forEach { course ->
                                         NowTabClassDetails(
@@ -390,15 +398,6 @@ fun NowTabScreen(
                             }
                         }
                     }
-
-                    if (showVacantTimes) {
-                        DailyOverviewDashboard(
-                            dayData = currentDayData,
-                            vacantBlocks = currentVacantBlocks,
-                            currentTime = currentTime,
-                            isToday = isTodayCurrent
-                        )
-                    }
                 }
             }
         }
@@ -407,8 +406,10 @@ fun NowTabScreen(
 
 @Composable
 private fun NowTabHeader(
-    currentDate: LocalDate
+    currentDate: LocalDate,
+    onAboutClick: () -> Unit = {}
 ) {
+    val haptic = LocalHapticFeedback.current
     val formattedDate = remember(currentDate) {
         currentDate.format(
             DateTimeFormatter.ofPattern("EEEE • MMMM d", Locale.US)
@@ -431,13 +432,25 @@ private fun NowTabHeader(
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             // Date
-            Text(
-                text = formattedDate,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = DarkMocha,
-                letterSpacing = 1.sp
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = DeepEspresso,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = formattedDate,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight
+                        .Bold,
+                    color = DarkMocha,
+                    letterSpacing = 1.sp
+                )
+            }
 
             // Main greeting
             Text(
@@ -450,16 +463,21 @@ private fun NowTabHeader(
 
         // Coffee icon
         Surface(
-            modifier = Modifier.size(52.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = SteamedMilk
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onAboutClick()
+            },
+            modifier = Modifier.size(54.dp),
+            shape = CircleShape,
+            color = SteamedMilk,
+            shadowElevation = 1.dp
         ) {
             Box(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Coffee,
-                    contentDescription = "Coffee",
+                    contentDescription = "About",
                     tint = DeepEspresso,
                     modifier = Modifier.size(26.dp)
                 )
@@ -479,7 +497,6 @@ private fun WeeklyCalendarStrip(
     val baseMonday = remember(currentDate) {
         currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     }
-
     Card(
         colors = CardDefaults.cardColors(containerColor = WarmCoffeeCream),
         shape = RoundedCornerShape(20.dp),
@@ -492,22 +509,36 @@ private fun WeeklyCalendarStrip(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header with title "This week" and calendar icon
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Event,
+                        contentDescription = null,
+                        tint = DeepEspresso,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    Text(
+                        text = "This week",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = DeepEspresso
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
                 Icon(
-                    imageVector = Icons.Default.Event,
-                    contentDescription = null,
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "View week",
                     tint = DeepEspresso,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = "This week",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = DeepEspresso
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -551,6 +582,8 @@ private fun WeeklyCalendarStrip(
                                 text = dayName.take(3).uppercase(Locale.US),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                fontStyle = FontStyle.Italic,
+                                textDecoration = TextDecoration.Underline,
                                 color = weekdayColor,
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center
@@ -607,11 +640,6 @@ private fun DaySummaryHeroCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                1.5.dp,
-                GoldenCrema.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(20.dp)
-            )
     ) {
         Column(
             modifier = Modifier
@@ -619,25 +647,52 @@ private fun DaySummaryHeroCard(
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = "${dayData.dayName.uppercase(Locale.US)} OVERVIEW",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = SteamedMilk,
-                letterSpacing = 0.8.sp
-            )
-
-            if (dayData.classes.isNotEmpty()) {
-                val firstStart = dayData.classes.minOf { it.startTime }.format(ScheduleConstants.TimeFormatter)
-                val lastEnd = dayData.classes.maxOf { it.endTime }.format(ScheduleConstants.TimeFormatter)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = SteamedMilk,
+                    modifier = Modifier.size(16.dp)
+                )
 
                 Text(
-                    text = "$firstStart - $lastEnd",
-                    textAlign = TextAlign.Left,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Black,
-                    color = GoldenCrema
+                    text = "${dayData.dayName.uppercase(Locale.US)} OVERVIEW",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = SteamedMilk,
+                    letterSpacing = 0.8.sp
                 )
+            }
+
+            if (dayData.classes.isNotEmpty()) {
+                val firstStart = dayData.classes.minOf { it.startTime }
+                    .format(ScheduleConstants.TimeFormatter)
+
+                val lastEnd = dayData.classes.maxOf { it.endTime }
+                    .format(ScheduleConstants.TimeFormatter)
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Class time",
+                        tint = GoldenCrema,
+                        modifier = Modifier.size(25.dp)
+                    )
+
+                    Text(
+                        text = "$firstStart - $lastEnd",
+                        textAlign = TextAlign.Left,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        color = GoldenCrema
+                    )
+                }
             } else {
                 Text(
                     text = "No Classes Scheduled ☕",
@@ -733,39 +788,49 @@ private fun CountdownTimerView(
         }
 
         if (status.status == ClassStatus.NONE || status.courseClass == null) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp),
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Surface(
-                    color = GoldenCrema.copy(alpha = 0.2f),
+                    color = GoldenCrema.copy(alpha = 0.15f),
                     shape = CircleShape,
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.FreeBreakfast,
                             contentDescription = null,
                             tint = GoldenCrema,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
                     Text(
-                        text = if (status.hasClassesToday) "All Classes Finished" else "No Classes Today",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        text = if (status.hasClassesToday)
+                            "All Classes Finished"
+                        else
+                            "No Classes Today",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = SteamedMilk
                     )
+
                     Text(
-                        text = if (status.hasClassesToday) "All scheduled lectures are completed. Enjoy your time! ☕" else "No lectures scheduled for today. Enjoy your free day! ☕",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = SteamedMilk.copy(alpha = 0.85f)
+                        text = if (status.hasClassesToday)
+                            "You're done for today. Enjoy your free time."
+                        else
+                            "Your schedule is clear today.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SteamedMilk.copy(alpha = 0.75f)
                     )
                 }
             }
@@ -892,185 +957,6 @@ private fun CountdownTimerView(
 }
 
 @Composable
-private fun DailyOverviewDashboard(
-    dayData: DayScheduleData,
-    vacantBlocks: List<VacantTimeBlock>,
-    currentTime: LocalTime,
-    isToday: Boolean
-) {
-    val totalClassTime = remember(dayData.classes) { calculateTotalClassHours(dayData.classes) }
-    val totalFreeTime = remember(vacantBlocks) { calculateTotalFreeTime(vacantBlocks) }
-
-    val cardBg = SteamedMilk
-    val titleColor = DeepEspresso
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        shape = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "DAILY SUMMARY",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = titleColor,
-                letterSpacing = 0.6.sp
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                StatisticItem(
-                    label = "Classes",
-                    value = "${dayData.classes.size}",
-                    icon = Icons.AutoMirrored.Filled.EventNote,
-                    modifier = Modifier.weight(1f)
-                )
-                StatisticItem(
-                    label = "Class Time",
-                    value = totalClassTime,
-                    icon = Icons.Default.AccessTime,
-                    modifier = Modifier.weight(1f)
-                )
-                StatisticItem(
-                    label = "Free Time",
-                    value = totalFreeTime,
-                    icon = Icons.Default.FreeBreakfast,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            if (dayData.classes.isNotEmpty()) {
-                HorizontalDivider(
-                    thickness = 0.5.dp,
-                    color = DarkMocha.copy(alpha = 0.12f)
-                )
-
-                val sortedClasses = dayData.classes.sortedBy { it.startTime }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    sortedClasses.forEachIndexed { index, course ->
-                        val isCompleted = isToday && !currentTime.isBefore(course.endTime)
-                        val isOngoing = isToday && !currentTime.isBefore(course.startTime) && currentTime.isBefore(course.endTime)
-                        
-                        val indicatorColor = when {
-                            isToday && isOngoing -> DeepEspresso
-                            isToday && isCompleted -> WarmRoast.copy(alpha = 0.5f)
-                            else -> DarkMocha.copy(alpha = 0.35f)
-                        }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(3.dp),
-                                modifier = Modifier.widthIn(min = 60.dp)
-                            ) {
-                                Surface(
-                                    color = indicatorColor,
-                                    shape = CircleShape,
-                                    modifier = Modifier.size(10.dp)
-                                ) {}
-                                Text(
-                                    text = course.courseCode,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DarkMocha,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = course.startTime.format(ScheduleConstants.TimeFormatter),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = DarkMocha.copy(alpha = 0.65f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            if (index < sortedClasses.size - 1) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(20.dp)
-                                        .height(1.5.dp)
-                                        .background(DarkMocha.copy(alpha = 0.15f))
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatisticItem(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        color = WarmCoffeeCream,
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(0.5.dp, DarkMocha.copy(alpha = 0.15f)),
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.padding(10.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = DeepEspresso,
-                    modifier = Modifier.size(13.dp)
-                )
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkMocha.copy(alpha = 0.75f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = DarkMocha,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
 private fun VacantTimeBlockCard(
     block: VacantTimeBlock
 ) {
@@ -1082,18 +968,17 @@ private fun VacantTimeBlockCard(
         else -> "$mins mins free"
     }
 
-    val cardBg = SteamedMilk
-
     Card(
-        colors = CardDefaults.cardColors(containerColor = cardBg),
+        colors = CardDefaults.cardColors(containerColor = SteamedMilk.copy(alpha = 0.5f)),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1103,41 +988,41 @@ private fun VacantTimeBlockCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Surface(
-                    color = GoldenCrema,
+                    color = GoldenCrema.copy(alpha = 0.3f),
                     shape = CircleShape,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.FreeBreakfast,
                             contentDescription = "Free time",
                             tint = DeepEspresso,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = "Gap duration",
-                        tint = DarkMocha,
-                        modifier = Modifier.size(13.dp)
+                        tint = DarkMocha.copy(alpha = 0.7f),
+                        modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = "${block.startTime.format(ScheduleConstants.TimeFormatter)} - ${block.endTime.format(ScheduleConstants.TimeFormatter)}",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = DarkMocha
                     )
                 }
             }
 
             Surface(
-                color = DeepEspresso,
+                color = DeepEspresso.copy(alpha = 0.85f),
                 shape = RoundedCornerShape(50.dp)
             ) {
                 Text(
@@ -1167,13 +1052,13 @@ private fun NowTabClassDetails(
     val isOngoing = isToday && !currentTime.isBefore(course.startTime) && currentTime.isBefore(course.endTime)
 
     val cardTextColor = when {
-        isCompleted -> DarkMocha.copy(alpha = 0.6f)
+        isCompleted -> DarkMocha.copy(alpha = 0.55f)
         else -> DarkMocha
     }
-    val iconTint = DarkMocha.copy(alpha = 0.7f)
+    val iconTint = DarkMocha.copy(alpha = 0.65f)
 
     val cardBg = when {
-        isCompleted -> SteamedMilk.copy(alpha = 0.75f)
+        isCompleted -> SteamedMilk.copy(alpha = 0.7f)
         else -> SteamedMilk
     }
 
@@ -1204,110 +1089,143 @@ private fun NowTabClassDetails(
     Card(
         colors = CardDefaults.cardColors(containerColor = cardBg),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isOngoing) 3.dp else 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isOngoing) 1.dp else 0.dp),
+        border = BorderStroke(
+            width = 0.75.dp,
+            color = when {
+                isOngoing -> GoldenCrema.copy(alpha = 0.8f)
+                isCompleted -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }
+        ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(5.dp)
-                    .background(
-                        when {
-                            isOngoing -> DeepEspresso
-                            isCompleted -> WarmRoast.copy(alpha = 0.4f)
-                            else -> GoldenCrema
-                        }
-                    )
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            // Row 1: Course Code & Name (Primary & Secondary) + Menu options
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Surface(
-                            color = if (isOngoing) DeepEspresso else WarmRoast,
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = course.courseCode,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = SteamedMilk,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
-                        }
-
                         Text(
-                            text = course.courseName,
+                            text = course.courseCode,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = cardTextColor,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            fontWeight = FontWeight.SemiBold,
+                            color = DeepEspresso
+                        )
+
+                        if (isToday && isOngoing) {
+                            Surface(
+                                color = DeepEspresso,
+                                shape = RoundedCornerShape(50.dp)
+                            ) {
+                                Text(
+                                    text = "ONGOING",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = SteamedMilk,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                )
+                            }
+                        } else if (isToday && isCompleted) {
+                            Surface(
+                                color = DarkMocha.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(50.dp)
+                            ) {
+                                Text(
+                                    text = "DONE",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DarkMocha.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = course.courseName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = cardTextColor,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Box {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More Options",
+                            tint = iconTint,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
-                    Box {
-                        IconButton(
-                            onClick = { showMenu = true }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "More Options",
-                                tint = iconTint,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(SteamedMilk)
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Edit Class", fontWeight = FontWeight.Bold, color = DarkMocha) },
-                                onClick = {
-                                    showMenu = false
-                                    onEdit()
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Edit, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(16.dp))
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete Class", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
-                                onClick = {
-                                    showMenu = false
-                                    showDeleteConfirmDialog = true
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                }
-                            )
-                        }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(SteamedMilk)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit Class", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                            onClick = {
+                                showMenu = false
+                                onEdit()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(16.dp))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete Class", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showMenu = false
+                                showDeleteConfirmDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                            }
+                        )
                     }
                 }
+            }
 
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 0.5.dp,
+                color = DarkMocha.copy(alpha = 0.12f)
+            )
+
+            // Row 2: Schedule & Room (Schedule Info & Additional Info)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Time Range
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
@@ -1323,62 +1241,26 @@ private fun NowTabClassDetails(
                     )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (course.room.isNotBlank()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.weight(1f, fill = false)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Room location",
-                                tint = iconTint,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = course.room,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = cardTextColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-
-                    if (isToday && isOngoing) {
-                        Surface(
-                            color = DeepEspresso,
-                            shape = RoundedCornerShape(50.dp)
-                        ) {
-                            Text(
-                                text = "ONGOING",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = SteamedMilk,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    } else if (isToday && isCompleted) {
-                        Surface(
-                            color = DarkMocha.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(50.dp)
-                        ) {
-                            Text(
-                                text = "DONE",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkMocha.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
+                // Room Location
+                if (course.room.isNotBlank()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Room location",
+                            tint = iconTint,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = course.room,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = cardTextColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }

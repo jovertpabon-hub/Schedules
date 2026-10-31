@@ -214,7 +214,8 @@ fun MainScheduleApp(
                     editingClass = course
                     editingDay = day
                     showDialog = true
-                }
+                },
+                onAboutClick = { showAboutSettings = true }
             )
 
             AnimatedVisibility(
@@ -389,7 +390,8 @@ private fun MainScreenContent(
     viewModel: ScheduleViewModel,
     selectedDay: String,
     onSelectedDayChanged: (String) -> Unit,
-    onEditClass: (CourseClass, String) -> Unit
+    onEditClass: (CourseClass, String) -> Unit,
+    onAboutClick: () -> Unit = {}
 ) {
     val currentStatus by viewModel.liveStatus.collectAsState()
     val weekSchedule by viewModel.weekSchedule.collectAsState()
@@ -425,7 +427,8 @@ private fun MainScreenContent(
                         )
                         viewModel.deleteClass(entity)
                     }
-                }
+                },
+                onAboutClick = onAboutClick
             )
         }
     }
