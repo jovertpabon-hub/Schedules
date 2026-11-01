@@ -72,4 +72,27 @@ interface ScheduleDao {
      */
     @Query("DELETE FROM schedules")
     suspend fun clearAll()
+
+    // --- Schedule Notes Operations ---
+
+    @Query("SELECT * FROM schedule_notes")
+    fun getAllNotes(): Flow<List<ScheduleNoteEntity>>
+
+    @Query("SELECT * FROM schedule_notes WHERE scheduleId = :scheduleId AND date = :date LIMIT 1")
+    fun getNoteForClassAndDate(scheduleId: Long, date: java.time.LocalDate): Flow<ScheduleNoteEntity?>
+
+    @Query("SELECT * FROM schedule_notes WHERE date = :date")
+    fun getNotesForDate(date: java.time.LocalDate): Flow<List<ScheduleNoteEntity>>
+
+    @Query("SELECT * FROM schedule_notes WHERE date = :date")
+    suspend fun getNotesForDateDirect(date: java.time.LocalDate): List<ScheduleNoteEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveNote(note: ScheduleNoteEntity)
+
+    @Query("DELETE FROM schedule_notes WHERE scheduleId = :scheduleId AND date = :date")
+    suspend fun deleteNote(scheduleId: Long, date: java.time.LocalDate)
+
+    @Query("DELETE FROM schedule_notes WHERE scheduleId = :scheduleId")
+    suspend fun deleteNotesForSchedule(scheduleId: Long)
 }

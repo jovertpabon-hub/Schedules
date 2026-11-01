@@ -27,4 +27,16 @@ interface IScheduleRepository {
      * Returns a Result: Success if saved, or Failure with an error message.
      */
     suspend fun validateAndSaveSchedule(schedule: ScheduleEntity): Result<Unit>
+
+    /** Gets live stream of all temporary notes */
+    fun getAllNotes(): Flow<List<com.example.schedules.data.local.ScheduleNoteEntity>>
+
+    /** Gets live stream of temporary notes for a specific date */
+    fun getNotesForDate(date: java.time.LocalDate): Flow<List<com.example.schedules.data.local.ScheduleNoteEntity>>
+
+    /** Saves or updates a temporary note for a class occurrence on a specific date */
+    suspend fun saveNoteForScheduleAndDate(scheduleId: Long, date: java.time.LocalDate, noteText: String)
+
+    /** Deletes a temporary note for a class occurrence on a specific date */
+    suspend fun deleteNoteForScheduleAndDate(scheduleId: Long, date: java.time.LocalDate)
 }

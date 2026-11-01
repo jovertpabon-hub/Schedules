@@ -101,10 +101,29 @@ class ScheduleViewModel(
     // Temporary storage to allow "Undo" after deleting a class
     private var recentlyDeletedClass: ScheduleEntity? = null
 
+    private val _selectedDate = MutableStateFlow(java.time.LocalDate.now())
+    val selectedDate: StateFlow<java.time.LocalDate> = _selectedDate.asStateFlow()
+
+    private val _selectedDateNotes = MutableStateFlow<Map<Long, String>>(emptyMap())
+    val selectedDateNotes: StateFlow<Map<Long, String>> = _selectedDateNotes.asStateFlow()
+
+    private val _notesDates = MutableStateFlow<Set<java.time.LocalDate>>(emptySet())
+    val notesDates: StateFlow<Set<java.time.LocalDate>> = _notesDates.asStateFlow()
+
+    fun setSelectedDate(date: java.time.LocalDate) {
+        _selectedDate.value = date
+        viewModelScope.launch {
+            repository.getNotesForDate(date).collectLatest { notes ->
+                _selectedDateNotes.value = notes.associate { it.scheduleId to it.noteText }
+            }
+        }
+    }
+
     init {
         // Start these as soon as the ViewModel is created
         monitorDatabaseChanges()
         startLiveUpdatesTimer()
+        setSelectedDate(java.time.LocalDate.now())
     }
 
     /**
@@ -129,6 +148,11 @@ class ScheduleViewModel(
                 
                 _weekSchedule.value = WeekSchedule(finalWeekData)
                 _isLoading.value = false
+            }
+        }
+        viewModelScope.launch {
+            repository.getAllNotes().collect { notes ->
+                _notesDates.value = notes.map { it.date }.toSet()
             }
         }
     }
@@ -288,6 +312,20 @@ class ScheduleViewModel(
         viewModelScope.launch {
             repository.clearAllSchedules()
             _uiEvents.emit(UiEvent.ShowMessage("All schedules cleared"))
+        }
+    }
+
+    fun saveNote(scheduleId: Long, date: java.time.LocalDate, noteText: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.saveNoteForScheduleAndDate(scheduleId, date, noteText)
+            _uiEvents.emit(UiEvent.ShowMessage("Temporary note saved"))
+        }
+    }
+
+    fun deleteNote(scheduleId: Long, date: java.time.LocalDate) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteNoteForScheduleAndDate(scheduleId, date)
+            _uiEvents.emit(UiEvent.ShowMessage("Temporary note removed"))
         }
     }
 

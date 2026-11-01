@@ -6,8 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [ScheduleEntity::class], version = 1, exportSchema = false)
-@TypeConverters(LocalTimeConverter::class)
+@Database(entities = [ScheduleEntity::class, ScheduleNoteEntity::class], version = 2, exportSchema = false)
+@TypeConverters(LocalTimeConverter::class, LocalDateConverter::class)
 abstract class ScheduleDatabase : RoomDatabase() {
     abstract fun scheduleDao(): ScheduleDao
 
@@ -21,7 +21,7 @@ abstract class ScheduleDatabase : RoomDatabase() {
                     context.applicationContext,
                     ScheduleDatabase::class.java,
                     "schedule_database",
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

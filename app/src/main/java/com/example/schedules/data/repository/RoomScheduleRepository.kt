@@ -40,6 +40,7 @@ class RoomScheduleRepository(
 
     override suspend fun deleteSchedule(schedule: ScheduleEntity) {
         scheduleDao.removeSchedule(schedule)
+        scheduleDao.deleteNotesForSchedule(schedule.id)
         ScheduleNotificationHelper.cancelClassReminder(appContext, schedule)
         ScheduleNotificationHelper.showScheduleChangeNotification(
             appContext,
@@ -53,6 +54,7 @@ class RoomScheduleRepository(
         val allSchedules = scheduleDao.fetchAllSchedulesDirect()
         allSchedules.forEach { schedule ->
             ScheduleNotificationHelper.cancelClassReminder(appContext, schedule)
+            scheduleDao.deleteNotesForSchedule(schedule.id)
         }
         scheduleDao.clearAll()
         ScheduleNotificationHelper.showScheduleChangeNotification(
@@ -124,5 +126,38 @@ class RoomScheduleRepository(
             appContext,
             schedule
         )
+    }
+
+    // --- Temporary Notes Operations ---
+
+    override fun getAllNotes(): Flow<List<com.example.schedules.data.local.ScheduleNoteEntity>> =
+        scheduleDao.getAllNotes()
+
+    override fun getNotesForDate(date: java.time.LocalDate): Flow<List<com.example.schedules.data.local.ScheduleNoteEntity>> =
+        scheduleDao.getNotesForDate(date)
+
+    override suspend fun saveNoteForScheduleAndDate(scheduleId: Long, date: java.time.LocalDate, noteText: String) {
+        if (noteText.isBlank()) {
+            scheduleDao.deleteNote(scheduleId, date)
+        } else {
+            val entity = com.example.schedules.data.local.ScheduleNoteEntity(scheduleId = scheduleId, date = date, noteText = noteText)
+            scheduleDao.saveNote(entity)
+        }
+        ScheduleNotificationHelper.showScheduleChangeNotification(
+            appContext,
+            "☕ Temporary Note Updated",
+            "Updated note for class occurrence on $date."
+        )
+        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
+    }
+
+    override suspend fun deleteNoteForScheduleAndDate(scheduleId: Long, date: java.time.LocalDate) {
+        scheduleDao.deleteNote(scheduleId, date)
+        ScheduleNotificationHelper.showScheduleChangeNotification(
+            appContext,
+            "☕ Temporary Note Removed",
+            "Removed note for class occurrence on $date."
+        )
+        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
 }

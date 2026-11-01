@@ -15,3 +15,14 @@ data class ScheduleEntity(
     val endTime: LocalTime,
     val room: String
 )
+
+@Entity(
+    tableName = "schedule_notes",
+    primaryKeys = ["scheduleId", "date"]
+)
+data class ScheduleNoteEntity(
+    val scheduleId: Long,
+    val date: java.time.LocalDate,
+    val noteText: String,
+    val updatedAt: Long = System.currentTimeMillis()
+)

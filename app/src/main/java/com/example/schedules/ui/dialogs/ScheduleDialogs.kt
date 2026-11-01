@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -31,6 +33,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.schedules.data.models.CourseClass
@@ -305,6 +308,89 @@ fun TimePickerDialog(
                     TextButton(onClick = { 
                         onConfirm(LocalTime.of(timePickerState.hour, timePickerState.minute)) 
                     }) { Text("OK") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ClassNoteDialog(
+    course: CourseClass,
+    selectedDate: java.time.LocalDate,
+    existingNote: String?,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var noteText by remember { mutableStateOf(existingNote ?: "") }
+    val formattedDate = remember(selectedDate) {
+        selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy", java.util.Locale.US))
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 8.dp,
+            color = com.example.schedules.ui.theme.SteamedMilk
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Temporary Note",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = com.example.schedules.ui.theme.DarkMocha
+                )
+                Text(
+                    text = "${course.courseCode} - ${course.courseName}\nApplies only to date: $formattedDate",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = com.example.schedules.ui.theme.DarkMocha.copy(alpha = 0.8f)
+                )
+
+                OutlinedTextField(
+                    value = noteText,
+                    onValueChange = { noteText = it },
+                    label = { Text("Note (e.g. Bring assignment, Room change)") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    maxLines = 5
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    if (!existingNote.isNullOrBlank()) {
+                        TextButton(
+                            onClick = {
+                                onDelete()
+                                onDismiss()
+                            }
+                        ) {
+                            Text("Delete Note", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = onDismiss) {
+                            Text("Cancel", color = com.example.schedules.ui.theme.DarkMocha)
+                        }
+                        Button(
+                            onClick = {
+                                onSave(noteText.trim())
+                                onDismiss()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = com.example.schedules.ui.theme.DarkMocha)
+                        ) {
+                            Text("Save", color = com.example.schedules.ui.theme.SteamedMilk, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         }

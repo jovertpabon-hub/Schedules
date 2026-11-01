@@ -21,3 +21,21 @@ object LocalTimeConverter {
         return time?.format(formatter)
     }
 }
+
+object LocalDateConverter {
+    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
+    @TypeConverter
+    @JvmStatic
+    fun fromLocalDateString(value: String?): java.time.LocalDate? {
+        return value?.let {
+            java.time.LocalDate.parse(it, dateFormatter)
+        }
+    }
+
+    @TypeConverter
+    @JvmStatic
+    fun toLocalDateString(date: java.time.LocalDate?): String? {
+        return date?.format(dateFormatter)
+    }
+}

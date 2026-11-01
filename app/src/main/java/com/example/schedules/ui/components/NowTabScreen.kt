@@ -1,5 +1,6 @@
 package com.example.schedules.ui.components
 
+import com.example.schedules.ui.dialogs.ClassNoteDialog
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -14,11 +15,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +43,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -213,6 +217,8 @@ fun NowTabScreen(
     selectedDate: LocalDate,
     weekStart: LocalDate,
     selectedDay: String,
+    notesMap: Map<Long, String> = emptyMap(),
+    notesDates: Set<LocalDate> = emptySet(),
     onDateSelected: (LocalDate, String) -> Unit,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
@@ -222,7 +228,9 @@ fun NowTabScreen(
     onAddClass: () -> Unit = {},
     onImportPdf: () -> Unit = {},
     onClearAll: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onSaveNote: (Long, String) -> Unit = { _, _ -> },
+    onDeleteNote: (Long) -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -241,6 +249,7 @@ fun NowTabScreen(
     if (showCalendarDialog) {
         CoffeeCalendarDialog(
             initialDate = selectedDate,
+            notesDates = notesDates,
             onDismiss = { showCalendarDialog = false },
             onDateSelected = { date ->
                 val dayName = ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(date.dayOfWeek.name, ignoreCase = true) } ?: "Monday"
@@ -281,6 +290,7 @@ fun NowTabScreen(
                 weekStart = weekStart,
                 selectedDate = selectedDate,
                 weekSchedule = weekSchedule,
+                notesDates = notesDates,
                 onDateSelected = { date, dayName ->
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onDateSelected(date, dayName)
@@ -427,12 +437,26 @@ fun NowTabScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     currentDayData.classes.forEach { course ->
+                                        val courseId = course.id
+                                        val note = courseId?.let { notesMap[it] }
                                         NowTabClassDetails(
                                             course = course,
                                             isToday = isTodayCurrent,
                                             currentTime = currentTime,
+                                            selectedDate = selectedDate,
+                                            note = note,
                                             onEdit = { onEditClass(course, currentDayData.dayName) },
-                                            onDelete = { onDeleteClass(course) }
+                                            onDelete = { onDeleteClass(course) },
+                                            onSaveNote = { text ->
+                                                if (course.id != null) {
+                                                    onSaveNote(course.id, text)
+                                                }
+                                            },
+                                            onDeleteNote = {
+                                                if (course.id != null) {
+                                                    onDeleteNote(course.id)
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -591,52 +615,169 @@ private fun NowTabHeader(
 @Composable
 private fun CoffeeCalendarDialog(
     initialDate: LocalDate,
+    notesDates: Set<LocalDate> = emptySet(),
     onDismiss: () -> Unit,
     onDateSelected: (LocalDate) -> Unit
 ) {
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    )
+    var selectedCalendarDate by remember { mutableStateOf(initialDate) }
+    var displayedMonth by remember { mutableStateOf(initialDate.withDayOfMonth(1)) }
 
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val localDate = Instant.ofEpochMilli(millis)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
-                        onDateSelected(localDate)
-                    }
-                    onDismiss()
-                }
+    val monthFormatter = remember { DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 8.dp,
+            color = SteamedMilk
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Select", color = DeepEspresso, fontWeight = FontWeight.Bold)
+                // Header: Month navigation & title
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { displayedMonth = displayedMonth.minusMonths(1) }) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronLeft,
+                            contentDescription = "Previous month",
+                            tint = DeepEspresso
+                        )
+                    }
+
+                    Text(
+                        text = displayedMonth.format(monthFormatter),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = DeepEspresso
+                    )
+
+                    IconButton(onClick = { displayedMonth = displayedMonth.plusMonths(1) }) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Next month",
+                            tint = DeepEspresso
+                        )
+                    }
+                }
+
+                // Weekday headers (Mon - Sun)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    val weekdays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                    weekdays.forEach { day ->
+                        Text(
+                            text = day,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = DarkMocha.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(36.dp)
+                        )
+                    }
+                }
+
+                // Calendar grid days
+                val daysInMonth = remember(displayedMonth) {
+                    val yearMonth = java.time.YearMonth.from(displayedMonth)
+                    val firstDayOfWeek = yearMonth.atDay(1).dayOfWeek.value // 1 = Monday, 7 = Sunday
+                    val paddingDays = firstDayOfWeek - 1
+                    val lengthOfMonth = yearMonth.lengthOfMonth()
+
+                    val list = mutableListOf<LocalDate?>()
+                    repeat(paddingDays) { list.add(null) }
+                    for (day in 1..lengthOfMonth) {
+                        list.add(displayedMonth.withDayOfMonth(day))
+                    }
+                    list
+                }
+
+                val weeks = daysInMonth.chunked(7)
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    weeks.forEach { week ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            for (i in 0 until 7) {
+                                val date = week.getOrNull(i)
+                                if (date != null) {
+                                    val isSelected = date == selectedCalendarDate
+                                    val isToday = date == LocalDate.now()
+                                    val hasNote = notesDates.contains(date)
+
+                                    val cellBg = if (isSelected) DeepEspresso else Color.Transparent
+                                    val textColor = if (isSelected) SteamedMilk else DarkMocha
+
+                                    Surface(
+                                        onClick = { selectedCalendarDate = date },
+                                        shape = CircleShape,
+                                        color = cellBg,
+                                        modifier = Modifier.size(38.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.fillMaxSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = date.dayOfMonth.toString(),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                                color = textColor,
+                                                textAlign = TextAlign.Center
+                                            )
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(5.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (hasNote) WarmRoast else Color.Transparent)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.size(38.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bottom actions
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel", color = DarkMocha)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    androidx.compose.material3.Button(
+                        onClick = {
+                            onDateSelected(selectedCalendarDate)
+                            onDismiss()
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = DeepEspresso)
+                    ) {
+                        Text("Select", color = SteamedMilk, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = DarkMocha)
-            }
-        },
-        colors = DatePickerDefaults.colors(
-            containerColor = SteamedMilk
-        )
-    ) {
-        DatePicker(
-            state = datePickerState,
-            colors = DatePickerDefaults.colors(
-                containerColor = SteamedMilk,
-                selectedDayContainerColor = DeepEspresso,
-                selectedDayContentColor = SteamedMilk,
-                todayContentColor = DeepEspresso,
-                headlineContentColor = DeepEspresso,
-                weekdayContentColor = DarkMocha,
-                subheadContentColor = DarkMocha,
-                yearContentColor = DeepEspresso
-            )
-        )
+        }
     }
 }
 
@@ -645,6 +786,7 @@ private fun WeeklyCalendarStrip(
     weekStart: LocalDate,
     selectedDate: LocalDate,
     weekSchedule: WeekSchedule,
+    notesDates: Set<LocalDate> = emptySet(),
     onDateSelected: (LocalDate, String) -> Unit,
     onPreviousWeek: () -> Unit,
     onNextWeek: () -> Unit,
@@ -781,6 +923,7 @@ private fun WeeklyCalendarStrip(
                     val dayData = weekSchedule.days.firstOrNull { it.dayName.equals(dayName, ignoreCase = true) }
                     val classCount = dayData?.classes?.size ?: 0
                     val hasClasses = classCount > 0
+                    val hasNote = notesDates.contains(dayDate)
 
                     val tileBg = if (isSelectedDate) DeepEspresso else SteamedMilk
                     val weekdayColor = if (isSelectedDate) SteamedMilk.copy(alpha = 0.9f) else DarkMocha.copy(alpha = 0.65f)
@@ -824,24 +967,37 @@ private fun WeeklyCalendarStrip(
 
                             Box(
                                 modifier = Modifier
-                                    .height(6.dp)
+                                    .height(14.dp)
                                     .fillMaxWidth(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (hasClasses) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(indicatorColor)
-                                    )
-                                } else if (isToday && !isSelectedDate) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(DarkMocha.copy(alpha = 0.3f))
-                                    )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (hasClasses) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(4.dp)
+                                                .clip(CircleShape)
+                                                .background(indicatorColor)
+                                        )
+                                    } else if (isToday && !isSelectedDate) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(4.dp)
+                                                .clip(CircleShape)
+                                                .background(DarkMocha.copy(alpha = 0.3f))
+                                        )
+                                    }
+                                    if (hasNote) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                                .clip(CircleShape)
+                                                .background(WarmRoast)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1266,11 +1422,16 @@ private fun NowTabClassDetails(
     course: CourseClass,
     isToday: Boolean,
     currentTime: LocalTime,
+    selectedDate: LocalDate,
+    note: String?,
     onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onSaveNote: (String) -> Unit = {},
+    onDeleteNote: () -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showNoteDialog by remember { mutableStateOf(false) }
 
     val isCompleted = isToday && !currentTime.isBefore(course.endTime)
     val isOngoing = isToday && !currentTime.isBefore(course.startTime) && currentTime.isBefore(course.endTime)
@@ -1307,6 +1468,17 @@ private fun NowTabClassDetails(
                 }
             },
             containerColor = SteamedMilk
+        )
+    }
+
+    if (showNoteDialog) {
+        ClassNoteDialog(
+            course = course,
+            selectedDate = selectedDate,
+            existingNote = note,
+            onDismiss = { showNoteDialog = false },
+            onSave = onSaveNote,
+            onDelete = onDeleteNote
         )
     }
 
@@ -1421,6 +1593,16 @@ private fun NowTabClassDetails(
                             }
                         )
                         DropdownMenuItem(
+                            text = { Text(if (note.isNullOrBlank()) "Add Temporary Note" else "Edit Temporary Note", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                            onClick = {
+                                showMenu = false
+                                showNoteDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Event, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(16.dp))
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Delete Class", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 showMenu = false
@@ -1430,6 +1612,45 @@ private fun NowTabClassDetails(
                                 Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                             }
                         )
+                    }
+                }
+            }
+
+            if (!note.isNullOrBlank()) {
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 0.5.dp,
+                    color = DarkMocha.copy(alpha = 0.12f)
+                )
+                Surface(
+                    color = GoldenCrema.copy(alpha = 0.25f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Event,
+                            contentDescription = "Temporary Note",
+                            tint = DeepEspresso,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Temporary Note (${selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US))})",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = DeepEspresso
+                            )
+                            Text(
+                                text = note,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = cardTextColor
+                            )
+                        }
                     }
                 }
             }

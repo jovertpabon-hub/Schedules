@@ -262,10 +262,16 @@ private fun MainScreenContent(
     val currentStatus by viewModel.liveStatus.collectAsState()
     val weekSchedule by viewModel.weekSchedule.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val notesMap by viewModel.selectedDateNotes.collectAsState()
+    val notesDates by viewModel.notesDates.collectAsState()
 
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var weekStart by remember {
         mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))
+    }
+
+    LaunchedEffect(selectedDate) {
+        viewModel.setSelectedDate(selectedDate)
     }
 
     Crossfade(
@@ -285,6 +291,8 @@ private fun MainScreenContent(
                 selectedDate = selectedDate,
                 weekStart = weekStart,
                 selectedDay = selectedDay,
+                notesMap = notesMap,
+                notesDates = notesDates,
                 onDateSelected = { date, dayName ->
                     selectedDate = date
                     weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -295,12 +303,16 @@ private fun MainScreenContent(
                     weekStart = newWeekStart
                     val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(selectedDay, ignoreCase = true) }.coerceAtLeast(0)
                     selectedDate = newWeekStart.plusDays(dayIndex.toLong())
+                    val dayName = ScheduleConstants.DaysOfWeek[dayIndex]
+                    onSelectedDayChanged(dayName)
                 },
                 onNextWeek = {
                     val newWeekStart = weekStart.plusWeeks(1)
                     weekStart = newWeekStart
                     val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(selectedDay, ignoreCase = true) }.coerceAtLeast(0)
                     selectedDate = newWeekStart.plusDays(dayIndex.toLong())
+                    val dayName = ScheduleConstants.DaysOfWeek[dayIndex]
+                    onSelectedDayChanged(dayName)
                 },
                 onTodayClick = {
                     val today = LocalDate.now()
@@ -327,7 +339,9 @@ private fun MainScreenContent(
                 onAddClass = onAddClass,
                 onImportPdf = onImportPdf,
                 onClearAll = onClearAll,
-                onSettingsClick = onSettingsClick
+                onSettingsClick = onSettingsClick,
+                onSaveNote = { scheduleId, text -> viewModel.saveNote(scheduleId, selectedDate, text) },
+                onDeleteNote = { scheduleId -> viewModel.deleteNote(scheduleId, selectedDate) }
             )
         }
     }
