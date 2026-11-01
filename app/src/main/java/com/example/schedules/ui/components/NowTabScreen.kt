@@ -25,19 +25,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -216,7 +219,10 @@ fun NowTabScreen(
     onTodayClick: () -> Unit,
     onEditClass: (CourseClass, String) -> Unit = { _, _ -> },
     onDeleteClass: (CourseClass) -> Unit = {},
-    onAboutClick: () -> Unit = {}
+    onAddClass: () -> Unit = {},
+    onImportPdf: () -> Unit = {},
+    onClearAll: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -258,7 +264,10 @@ fun NowTabScreen(
             // Header sitting directly on AppBackground
             NowTabHeader(
                 currentDate = selectedDate,
-                onAboutClick = onAboutClick
+                onAddClass = onAddClass,
+                onImportPdf = onImportPdf,
+                onClearAll = onClearAll,
+                onSettingsClick = onSettingsClick
             )
             HorizontalDivider(
                 modifier = Modifier
@@ -410,7 +419,7 @@ fun NowTabScreen(
                                 EmptyDayView(
                                     modifier = Modifier.fillMaxWidth(),
                                     mainMessage = "No classes for $currentDay!",
-                                    secondaryMessage = "Enjoy a free day or catch up on studies ☕"
+                                    secondaryMessage = "Enjoy a free day"
                                 )
                             } else {
                                 Column(
@@ -439,9 +448,14 @@ fun NowTabScreen(
 @Composable
 private fun NowTabHeader(
     currentDate: LocalDate,
-    onAboutClick: () -> Unit = {}
+    onAddClass: () -> Unit = {},
+    onImportPdf: () -> Unit = {},
+    onClearAll: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
+    var showHeaderMenu by remember { mutableStateOf(false) }
+
     val formattedDate = remember(currentDate) {
         currentDate.format(
             DateTimeFormatter.ofPattern("EEEE • MMMM d", Locale.US)
@@ -461,7 +475,8 @@ private fun NowTabHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+            modifier = Modifier.weight(1f)
         ) {
             // Date
             Row(
@@ -477,8 +492,7 @@ private fun NowTabHeader(
                 Text(
                     text = formattedDate,
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight
-                        .Bold,
+                    fontWeight = FontWeight.Bold,
                     color = DarkMocha,
                     letterSpacing = 1.sp
                 )
@@ -489,30 +503,86 @@ private fun NowTabHeader(
                 text = greeting,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = DarkMocha
+                color = DarkMocha,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
-        // Coffee icon
-        Surface(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onAboutClick()
-            },
-            modifier = Modifier.size(54.dp),
-            shape = CircleShape,
-            color = SteamedMilk,
-            shadowElevation = 1.dp
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Coffee,
-                    contentDescription = "About",
-                    tint = DeepEspresso,
-                    modifier = Modifier.size(26.dp)
-                )
+            // Actions Menu Button
+            Box {
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        showHeaderMenu = true
+                    },
+                    modifier = Modifier.size(54.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = SteamedMilk,
+                    shadowElevation = 1.dp
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Actions Menu",
+                            tint = DeepEspresso,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = showHeaderMenu,
+                    onDismissRequest = { showHeaderMenu = false },
+                    modifier = Modifier.background(SteamedMilk)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Add Class", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                        onClick = {
+                            showHeaderMenu = false
+                            onAddClass()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Import COE", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                        onClick = {
+                            showHeaderMenu = false
+                            onImportPdf()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Clear All", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            showHeaderMenu = false
+                            onClearAll()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Settings", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                        onClick = {
+                            showHeaderMenu = false
+                            onSettingsClick()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Settings, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                }
             }
         }
     }
