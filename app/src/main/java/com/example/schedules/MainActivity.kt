@@ -25,6 +25,7 @@ import com.example.schedules.ui.theme.SchedulesTheme
 class MainActivity : ComponentActivity() {
 
     private var startupReconciliationPending = false
+    private val currentIntentState = mutableStateOf<android.content.Intent?>(null)
 
     companion object {
         private const val KEY_STARTUP_RECONCILIATION_PENDING = "startup_reconciliation_pending"
@@ -40,9 +41,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        currentIntentState.value = intent
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        currentIntentState.value = intent
         startupReconciliationPending = savedInstanceState?.getBoolean(KEY_STARTUP_RECONCILIATION_PENDING)
             ?: checkAndRequestNotificationPermission()
         if (savedInstanceState == null && !startupReconciliationPending) {
@@ -64,7 +72,8 @@ class MainActivity : ComponentActivity() {
                         onThemeModeChange = { selected ->
                             themeMode = selected
                             preferences.edit().putString("theme_mode", selected).apply()
-                        }
+                        },
+                        intent = currentIntentState.value
                     )
                 }
             }

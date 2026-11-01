@@ -94,6 +94,7 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.e("ScheduleAlarmReceiver", "Error processing alarm broadcast", e)
             } finally {
+                com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(context)
                 pendingResult.finish()
             }
         }

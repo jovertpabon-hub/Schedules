@@ -14,6 +14,7 @@ ksp = "2.3.10"
 pdfbox = "2.0.27.0"
 foundationLayout = "1.12.1"
 uiText = "1.12.1"
+glance = "1.2.0"
 
 
 [libraries]
@@ -41,6 +42,8 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 pdfbox-android = { module = "com.tom-roush:pdfbox-android", version.ref = "pdfbox" }
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

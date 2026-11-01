@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">CoffeeLog</string>
+    <string name="widget_name">CoffeeLog Schedule</string>
+    <string name="widget_description">View your daily university timetable and next class countdown at a glance.</string>
 </resources>

@@ -35,6 +35,7 @@ class RoomScheduleRepository(
             "☕ Schedule Updated",
             "Restored class ${schedule.courseCode} on ${schedule.dayName}."
         )
+        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
 
     override suspend fun deleteSchedule(schedule: ScheduleEntity) {
@@ -45,6 +46,7 @@ class RoomScheduleRepository(
             "☕ Schedule Updated",
             "Removed class ${schedule.courseCode} on ${schedule.dayName}."
         )
+        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
 
     override suspend fun clearAllSchedules() {
@@ -58,6 +60,7 @@ class RoomScheduleRepository(
             "☕ Schedule Updated",
             "All scheduled classes have been cleared."
         )
+        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
 
     // --- Complex Logic & Validation ---
@@ -103,6 +106,7 @@ class RoomScheduleRepository(
                 "☕ Schedule Updated",
                 "$actionText class ${schedule.courseCode} on ${schedule.dayName}."
             )
+            com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
             Result.success(Unit)
         } catch (error: Exception) {
             Result.failure(error)

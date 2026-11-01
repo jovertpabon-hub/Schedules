@@ -217,6 +217,7 @@ class ScheduleViewModel(
                         .onSuccess { successCount++ }
                 }
                 _importPreview.value = null
+                com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
                 _uiEvents.emit(UiEvent.ShowMessage("Imported $successCount classes from PDF"))
             } catch (e: Exception) {
                 _uiEvents.emit(UiEvent.ShowMessage("Error saving imported schedules: ${e.message}"))

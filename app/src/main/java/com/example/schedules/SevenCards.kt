@@ -54,7 +54,8 @@ import kotlin.time.Duration.Companion.minutes
 @Composable
 fun MainScheduleApp(
     themeMode: String,
-    onThemeModeChange: (String) -> Unit
+    onThemeModeChange: (String) -> Unit,
+    intent: android.content.Intent? = null
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
@@ -89,6 +90,32 @@ fun MainScheduleApp(
     var showScheduleSettings by remember { mutableStateOf(false) }
     var showAppearanceSettings by remember { mutableStateOf(false) }
     var showAboutSettings by remember { mutableStateOf(false) }
+
+    LaunchedEffect(intent?.data) {
+        val uri = intent?.data ?: return@LaunchedEffect
+        if (uri.scheme == "coffeelog") {
+            val host = uri.host
+            if (host == "today") {
+                selectedDay = todayName
+            } else if (host == "class") {
+                val classIdStr = uri.lastPathSegment
+                val classId = classIdStr?.toLongOrNull()
+                if (classId != null) {
+                    val weekData = viewModel.weekSchedule.value
+                    for (dayData in weekData.days) {
+                        val found = dayData.classes.firstOrNull { it.id == classId }
+                        if (found != null) {
+                            selectedDay = dayData.dayName
+                            editingClass = found
+                            editingDay = dayData.dayName
+                            showDialog = true
+                            break
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
