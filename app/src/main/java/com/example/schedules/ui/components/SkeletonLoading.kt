@@ -168,19 +168,28 @@ fun SkeletonWeeklyCalendarStrip() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header with title "This week" and calendar icon placeholder
+            // Header with navigation arrows and date range placeholder
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 SkeletonBox(
-                    width = 18.dp,
-                    height = 18.dp,
-                    shape = CircleShape
+                    width = 32.dp,
+                    height = 32.dp,
+                    shape = RoundedCornerShape(8.dp)
                 )
+
                 SkeletonBox(
-                    width = 70.dp,
-                    height = 16.dp
+                    width = 150.dp,
+                    height = 32.dp,
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                SkeletonBox(
+                    width = 32.dp,
+                    height = 32.dp,
+                    shape = RoundedCornerShape(8.dp)
                 )
             }
 

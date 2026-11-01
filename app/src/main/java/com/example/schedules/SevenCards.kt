@@ -4,6 +4,9 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
@@ -397,6 +400,11 @@ private fun MainScreenContent(
     val weekSchedule by viewModel.weekSchedule.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var weekStart by remember {
+        mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))
+    }
+
     Crossfade(
         targetState = isLoading,
         animationSpec = tween(durationMillis = 500),
@@ -411,8 +419,33 @@ private fun MainScreenContent(
             NowTabScreen(
                 status = currentStatus,
                 weekSchedule = weekSchedule,
+                selectedDate = selectedDate,
+                weekStart = weekStart,
                 selectedDay = selectedDay,
-                onSelectedDayChanged = onSelectedDayChanged,
+                onDateSelected = { date, dayName ->
+                    selectedDate = date
+                    weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                    onSelectedDayChanged(dayName)
+                },
+                onPreviousWeek = {
+                    val newWeekStart = weekStart.minusWeeks(1)
+                    weekStart = newWeekStart
+                    val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(selectedDay, ignoreCase = true) }.coerceAtLeast(0)
+                    selectedDate = newWeekStart.plusDays(dayIndex.toLong())
+                },
+                onNextWeek = {
+                    val newWeekStart = weekStart.plusWeeks(1)
+                    weekStart = newWeekStart
+                    val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(selectedDay, ignoreCase = true) }.coerceAtLeast(0)
+                    selectedDate = newWeekStart.plusDays(dayIndex.toLong())
+                },
+                onTodayClick = {
+                    val today = LocalDate.now()
+                    selectedDate = today
+                    weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                    val dayName = ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(today.dayOfWeek.name, ignoreCase = true) } ?: "Monday"
+                    onSelectedDayChanged(dayName)
+                },
                 onEditClass = onEditClass,
                 onDeleteClass = { course ->
                     course.id?.let { id ->
