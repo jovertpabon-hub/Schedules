@@ -54,6 +54,7 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
                 val courseName = intent.getStringExtra("course_name") ?: "Course"
                 val room = intent.getStringExtra("room") ?: "TBA"
                 val startTimeStr = intent.getStringExtra("start_time") ?: "08:00 AM"
+                val offsetMinutes = intent.getIntExtra("offset_minutes", 15)
 
                 val startTime = try {
                     LocalTime.parse(startTimeStr, ScheduleConstants.TimeFormatter)
@@ -81,7 +82,8 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
                     ScheduleNotificationHelper.showClassReminderNotification(
                         context = context,
                         course = dummyCourse,
-                        isClassStarting = isStarting
+                        isClassStarting = isStarting,
+                        offsetMinutes = offsetMinutes
                     )
 
                     // Reschedule next weekly occurrence
@@ -89,7 +91,11 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
                         ScheduleNotificationHelper.scheduleExactClassReminder(context, existing)
                     }
                 } else {
-                    ScheduleNotificationHelper.showClassReminderNotification(context, dummyCourse)
+                    ScheduleNotificationHelper.showClassReminderNotification(
+                        context = context,
+                        course = dummyCourse,
+                        offsetMinutes = offsetMinutes
+                    )
                 }
             } catch (e: Exception) {
                 Log.e("ScheduleAlarmReceiver", "Error processing alarm broadcast", e)

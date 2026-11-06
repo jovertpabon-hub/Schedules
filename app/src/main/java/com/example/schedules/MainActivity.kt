@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.example.schedules.data.notifications.ScheduleNotificationHelper
 import com.example.schedules.ui.theme.SchedulesTheme
 
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
                         themeMode = themeMode,
                         onThemeModeChange = { selected ->
                             themeMode = selected
-                            preferences.edit().putString("theme_mode", selected).apply()
+                            preferences.edit { putString("theme_mode", selected) }
                         },
                         intent = currentIntentState.value
                     )

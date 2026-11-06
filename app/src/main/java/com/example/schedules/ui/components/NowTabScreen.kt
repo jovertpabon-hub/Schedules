@@ -1,11 +1,14 @@
 package com.example.schedules.ui.components
 
-import com.example.schedules.ui.dialogs.ClassNoteDialog
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -42,15 +45,11 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PlayCircleFilled
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.ui.window.Dialog
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -60,7 +59,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,20 +73,21 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.DayScheduleData
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
+import com.example.schedules.ui.dialogs.ClassNoteDialog
 import com.example.schedules.ui.theme.AppBackground
 import com.example.schedules.ui.theme.DarkMocha
 import com.example.schedules.ui.theme.DeepEspresso
@@ -100,10 +99,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.time.DayOfWeek
 import java.time.Duration
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
@@ -229,6 +226,7 @@ fun NowTabScreen(
     onImportPdf: () -> Unit = {},
     onClearAll: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
     onSaveNote: (Long, String) -> Unit = { _, _ -> },
     onDeleteNote: (Long) -> Unit = {}
 ) {
@@ -263,55 +261,77 @@ fun NowTabScreen(
         color = AppBackground
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Header sitting directly on AppBackground
-            NowTabHeader(
-                currentDate = selectedDate,
-                onAddClass = onAddClass,
-                onImportPdf = onImportPdf,
-                onClearAll = onClearAll,
-                onSettingsClick = onSettingsClick
-            )
-            HorizontalDivider(
-                modifier = Modifier
-                    .height(1.5.dp)
-                    .fillMaxWidth(),
-                color = DarkMocha.copy(alpha= 0.25f)
-            )
-
-            // Redesigned Weekly Calendar Strip inside a WarmCoffeeCream surface
-            WeeklyCalendarStrip(
-                weekStart = weekStart,
-                selectedDate = selectedDate,
-                weekSchedule = weekSchedule,
-                notesDates = notesDates,
-                onDateSelected = { date, dayName ->
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onDateSelected(date, dayName)
-                },
-                onPreviousWeek = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onPreviousWeek()
-                },
-                onNextWeek = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onNextWeek()
-                },
-                onTodayClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onTodayClick()
-                },
-                onCalendarClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    showCalendarDialog = true
+            // Persistent Sticky Header
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = AppBackground,
+                shadowElevation = 2.dp
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        NowTabHeader(
+                            currentDate = selectedDate,
+                            onAddClass = onAddClass,
+                            onImportPdf = onImportPdf,
+                            onClearAll = onClearAll,
+                            onSettingsClick = onSettingsClick,
+                            onSearchClick = onSearchClick
+                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .height(1.dp)
+                            .fillMaxWidth(),
+                        color = DarkMocha.copy(alpha = 0.15f)
+                    )
                 }
-            )
+            }
+
+            // Independent Scrolling Content Area
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Redesigned Weekly Calendar Strip inside a WarmCoffeeCream surface
+                WeeklyCalendarStrip(
+                    weekStart = weekStart,
+                    selectedDate = selectedDate,
+                    weekSchedule = weekSchedule,
+                    notesDates = notesDates,
+                    onDateSelected = { date, dayName ->
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onDateSelected(date, dayName)
+                    },
+                    onPreviousWeek = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onPreviousWeek()
+                    },
+                    onNextWeek = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onNextWeek()
+                    },
+                    onTodayClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onTodayClick()
+                    },
+                    onCalendarClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        showCalendarDialog = true
+                    }
+                )
 
             AnimatedContent(
                 targetState = selectedDay,
@@ -468,6 +488,7 @@ fun NowTabScreen(
         }
     }
 }
+}
 
 @Composable
 private fun NowTabHeader(
@@ -476,87 +497,120 @@ private fun NowTabHeader(
     onImportPdf: () -> Unit = {},
     onClearAll: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    onSearchClick: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
     var showHeaderMenu by remember { mutableStateOf(false) }
 
     val formattedDate = remember(currentDate) {
         currentDate.format(
-            DateTimeFormatter.ofPattern("EEEE • MMMM d", Locale.US)
-        ).uppercase(Locale.US)
-    }
-
-    val currentHour = LocalTime.now().hour
-    val greeting = when (currentHour) {
-        in 5..11 -> "Good morning!"
-        in 12..17 -> "Good afternoon!"
-        else -> "Good evening!"
+            DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.US)
+        )
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+        // Left: Circular coffee-themed icon + CoffeeLog app name & smaller secondary date text
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f)
         ) {
-            // Date
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null,
-                    tint = DeepEspresso,
-                    modifier = Modifier.size(18.dp)
+                Text(
+                    text = "CoffeeLog",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 24.sp,
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp,
+                        lineHeight = 26.sp
+                    ),
+                    color = DarkMocha,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = formattedDate,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkMocha,
-                    letterSpacing = 1.sp
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = DarkMocha.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-
-            // Main greeting
-            Text(
-                text = greeting,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = DarkMocha,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
 
+        // Right: Compact action icons for Search, Notifications, and More Options
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Actions Menu Button
+            // Notifications Icon
+            Surface(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onAddClass()
+                },
+                shape = CircleShape,
+                color = SteamedMilk.copy(alpha = 0.7f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Class",
+                        tint = DeepEspresso,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            // Search Icon
+            Surface(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onSearchClick()
+                },
+                shape = CircleShape,
+                color = SteamedMilk.copy(alpha = 0.7f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = DeepEspresso,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            // More Options Icon (Dropdown Menu)
             Box {
                 Surface(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         showHeaderMenu = true
                     },
-                    modifier = Modifier.size(54.dp),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = CircleShape,
                     color = SteamedMilk,
-                    shadowElevation = 1.dp
+                    modifier = Modifier.size(36.dp),
+                    shadowElevation = 0.5.dp
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Actions Menu",
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More Options",
                             tint = DeepEspresso,
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -566,16 +620,16 @@ private fun NowTabHeader(
                     onDismissRequest = { showHeaderMenu = false },
                     modifier = Modifier.background(SteamedMilk)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Add Class", fontWeight = FontWeight.Bold, color = DarkMocha) },
-                        onClick = {
-                            showHeaderMenu = false
-                            onAddClass()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
-                        }
-                    )
+//                    DropdownMenuItem(
+//                        text = { Text("Add Class", fontWeight = FontWeight.Bold, color = DarkMocha) },
+//                        onClick = {
+//                            showHeaderMenu = false
+//                            onAddClass()
+//                        },
+//                        leadingIcon = {
+//                            Icon(Icons.Default.Add, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+//                        }
+//                    )
                     DropdownMenuItem(
                         text = { Text("Import COE", fontWeight = FontWeight.Bold, color = DarkMocha) },
                         onClick = {
@@ -793,17 +847,7 @@ private fun WeeklyCalendarStrip(
     onTodayClick: () -> Unit,
     onCalendarClick: () -> Unit
 ) {
-    val weekEnd = weekStart.plusDays(6)
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d", Locale.US) }
-    val yearFormatter = remember { DateTimeFormatter.ofPattern("yyyy", Locale.US) }
-    
-    val weekRangeText = remember(weekStart, weekEnd) {
-        val startStr = weekStart.format(dateFormatter)
-        val endStr = weekEnd.format(dateFormatter)
-        val yearStr = weekStart.format(yearFormatter)
-        "$startStr – $endStr, $yearStr"
-    }
-
+    val weekEnd = remember(weekStart) { weekStart.plusDays(6) }
     val isCurrentWeek = remember(weekStart) {
         val currentWeekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         weekStart == currentWeekStart
@@ -819,192 +863,357 @@ private fun WeeklyCalendarStrip(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+            WeeklyCalendarHeader(
+                weekStart = weekStart,
+                weekEnd = weekEnd,
+                isCurrentWeek = isCurrentWeek,
+                onPreviousWeek = onPreviousWeek,
+                onNextWeek = onNextWeek,
+                onTodayClick = onTodayClick,
+                onCalendarClick = onCalendarClick
+            )
+
+            HorizontalDivider(
+                color = DarkMocha.copy(alpha = 0.12f),
+                thickness = 1.dp
+            )
+
+            WeeklyDateSelector(
+                weekStart = weekStart,
+                selectedDate = selectedDate,
+                weekSchedule = weekSchedule,
+                notesDates = notesDates,
+                onDateSelected = onDateSelected
+            )
+
+//            CalendarIndicatorLegend()
+        }
+    }
+}
+
+@Composable
+private fun WeeklyCalendarHeader(
+    weekStart: LocalDate,
+    weekEnd: LocalDate,
+    isCurrentWeek: Boolean,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit,
+    onTodayClick: () -> Unit,
+    onCalendarClick: () -> Unit
+) {
+    val weekRangeText = remember(weekStart, weekEnd) {
+        formatWeekRange(weekStart, weekEnd)
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Top Row: Title section & Today action
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                // Left: Previous Week
-                IconButton(
-                    onClick = onPreviousWeek,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .align(Alignment.CenterStart)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronLeft,
-                        contentDescription = "Previous week",
-                        tint = DeepEspresso,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                // Center: Date Range & Retry Button
-                Row(
-                    modifier = Modifier.align(Alignment.Center),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Surface(
-                        onClick = onCalendarClick,
-                        shape = RoundedCornerShape(8.dp),
-                        color = SteamedMilk,
-                        shadowElevation = 0.5.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Event,
-                                contentDescription = "Open Calendar",
-                                tint = DeepEspresso,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = weekRangeText,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = DeepEspresso
-                            )
-                        }
-                    }
-
-                    if (!isCurrentWeek) {
-                        Surface(
-                            onClick = onTodayClick,
-                            shape = CircleShape,
-                            color = DeepEspresso,
-                            shadowElevation = 1.dp,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Reset to Today",
-                                    tint = SteamedMilk,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Right: Next Week
-                IconButton(
-                    onClick = onNextWeek,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .align(Alignment.CenterEnd)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Next week",
-                        tint = DeepEspresso,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Text(
+                    text = "WEEKLY PLANNER",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = WarmRoast,
+                    letterSpacing = 1.2.sp
+                )
             }
 
-            // 7 day items in one horizontal row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ScheduleConstants.DaysOfWeek.forEachIndexed { index, dayName ->
-                    val dayDate = weekStart.plusDays(index.toLong())
-                    val dateNumber = dayDate.dayOfMonth.toString()
-                    val isSelectedDate = dayDate.equals(selectedDate)
-                    val isToday = dayDate.equals(LocalDate.now())
-
-                    val dayData = weekSchedule.days.firstOrNull { it.dayName.equals(dayName, ignoreCase = true) }
-                    val classCount = dayData?.classes?.size ?: 0
-                    val hasClasses = classCount > 0
-                    val hasNote = notesDates.contains(dayDate)
-
-                    val tileBg = if (isSelectedDate) DeepEspresso else SteamedMilk
-                    val weekdayColor = if (isSelectedDate) SteamedMilk.copy(alpha = 0.9f) else DarkMocha.copy(alpha = 0.65f)
-                    val dateColor = if (isSelectedDate) SteamedMilk else DarkMocha
-                    val indicatorColor = if (isSelectedDate) GoldenCrema else WarmRoast
-
-                    Surface(
-                        onClick = { onDateSelected(dayDate, dayName) },
-                        shape = RoundedCornerShape(14.dp),
-                        color = tileBg,
-                        border = if (!isSelectedDate && isToday) BorderStroke(1.dp, WarmRoast.copy(alpha = 0.6f)) else null,
-                        shadowElevation = if (isSelectedDate) 2.dp else 0.dp,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 2.dp)
+            // Conditional "Today" text action button when not viewing current week
+            if (!isCurrentWeek) {
+                Surface(
+                    onClick = onTodayClick,
+                    shape = RoundedCornerShape(12.dp),
+                    color = DeepEspresso,
+                    shadowElevation = 1.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = dayName.take(3).uppercase(Locale.US),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isSelectedDate) FontWeight.ExtraBold else FontWeight.Bold,
-                                fontStyle = FontStyle.Italic,
-                                textDecoration = TextDecoration.Underline,
-                                color = weekdayColor,
-                                fontSize = 11.sp,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Text(
-                                text = dateNumber,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Black,
-                                color = dateColor,
-                                fontSize = 16.sp,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .height(14.dp)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (hasClasses) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(4.dp)
-                                                .clip(CircleShape)
-                                                .background(indicatorColor)
-                                        )
-                                    } else if (isToday && !isSelectedDate) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(4.dp)
-                                                .clip(CircleShape)
-                                                .background(DarkMocha.copy(alpha = 0.3f))
-                                        )
-                                    }
-                                    if (hasNote) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(5.dp)
-                                                .clip(CircleShape)
-                                                .background(WarmRoast)
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                        Text(
+                            text = "Today",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = SteamedMilk
+                        )
                     }
                 }
             }
         }
+
+        // Bottom Bar of Header: Central Navigation & Date Range
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = SteamedMilk.copy(alpha = 0.6f),
+                    shape = RoundedCornerShape(14.dp)
+                )
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(
+                onClick = onPreviousWeek,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ChevronLeft,
+                    contentDescription = "Previous week",
+                    tint = DeepEspresso,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // Clickable Date Range
+            Surface(
+                onClick = onCalendarClick,
+                shape = RoundedCornerShape(8.dp),
+                color = Color.Transparent
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Event,
+                        contentDescription = "Open Calendar",
+                        tint = DeepEspresso,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    AnimatedContent(
+                        targetState = weekRangeText,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(180)) togetherWith fadeOut(animationSpec = tween(180))
+                        },
+                        label = "weekRangeTextTransition"
+                    ) { targetText ->
+                        Text(
+                            text = targetText,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = DeepEspresso
+                        )
+                    }
+                }
+            }
+
+            IconButton(
+                onClick = onNextWeek,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Next week",
+                    tint = DeepEspresso,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeeklyDateSelector(
+    weekStart: LocalDate,
+    selectedDate: LocalDate,
+    weekSchedule: WeekSchedule,
+    notesDates: Set<LocalDate>,
+    onDateSelected: (LocalDate, String) -> Unit
+) {
+    val today = remember { LocalDate.now() }
+
+    AnimatedContent(
+        targetState = weekStart,
+        transitionSpec = {
+            if (targetState.isAfter(initialState)) {
+                (slideInHorizontally { width -> width / 3 } + fadeIn(tween(200))).togetherWith(
+                    slideOutHorizontally { width -> -width / 3 } + fadeOut(tween(200))
+                )
+            } else {
+                (slideInHorizontally { width -> -width / 3 } + fadeIn(tween(200))).togetherWith(
+                    slideOutHorizontally { width -> width / 3 } + fadeOut(tween(200))
+                )
+            }
+        },
+        label = "weekDatesTransition"
+    ) { currentWeekStart ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ScheduleConstants.DaysOfWeek.forEachIndexed { index, dayName ->
+                val dayDate = currentWeekStart.plusDays(index.toLong())
+                val isSelectedDate = dayDate == selectedDate
+                val isToday = dayDate == today
+
+                val dayData = weekSchedule.days.firstOrNull { it.dayName.equals(dayName, ignoreCase = true) }
+                val classCount = dayData?.classes?.size ?: 0
+                val hasClasses = classCount > 0
+                val hasNote = notesDates.contains(dayDate)
+
+                WeeklyDateTile(
+                    modifier = Modifier.weight(1f),
+                    dayName = dayName,
+                    dayDate = dayDate,
+                    isSelected = isSelectedDate,
+                    isToday = isToday,
+                    hasClasses = hasClasses,
+                    hasNote = hasNote,
+                    onSelect = { onDateSelected(dayDate, dayName) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeeklyDateTile(
+    modifier: Modifier = Modifier,
+    dayName: String,
+    dayDate: LocalDate,
+    isSelected: Boolean,
+    isToday: Boolean,
+    hasClasses: Boolean,
+    hasNote: Boolean,
+    onSelect: () -> Unit
+) {
+    val dateNumber = dayDate.dayOfMonth.toString()
+    val weekdayAbbrev = remember(dayName) { dayName.take(3).uppercase(Locale.US) }
+
+    val tileBgColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> DeepEspresso
+            isToday -> SteamedMilk.copy(alpha = 0.9f)
+            else -> SteamedMilk.copy(alpha = 0.35f)
+        },
+        animationSpec = tween(durationMillis = 200),
+        label = "tileBgColor"
+    )
+
+    val weekdayTextColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> SteamedMilk.copy(alpha = 0.9f)
+            isToday -> WarmRoast
+            else -> DarkMocha.copy(alpha = 0.65f)
+        },
+        animationSpec = tween(durationMillis = 200),
+        label = "weekdayTextColor"
+    )
+
+    val dateTextColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> SteamedMilk
+            isToday -> DeepEspresso
+            else -> DarkMocha
+        },
+        animationSpec = tween(durationMillis = 200),
+        label = "dateTextColor"
+    )
+
+    val elevation by animateDpAsState(
+        targetValue = if (isSelected) 3.dp else 0.dp,
+        animationSpec = tween(durationMillis = 200),
+        label = "tileElevation"
+    )
+
+    Surface(
+        onClick = onSelect,
+        shape = RoundedCornerShape(14.dp),
+        color = tileBgColor,
+        border = if (!isSelected && isToday) BorderStroke(1.5.dp, WarmRoast) else null,
+        shadowElevation = elevation,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Weekday abbreviation (no italics, no underline)
+            Text(
+                text = weekdayAbbrev,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                color = weekdayTextColor,
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+
+            // Prominent date number
+            Text(
+                text = dateNumber,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = dateTextColor,
+                fontSize = 17.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+
+            // Indicators
+            Box(
+                modifier = Modifier
+                    .height(12.dp)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (hasClasses) {
+                        val classDotColor = if (isSelected) GoldenCrema else WarmRoast
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(classDotColor)
+                        )
+                    }
+                    if (hasNote) {
+                        val noteDotColor = if (isSelected) SteamedMilk else WarmRoast
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(noteDotColor)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatWeekRange(start: LocalDate, end: LocalDate): String {
+    val monthFormatter = DateTimeFormatter.ofPattern("MMM", Locale.US)
+    val fullMonthFormatter = DateTimeFormatter.ofPattern("MMMM", Locale.US)
+    
+    return if (start.year == end.year) {
+        if (start.month == end.month) {
+            "${start.format(fullMonthFormatter)} ${start.dayOfMonth} – ${end.dayOfMonth}"
+        } else {
+            "${start.format(monthFormatter)} ${start.dayOfMonth} – ${end.format(monthFormatter)} ${end.dayOfMonth}"
+        }
+    } else {
+        "${start.format(monthFormatter)} ${start.dayOfMonth}, ${start.year} – ${end.format(monthFormatter)} ${end.dayOfMonth}, ${end.year}"
     }
 }
 

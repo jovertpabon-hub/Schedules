@@ -32,8 +32,8 @@ class RoomScheduleRepository(
         registerReminderForSchedule(entityWithId)
         ScheduleNotificationHelper.showScheduleChangeNotification(
             appContext,
-            "☕ Schedule Updated",
-            "Restored class ${schedule.courseCode} on ${schedule.dayName}."
+            schedule.courseCode,
+            "Restored class for ${schedule.dayName}"
         )
         com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
@@ -44,8 +44,8 @@ class RoomScheduleRepository(
         ScheduleNotificationHelper.cancelClassReminder(appContext, schedule)
         ScheduleNotificationHelper.showScheduleChangeNotification(
             appContext,
-            "☕ Schedule Updated",
-            "Removed class ${schedule.courseCode} on ${schedule.dayName}."
+            schedule.courseCode,
+            "Removed class from ${schedule.dayName}"
         )
         com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
@@ -59,8 +59,8 @@ class RoomScheduleRepository(
         scheduleDao.clearAll()
         ScheduleNotificationHelper.showScheduleChangeNotification(
             appContext,
-            "☕ Schedule Updated",
-            "All scheduled classes have been cleared."
+            null,
+            "All scheduled classes have been cleared"
         )
         com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
@@ -98,15 +98,28 @@ class RoomScheduleRepository(
         // Step 4: Save to Database & Propagate instructor update across same course code sessions
         return try {
             val isNew = schedule.id == ScheduleConstants.DEFAULT_ID
+            val existing = if (!isNew) scheduleDao.getScheduleById(schedule.id) else null
+
             val savedId = scheduleDao.saveSchedule(schedule)
             val entityWithId = if (isNew) schedule.copy(id = savedId) else schedule
             registerReminderForSchedule(entityWithId)
             
-            val actionText = if (isNew) "Added" else "Updated"
+            val displayFmt = java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
+            val changeDesc = when {
+                isNew -> "Added class for ${schedule.dayName} (${schedule.startTime.format(displayFmt)})"
+                existing != null && (existing.startTime != schedule.startTime || existing.endTime != schedule.endTime) -> {
+                    "Class time changed: ${existing.startTime.format(displayFmt)} → ${schedule.startTime.format(displayFmt)}"
+                }
+                existing != null && existing.room != schedule.room -> {
+                    "Room changed: ${existing.room} → ${schedule.room}"
+                }
+                else -> "Updated class details for ${schedule.dayName}"
+            }
+
             ScheduleNotificationHelper.showScheduleChangeNotification(
                 appContext,
-                "☕ Schedule Updated",
-                "$actionText class ${schedule.courseCode} on ${schedule.dayName}."
+                schedule.courseCode,
+                changeDesc
             )
             com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
             Result.success(Unit)
@@ -143,20 +156,25 @@ class RoomScheduleRepository(
             val entity = com.example.schedules.data.local.ScheduleNoteEntity(scheduleId = scheduleId, date = date, noteText = noteText)
             scheduleDao.saveNote(entity)
         }
+        val schedule = scheduleDao.getScheduleById(scheduleId)
+        val courseCode = schedule?.courseCode ?: "Class"
+        val changeDesc = if (noteText.isBlank()) "Note removed ($date)" else "Note updated ($date)"
         ScheduleNotificationHelper.showScheduleChangeNotification(
             appContext,
-            "☕ Temporary Note Updated",
-            "Updated note for class occurrence on $date."
+            courseCode,
+            changeDesc
         )
         com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }
 
     override suspend fun deleteNoteForScheduleAndDate(scheduleId: Long, date: java.time.LocalDate) {
         scheduleDao.deleteNote(scheduleId, date)
+        val schedule = scheduleDao.getScheduleById(scheduleId)
+        val courseCode = schedule?.courseCode ?: "Class"
         ScheduleNotificationHelper.showScheduleChangeNotification(
             appContext,
-            "☕ Temporary Note Removed",
-            "Removed note for class occurrence on $date."
+            courseCode,
+            "Note removed ($date)"
         )
         com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
     }

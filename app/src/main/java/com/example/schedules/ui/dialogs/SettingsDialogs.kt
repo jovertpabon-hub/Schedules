@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,7 +23,6 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
@@ -49,11 +47,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedules.data.models.ScheduleConstants
+import com.example.schedules.ui.theme.SchedulesTheme
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 
 @Composable
@@ -175,181 +175,180 @@ fun AboutSettingsDialog(
     val version = runCatching {
         context.packageManager
             .getPackageInfo(context.packageName, 0)
-            .versionName ?: "Unknown"
-    }.getOrDefault("Unknown")
+            .versionName ?: "1.0.0"
+    }.getOrDefault("1.0.0")
 
-    // Developer information
-    val developerName = "JODev"
     val githubUrl = "https://github.com/jovertpabon-hub/Schedules"
     val email = "jovertpabon@gmail.com"
 
-    val pagePadding = 24.dp
-    val sectionSpacing = 20.dp
-
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .heightIn(max = 680.dp),
             shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surface
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 650.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(pagePadding)
+                modifier = Modifier.fillMaxWidth()
             ) {
-
-                // App identity header
+                // Scrollable Content
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 16.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(88.dp)
-                            .clip(CircleShape)
-                            .background(
-                                MaterialTheme.colorScheme.primaryContainer
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Coffee,
-                            contentDescription = "CoffeeLog logo",
-                            modifier = Modifier.size(42.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
+                    // 1. Header — App Identity
+                    Text(
+                        text = "ABOUT THE APP",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.5.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(6.dp))
 
                     Text(
                         text = "CoffeeLog",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary
                     )
 
+                    Spacer(Modifier.height(4.dp))
+
                     Text(
                         text = "Your academic schedule, brewed into simplicity.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 6.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Text(
-                        text = "Version $version",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 10.dp)
+                    Spacer(Modifier.height(12.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = "VERSION $version",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 18.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
-                }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = sectionSpacing)
-                )
-
-                // App purpose
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                    // 2. App Purpose Section
                     Text(
                         text = "Why CoffeeLog?",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = "CoffeeLog was created to make managing " +
-                                "university schedules easier and less stressful. " +
-                                "It brings class schedules, free-time tracking, " +
-                                "and reminders together in one place, helping " +
-                                "students stay organized and make better use " +
-                                "of their time.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 10.dp)
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = sectionSpacing)
-                )
-
-                // Developer introduction
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "A Note from the Developer",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = developerName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 10.dp)
-                    )
-
-                    Text(
-                        text = "I built CoffeeLog with one goal in mind: " +
-                                "make managing university schedules simple " +
-                                "and convenient. What started as a personal " +
-                                "development project became an opportunity " +
-                                "to build something useful and improve the " +
-                                "daily academic experience of students.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = sectionSpacing)
-                )
-
-                // Developer links
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Connect with Me",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(Modifier.height(8.dp))
 
-                    AboutLink(
-                        icon = Icons.Default.Code,
-                        title = "GitHub Repository",
-                        subtitle = "Explore the source code",
-                        onClick = {
-                            uriHandler.openUri(githubUrl)
-                        }
+                    Text(
+                        text = "CoffeeLog helps students organize academic schedules, track available time, and manage everyday university routines.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            lineHeight = MaterialTheme.typography.bodyMedium.fontSize * 1.4f
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    AboutLink(
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 18.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+
+                    // 3. Developer Introduction Section
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "DEVELOPED BY",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 1.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(Modifier.height(6.dp))
+
+                        Text(
+                            text = "JODev",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Text(
+                            text = "Independent Developer",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Text(
+                            text = "CoffeeLog began as a personal project to make university scheduling simpler while exploring and learning software development.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 18.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+
+                    // 4. Contact Section
+                    Text(
+                        text = "Find me online",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    ContactRow(
+                        icon = Icons.Default.Code,
+                        title = "GitHub",
+                        subtitle = "Explore the source code",
+                        onClick = { uriHandler.openUri(githubUrl) }
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    ContactRow(
                         icon = Icons.Default.Email,
                         title = "Email",
                         subtitle = email,
-                        onClick = {
-                            uriHandler.openUri("mailto:$email")
-                        }
+                        onClick = { uriHandler.openUri("mailto:$email") }
                     )
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(vertical = sectionSpacing)
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
 
-                // Footer
+                // Fixed Footer Action Area
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -358,21 +357,22 @@ fun AboutSettingsDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
+                    Spacer(Modifier.height(4.dp))
+
                     Text(
-                        text = "CoffeeLog • Version $version",
+                        text = "© 2026 JODev · CoffeeLog",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(10.dp))
 
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Done")
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Done")
+                    }
                 }
             }
         }
@@ -380,7 +380,7 @@ fun AboutSettingsDialog(
 }
 
 @Composable
-private fun AboutLink(
+private fun ContactRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
@@ -389,26 +389,39 @@ private fun AboutLink(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 48.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
-        )
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
+            )
+        }
 
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 14.dp)
+                .padding(start = 14.dp, end = 8.dp)
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
@@ -421,7 +434,18 @@ private fun AboutLink(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.OpenInNew,
             contentDescription = "Open $title",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AboutSettingsDialogPreview() {
+    SchedulesTheme(themeMode = "light") {
+        AboutSettingsDialog(
+            onDismiss = {}
         )
     }
 }

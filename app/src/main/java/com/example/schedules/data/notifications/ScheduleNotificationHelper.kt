@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import com.example.schedules.R
 import com.example.schedules.data.local.ScheduleDatabase
@@ -23,8 +24,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
@@ -99,7 +98,8 @@ object ScheduleNotificationHelper {
     fun showClassReminderNotification(
         context: Context,
         course: CourseClass,
-        isClassStarting: Boolean = false
+        isClassStarting: Boolean = false,
+        offsetMinutes: Int = 15
     ) {
         if (!NotificationPreferences.isNotificationsEnabled(context)) return
 
@@ -120,35 +120,32 @@ object ScheduleNotificationHelper {
 
         val targetChannelId = if (inQuietHours) CHANNEL_SILENT_ID else CHANNEL_ID
 
-        val timeStr = course.startTime.format(ScheduleConstants.TimeFormatter)
-
-        val title: String
-        val message: String
-
-        if (showDetails) {
-            if (isClassStarting) {
-                title = "☕ Class Starting: ${course.courseCode}"
-                message = "${course.courseName} is starting now in ${course.room}!"
-            } else {
-                title = "☕ Class Reminder: ${course.courseCode}"
-                message = "${course.courseName} starts at $timeStr in ${course.room}. Don't forget your coffee!"
-            }
+        val formattedContent = if (isClassStarting) {
+            NotificationContentFormatter.formatClassStarting(course, showDetails)
         } else {
-            if (isClassStarting) {
-                title = "☕ Class Starting"
-                message = "Your scheduled class is starting now!"
-            } else {
-                title = "☕ Class Reminder"
-                message = "You have an upcoming class scheduled soon."
-            }
+            NotificationContentFormatter.formatUpcomingReminder(course, offsetMinutes, showDetails)
         }
 
+        val largeIcon = ContextCompat.getDrawable(context, R.drawable.coffeelog_icon)?.toBitmap()
         val builder = NotificationCompat.Builder(context, targetChannelId)
-            .setSmallIcon(R.drawable.ic_coffee)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setLargeIcon(largeIcon)
+            .setContentTitle(formattedContent.title)
+            .setContentText(formattedContent.contentText)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(formattedContent.expandedTitle)
+                    .bigText(formattedContent.expandedText)
+            )
             .setAutoCancel(true)
+
+        val publicBuilder = NotificationCompat.Builder(context, targetChannelId)
+            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setContentTitle(formattedContent.publicTitle)
+            .setContentText(formattedContent.publicContentText)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+        builder.setPublicVersion(publicBuilder.build())
 
         if (hideLockScreen) {
             builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
@@ -182,11 +179,15 @@ object ScheduleNotificationHelper {
         }
     }
 
-    fun showScheduleChangeNotification(context: Context, title: String, message: String) {
+    @JvmName("showScheduleChangeNotificationWithCourseCode")
+    fun showScheduleChangeNotification(
+        context: Context,
+        courseCode: String?,
+        changeDescription: String
+    ) {
         if (!NotificationPreferences.isNotificationsEnabled(context)) return
         if (!NotificationPreferences.isScheduleChangesEnabled(context)) return
 
-        // Suppress optional schedule change notifications during quiet hours
         if (NotificationPreferences.isInQuietHours(context)) {
             Log.d("ScheduleNotification", "Schedule change notification suppressed due to Quiet Hours.")
             return
@@ -197,13 +198,35 @@ object ScheduleNotificationHelper {
 
         if (!hasPostNotificationPermission) return
 
+        val formattedContent = NotificationContentFormatter.formatScheduleChange(courseCode, changeDescription)
+
+        val largeIcon = ContextCompat.getDrawable(context, R.drawable.coffeelog_icon)?.toBitmap()
         val builder = NotificationCompat.Builder(context, CHANNEL_UPDATES_ID)
-            .setSmallIcon(R.drawable.ic_coffee)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setLargeIcon(largeIcon)
+            .setContentTitle(formattedContent.title)
+            .setContentText(formattedContent.contentText)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(formattedContent.expandedTitle)
+                    .bigText(formattedContent.expandedText)
+            )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
+
+        val publicBuilder = NotificationCompat.Builder(context, CHANNEL_UPDATES_ID)
+            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setContentTitle(formattedContent.publicTitle)
+            .setContentText(formattedContent.publicContentText)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+        builder.setPublicVersion(publicBuilder.build())
+
+        if (NotificationPreferences.hideLockScreenDetails(context)) {
+            builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+        } else {
+            builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        }
 
         if (!NotificationPreferences.isSoundEnabled(context)) builder.setSound(null)
         if (!NotificationPreferences.isVibrationEnabled(context)) builder.setVibrate(longArrayOf(0))
@@ -216,11 +239,14 @@ object ScheduleNotificationHelper {
         }
     }
 
+    fun showScheduleChangeNotification(context: Context, title: String, message: String) {
+        showScheduleChangeNotification(context, courseCode = null, changeDescription = message)
+    }
+
     fun showDailySummaryNotification(context: Context, todayClasses: List<CourseClass>) {
         if (!NotificationPreferences.isNotificationsEnabled(context)) return
         if (!NotificationPreferences.isDailySummaryEnabled(context)) return
 
-        // Suppress optional daily summary notifications during quiet hours
         if (NotificationPreferences.isInQuietHours(context)) {
             Log.d("ScheduleNotification", "Daily summary notification suppressed due to Quiet Hours.")
             return
@@ -231,23 +257,36 @@ object ScheduleNotificationHelper {
 
         if (!hasPostNotificationPermission) return
 
-        val title = "☕ Today's Schedule Summary"
-        val message = if (todayClasses.isEmpty()) {
-            "No classes scheduled for today. Enjoy your break!"
-        } else {
-            val classSummary = todayClasses.joinToString(separator = ", ") {
-                "${it.courseCode} (${it.startTime.format(ScheduleConstants.TimeFormatter)})"
-            }
-            "You have ${todayClasses.size} class(es) today: $classSummary"
-        }
+        val showDetails = NotificationPreferences.showClassDetails(context)
+        val formattedContent = NotificationContentFormatter.formatDailySummary(todayClasses, showDetails)
 
+        val largeIcon = ContextCompat.getDrawable(context, R.drawable.coffeelog_icon)?.toBitmap()
         val builder = NotificationCompat.Builder(context, CHANNEL_SUMMARY_ID)
-            .setSmallIcon(R.drawable.ic_coffee)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setLargeIcon(largeIcon)
+            .setContentTitle(formattedContent.title)
+            .setContentText(formattedContent.contentText)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(formattedContent.expandedTitle)
+                    .bigText(formattedContent.expandedText)
+            )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
+
+        val publicBuilder = NotificationCompat.Builder(context, CHANNEL_SUMMARY_ID)
+            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setContentTitle(formattedContent.publicTitle)
+            .setContentText(formattedContent.publicContentText)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+        builder.setPublicVersion(publicBuilder.build())
+
+        if (NotificationPreferences.hideLockScreenDetails(context)) {
+            builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+        } else {
+            builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        }
 
         if (!NotificationPreferences.isSoundEnabled(context)) builder.setSound(null)
         if (!NotificationPreferences.isVibrationEnabled(context)) builder.setVibrate(longArrayOf(0))
@@ -327,7 +366,7 @@ object ScheduleNotificationHelper {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val targetMillis = calculateTargetMillis(schedule.dayName, schedule.startTime, offsetMinutes)
 
-        val pendingIntent = createAlarmPendingIntent(context, schedule, action, requestCode)
+        val pendingIntent = createAlarmPendingIntent(context, schedule, action, requestCode, offsetMinutes)
 
         try {
             val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
@@ -423,7 +462,8 @@ object ScheduleNotificationHelper {
         context: Context,
         schedule: ScheduleEntity,
         actionString: String,
-        requestCode: Int
+        requestCode: Int,
+        offsetMinutes: Int = 15
     ): PendingIntent {
         val intent = Intent(context, ScheduleAlarmReceiver::class.java).apply {
             action = actionString
@@ -434,6 +474,7 @@ object ScheduleNotificationHelper {
             putExtra("room", schedule.room)
             putExtra("start_time", schedule.startTime.format(ScheduleConstants.TimeFormatter))
             putExtra("day_name", schedule.dayName)
+            putExtra("offset_minutes", offsetMinutes)
         }
         return PendingIntent.getBroadcast(
             context,
