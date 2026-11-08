@@ -45,7 +45,6 @@ import com.example.schedules.ui.theme.DarkMocha
 import com.example.schedules.ui.theme.DeepEspresso
 import com.example.schedules.ui.theme.GoldenCrema
 import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmCoffeeCream
 
 // ---------------------------------------------------------
 // SHIMMER EFFECT
@@ -154,91 +153,84 @@ fun SkeletonNowHeader() {
 
 @Composable
 fun SkeletonWeeklyCalendarStrip() {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = WarmCoffeeCream),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        // Header with navigation arrows and date range placeholder
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Header with navigation arrows and date range placeholder
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                SkeletonBox(
-                    width = 32.dp,
-                    height = 32.dp,
-                    shape = RoundedCornerShape(8.dp)
-                )
+            SkeletonBox(
+                width = 32.dp,
+                height = 32.dp,
+                shape = RoundedCornerShape(8.dp)
+            )
 
-                SkeletonBox(
-                    width = 150.dp,
-                    height = 32.dp,
-                    shape = RoundedCornerShape(8.dp)
-                )
+            SkeletonBox(
+                width = 150.dp,
+                height = 32.dp,
+                shape = RoundedCornerShape(8.dp)
+            )
 
-                SkeletonBox(
-                    width = 32.dp,
-                    height = 32.dp,
-                    shape = RoundedCornerShape(8.dp)
-                )
-            }
+            SkeletonBox(
+                width = 32.dp,
+                height = 32.dp,
+                shape = RoundedCornerShape(8.dp)
+            )
+        }
 
-            // 7 day items in one horizontal row matching WeeklyCalendarStrip
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(7) { index ->
-                    val isSelected = (index == 0)
-                    val tileBg = if (isSelected) DeepEspresso else SteamedMilk
+        // 7 day items in one horizontal row matching WeeklyCalendarStrip
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(7) { index ->
+                val isSelected = (index == 0)
+                val tileBg = if (isSelected) DeepEspresso else SteamedMilk
 
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = tileBg,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 2.dp)
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = tileBg,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 2.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        SkeletonBox(
+                            width = 24.dp,
+                            height = 10.dp,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+
+                        SkeletonBox(
+                            width = 18.dp,
+                            height = 16.dp,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .height(6.dp)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            SkeletonBox(
-                                width = 24.dp,
-                                height = 10.dp,
-                                shape = RoundedCornerShape(4.dp)
-                            )
-
-                            SkeletonBox(
-                                width = 18.dp,
-                                height = 16.dp,
-                                shape = RoundedCornerShape(4.dp)
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .height(6.dp)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(4.dp)
-                                            .clip(CircleShape)
-                                            .background(GoldenCrema)
-                                    )
-                                }
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(GoldenCrema)
+                                )
                             }
                         }
                     }

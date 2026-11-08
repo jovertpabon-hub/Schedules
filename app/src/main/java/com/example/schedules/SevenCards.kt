@@ -266,7 +266,7 @@ private fun MainScreenContent(
 
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var weekStart by remember {
-        mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))
+        mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)))
     }
     var showSearchDialog by remember { mutableStateOf(false) }
 
@@ -296,30 +296,7 @@ private fun MainScreenContent(
                     notesDates = notesDates,
                     onDateSelected = { date, dayName ->
                         selectedDate = date
-                        weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                        onSelectedDayChanged(dayName)
-                    },
-                    onPreviousWeek = {
-                        val newWeekStart = weekStart.minusWeeks(1)
-                        weekStart = newWeekStart
-                        val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(selectedDay, ignoreCase = true) }.coerceAtLeast(0)
-                        selectedDate = newWeekStart.plusDays(dayIndex.toLong())
-                        val dayName = ScheduleConstants.DaysOfWeek[dayIndex]
-                        onSelectedDayChanged(dayName)
-                    },
-                    onNextWeek = {
-                        val newWeekStart = weekStart.plusWeeks(1)
-                        weekStart = newWeekStart
-                        val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(selectedDay, ignoreCase = true) }.coerceAtLeast(0)
-                        selectedDate = newWeekStart.plusDays(dayIndex.toLong())
-                        val dayName = ScheduleConstants.DaysOfWeek[dayIndex]
-                        onSelectedDayChanged(dayName)
-                    },
-                    onTodayClick = {
-                        val today = LocalDate.now()
-                        selectedDate = today
-                        weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                        val dayName = ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(today.dayOfWeek.name, ignoreCase = true) } ?: "Monday"
+                        weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
                         onSelectedDayChanged(dayName)
                     },
                     onEditClass = onEditClass,
