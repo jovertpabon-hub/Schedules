@@ -42,14 +42,16 @@ import com.example.schedules.ui.dialogs.NotificationSettingsDialog
 import com.example.schedules.ui.dialogs.ScheduleImportPreviewDialog
 import com.example.schedules.ui.dialogs.ScheduleSettingsDialog
 import com.example.schedules.ui.dialogs.SettingsOverviewDialog
+import com.example.schedules.ui.now.weekly.CoffeeCalendarDialog
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 import com.example.schedules.ui.viewmodel.UiEvent
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.temporal.TemporalAdjusters
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -68,20 +70,29 @@ fun MainScheduleApp(
     val importPreview by viewModel.importPreview.collectAsState()
 
     var currentDate by remember { mutableStateOf(LocalDate.now()) }
-    
+    var currentTime by remember { mutableStateOf(LocalTime.now()) }
+
     LaunchedEffect(Unit) {
-        while (true) {
-            currentDate = LocalDate.now()
-            kotlinx.coroutines.delay(1.minutes.inWholeMilliseconds.milliseconds)
+        while (isActive) {
+            val now = LocalDate.now()
+            if (currentDate != now) {
+                currentDate = now
+            }
+            currentTime = LocalTime.now()
+            kotlinx.coroutines.delay(30.seconds)
         }
     }
 
-    val todayName = remember(currentDate) {
-        val name = currentDate.dayOfWeek.name
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var weekStart by remember {
+        mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)))
+    }
+
+    val selectedDay = remember(selectedDate) {
+        val name = selectedDate.dayOfWeek.name
         ScheduleConstants.DaysOfWeek.firstOrNull { it.equals(name, ignoreCase = true) } ?: ScheduleConstants.DaysOfWeek[0]
     }
 
-    var selectedDay by remember { mutableStateOf(todayName) }
     var showDialog by remember { mutableStateOf(false) }
     var editingClass by remember { mutableStateOf<CourseClass?>(null) }
     var editingDay by remember { mutableStateOf("") }
@@ -92,12 +103,18 @@ fun MainScheduleApp(
     var showAppearanceSettings by remember { mutableStateOf(false) }
     var showAboutSettings by remember { mutableStateOf(false) }
 
+    LaunchedEffect(selectedDate) {
+        viewModel.setSelectedDate(selectedDate)
+    }
+
     LaunchedEffect(intent?.data) {
         val uri = intent?.data ?: return@LaunchedEffect
         if (uri.scheme == "coffeelog") {
             val host = uri.host
             if (host == "today") {
-                selectedDay = todayName
+                val today = LocalDate.now()
+                selectedDate = today
+                weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
             } else if (host == "class") {
                 val classIdStr = uri.lastPathSegment
                 val classId = classIdStr?.toLongOrNull()
@@ -106,7 +123,10 @@ fun MainScheduleApp(
                     for ((dayName, classes) in weekData.days) {
                         val found = classes.firstOrNull { it.id == classId }
                         if (found != null) {
-                            selectedDay = dayName
+                            val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst {
+                                it.equals(dayName, ignoreCase = true)
+                            }.coerceAtLeast(0)
+                            selectedDate = weekStart.plusDays(dayIndex.toLong())
                             editingClass = found
                             editingDay = dayName
                             showDialog = true
@@ -157,8 +177,27 @@ fun MainScheduleApp(
             MainScreenContent(
                 paddingValues = paddingValues,
                 viewModel = viewModel,
+                selectedDate = selectedDate,
+                weekStart = weekStart,
                 selectedDay = selectedDay,
-                onSelectedDayChanged = { selectedDay = it },
+                currentTime = currentTime,
+                onDateSelected = { date ->
+                    selectedDate = date
+                    weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+                },
+                onPreviousWeek = {
+                    selectedDate = selectedDate.minusWeeks(1)
+                    weekStart = weekStart.minusWeeks(1)
+                },
+                onNextWeek = {
+                    selectedDate = selectedDate.plusWeeks(1)
+                    weekStart = weekStart.plusWeeks(1)
+                },
+                onTodayClick = {
+                    val today = LocalDate.now()
+                    selectedDate = today
+                    weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+                },
                 onEditClass = { course, day ->
                     editingClass = course
                     editingDay = day
@@ -250,8 +289,14 @@ fun MainScheduleApp(
 private fun MainScreenContent(
     paddingValues: PaddingValues,
     viewModel: ScheduleViewModel,
+    selectedDate: LocalDate,
+    weekStart: LocalDate,
     selectedDay: String,
-    onSelectedDayChanged: (String) -> Unit,
+    currentTime: LocalTime,
+    onDateSelected: (LocalDate) -> Unit,
+    onPreviousWeek: () -> Unit,
+    onNextWeek: () -> Unit,
+    onTodayClick: () -> Unit,
     onEditClass: (CourseClass, String) -> Unit,
     onAddClass: () -> Unit,
     onImportPdf: () -> Unit,
@@ -264,19 +309,12 @@ private fun MainScreenContent(
     val notesMap by viewModel.selectedDateNotes.collectAsState()
     val notesDates by viewModel.notesDates.collectAsState()
 
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var weekStart by remember {
-        mutableStateOf(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)))
-    }
     var showSearchDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(selectedDate) {
-        viewModel.setSelectedDate(selectedDate)
-    }
+    var showCalendarDialog by remember { mutableStateOf(false) }
 
     Crossfade(
         targetState = isLoading,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = 180),
         label = "DashboardLoadingTransition",
         modifier = Modifier
             .fillMaxSize()
@@ -291,13 +329,17 @@ private fun MainScreenContent(
                     weekSchedule = weekSchedule,
                     selectedDate = selectedDate,
                     weekStart = weekStart,
-                    selectedDay = selectedDay,
+                    currentTime = currentTime,
                     notesMap = notesMap,
                     notesDates = notesDates,
-                    onDateSelected = { date, dayName ->
-                        selectedDate = date
-                        weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-                        onSelectedDayChanged(dayName)
+                    onDateSelected = { date, _ ->
+                        onDateSelected(date)
+                    },
+                    onPreviousWeek = onPreviousWeek,
+                    onNextWeek = onNextWeek,
+                    onTodayClick = onTodayClick,
+                    onCalendarClick = {
+                        showCalendarDialog = true
                     },
                     onEditClass = onEditClass,
                     onDeleteClass = { course ->
@@ -323,16 +365,29 @@ private fun MainScreenContent(
                     onDeleteNote = { scheduleId -> viewModel.deleteNote(scheduleId, selectedDate) }
                 )
 
+                if (showCalendarDialog) {
+                    CoffeeCalendarDialog(
+                        initialDate = selectedDate,
+                        notesDates = notesDates,
+                        onDismiss = { showCalendarDialog = false },
+                        onDateSelected = { date ->
+                            onDateSelected(date)
+                            showCalendarDialog = false
+                        }
+                    )
+                }
+
                 if (showSearchDialog) {
                     GlobalSearchDialog(
                         weekSchedule = weekSchedule,
                         notesMap = notesMap,
                         onDismiss = { showSearchDialog = false },
                         onResultSelected = { _, dayName ->
-                            val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(dayName, ignoreCase = true) }.coerceAtLeast(0)
+                            val dayIndex = ScheduleConstants.DaysOfWeek.indexOfFirst {
+                                it.equals(dayName, ignoreCase = true)
+                            }.coerceAtLeast(0)
                             val targetDate = weekStart.plusDays(dayIndex.toLong())
-                            selectedDate = targetDate
-                            onSelectedDayChanged(dayName)
+                            onDateSelected(targetDate)
                             showSearchDialog = false
                         }
                     )
