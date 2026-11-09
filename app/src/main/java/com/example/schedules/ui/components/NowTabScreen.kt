@@ -8,9 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -35,14 +33,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -72,7 +69,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -224,8 +220,6 @@ fun NowTabScreen(
     notesMap: Map<Long, String> = emptyMap(),
     notesDates: Set<LocalDate> = emptySet(),
     onDateSelected: (LocalDate, String) -> Unit = { _, _ -> },
-    onPreviousWeek: () -> Unit = {},
-    onNextWeek: () -> Unit = {},
     onTodayClick: () -> Unit = {},
     onCalendarClick: () -> Unit = {},
     onEditClass: (CourseClass, String) -> Unit = { _, _ -> },
@@ -348,8 +342,6 @@ fun NowTabScreen(
                                             weekSchedule = weekSchedule,
                                             notesDates = notesDates,
                                             onDateSelected = onDateSelected,
-                                            onPreviousWeek = onPreviousWeek,
-                                            onNextWeek = onNextWeek,
                                             onTodayClick = onTodayClick,
                                             onCalendarClick = onCalendarClick
                                         )
@@ -421,7 +413,7 @@ fun NowTabScreen(
                             )
                             Text(
                                 text = formattedSelectedDate,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = DarkMocha.copy(alpha = 0.7f)
                             )
@@ -551,7 +543,7 @@ private fun NowTabHeaderSection(
                     .fillMaxWidth()
                     .padding(
                         horizontal = 16.dp,
-                        vertical = 12.dp
+                        vertical = 8.dp
                     )
             ) {
                 NowTabHeader(
@@ -734,20 +726,6 @@ fun WeeklyCalendarStrip(
     weekSchedule: WeekSchedule,
     notesDates: Set<LocalDate> = emptySet(),
     onDateSelected: (LocalDate, String) -> Unit,
-    onPreviousWeek: () -> Unit = {
-        val prevDate = selectedDate.minusWeeks(1)
-        val dayName = ScheduleConstants.DaysOfWeek.firstOrNull {
-            it.equals(prevDate.dayOfWeek.name, ignoreCase = true)
-        } ?: "Sunday"
-        onDateSelected(prevDate, dayName)
-    },
-    onNextWeek: () -> Unit = {
-        val nextDate = selectedDate.plusWeeks(1)
-        val dayName = ScheduleConstants.DaysOfWeek.firstOrNull {
-            it.equals(nextDate.dayOfWeek.name, ignoreCase = true)
-        } ?: "Sunday"
-        onDateSelected(nextDate, dayName)
-    },
     onTodayClick: () -> Unit = {
         val today = LocalDate.now()
         val dayName = ScheduleConstants.DaysOfWeek.firstOrNull {
@@ -758,7 +736,6 @@ fun WeeklyCalendarStrip(
     onCalendarClick: () -> Unit
 ) {
     val today = remember { LocalDate.now() }
-    val isTodayCurrent = selectedDate == today
     val haptic = LocalHapticFeedback.current
 
     Column(
@@ -769,15 +746,6 @@ fun WeeklyCalendarStrip(
     ) {
         WeeklyCalendarHeader(
             selectedDate = selectedDate,
-            isToday = isTodayCurrent,
-            onPreviousWeek = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onPreviousWeek()
-            },
-            onNextWeek = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onNextWeek()
-            },
             onTodayClick = {
                 if (selectedDate != today) {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -788,6 +756,11 @@ fun WeeklyCalendarStrip(
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onCalendarClick()
             }
+        )
+
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = DeepEspresso.copy(alpha = 0.12f)
         )
 
         WeeklyDateSelector(
@@ -803,17 +776,18 @@ fun WeeklyCalendarStrip(
 @Composable
 private fun WeeklyCalendarHeader(
     selectedDate: LocalDate,
-    isToday: Boolean,
-    onPreviousWeek: () -> Unit,
-    onNextWeek: () -> Unit,
     onTodayClick: () -> Unit,
     onCalendarClick: () -> Unit
 ) {
     val monthYearText = remember(selectedDate) {
-        selectedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US))
+        selectedDate.format(
+            DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US)
+        )
     }
 
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides Dp.Unspecified
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -837,21 +811,6 @@ private fun WeeklyCalendarHeader(
 
                 AnimatedContent(
                     targetState = monthYearText,
-                    transitionSpec = {
-                        if (targetState > initialState) {
-                            (slideInVertically(tween(150)) { it / 2 } +
-                                    fadeIn(tween(120))).togetherWith(
-                                slideOutVertically(tween(150)) { -it / 2 } +
-                                        fadeOut(tween(120))
-                            )
-                        } else {
-                            (slideInVertically(tween(150)) { -it / 2 } +
-                                    fadeIn(tween(120))).togetherWith(
-                                slideOutVertically(tween(150)) { it / 2 } +
-                                        fadeOut(tween(120))
-                            )
-                        }
-                    },
                     label = "monthYearTransition"
                 ) { targetText ->
                     Text(
@@ -862,50 +821,19 @@ private fun WeeklyCalendarHeader(
                     )
                 }
             }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            TextButton(
+                onClick = onTodayClick,
+                shape = RoundedCornerShape(10.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = DeepEspresso.copy(alpha = 0.08f)
+                )
             ) {
-                if (!isToday) {
-                    TextButton(
-                        onClick = onTodayClick,
-                        contentPadding = PaddingValues(
-                            horizontal = 6.dp,
-                            vertical = 0.dp
-                        )
-                    ) {
-                        Text(
-                            text = "Today",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            textDecoration = TextDecoration.Underline,
-                            color = DeepEspresso
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = onPreviousWeek,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronLeft,
-                        contentDescription = "Previous week",
-                        tint = DeepEspresso
-                    )
-                }
-
-                IconButton(
-                    onClick = onNextWeek,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Next week",
-                        tint = DeepEspresso
-                    )
-                }
+                Text(
+                    text = "Today",
+                    color = WarmRoast,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }

@@ -335,8 +335,6 @@ private fun MainScreenContent(
                     onDateSelected = { date, _ ->
                         onDateSelected(date)
                     },
-                    onPreviousWeek = onPreviousWeek,
-                    onNextWeek = onNextWeek,
                     onTodayClick = onTodayClick,
                     onCalendarClick = {
                         showCalendarDialog = true
