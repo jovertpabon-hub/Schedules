@@ -63,10 +63,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -201,9 +205,9 @@ fun calculateTotalFreeTime(vacantBlocks: List<VacantTimeBlock>): String {
 }
 
 /**
- * Unified Now and Schedule Screen for CoffeeLog.
+ * Unified Now and Schedule Screen for Clofee.
  * Contains:
- * - CoffeeLog Header with title, current date, Add Class, Search, and overflow actions.
+ * - Clofee Header with title, current date, Add Class, Search, and overflow actions.
  * - Swipeable Overview Section (Page 1: Timer Overview, Page 2: Calendar Overview).
  * - Subtle page indicator.
  * - Single Shared Schedule Section below the pager.
@@ -264,13 +268,15 @@ fun NowTabScreen(
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = AppBackground
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppBackground),
+        color = Color.Transparent
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 1. CoffeeLog Header Section (Fixed at top)
+            // 1. Clofee Header Section (Fixed at top)
             NowTabHeaderSection(
                 onAddClass = onAddClass,
                 onImportPdf = onImportPdf,
@@ -284,21 +290,21 @@ fun NowTabScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Overview Section (Pager + Indicator grouped together)
+                // Section 1: Overview Group (Pager + Indicator)
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(172.dp),
+                            .height(170.dp),
                         pageSpacing = 16.dp,
                         verticalAlignment = Alignment.Top
                     ) { page ->
@@ -311,6 +317,8 @@ fun NowTabScreen(
                                 ) {
                                     NowTabCountdownCard(
                                         status = status,
+                                        selectedDate = selectedDate,
+                                        onClick = onTodayClick
                                     )
                                 }
                             }
@@ -324,16 +332,16 @@ fun NowTabScreen(
                                         colors = CardDefaults.cardColors(
                                             containerColor = SteamedMilk
                                         ),
-                                        shape = RoundedCornerShape(24.dp),
+                                        shape = RoundedCornerShape(16.dp),
                                         elevation = CardDefaults.cardElevation(
-                                            defaultElevation = 4.dp
+                                            defaultElevation = 1.dp
                                         ),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .border(
-                                                1.5.dp,
-                                                WarmRoast.copy(alpha = 0.2f),
-                                                RoundedCornerShape(24.dp)
+                                                1.25.dp,
+                                                WarmRoast.copy(alpha = 0.45f),
+                                                RoundedCornerShape(16.dp)
                                             )
                                     ) {
                                         WeeklyCalendarStrip(
@@ -422,7 +430,8 @@ fun NowTabScreen(
 
                     Surface(
                         color = SteamedMilk,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.45f))
                     ) {
                         Text(
                             text = if (showVacantTimes) {
@@ -534,7 +543,7 @@ private fun NowTabHeaderSection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = AppBackground,
+        color = MaterialTheme.colorScheme.background,
         shadowElevation = 2.dp
     ) {
         Column {
@@ -551,7 +560,7 @@ private fun NowTabHeaderSection(
                     onImportPdf = onImportPdf,
                     onClearAll = onClearAll,
                     onSettingsClick = onSettingsClick,
-                    onSearchClick = onSearchClick
+                    onSearchClick = onSearchClick,
                 )
             }
 
@@ -589,29 +598,36 @@ private fun NowTabHeader(
             modifier = Modifier.weight(1f)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(1.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 Text(
-                    text = "CoffeeLog",
+                    text = "Clofee",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 24.sp,
+                        fontSize = 28.sp,
                         fontFamily = FontFamily.SansSerif,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontStyle = FontStyle.Italic,
                         letterSpacing = (-0.5).sp,
-                        lineHeight = 26.sp
+                        shadow = Shadow(
+                            color = DarkMocha.copy(alpha = 0.22f),
+                            offset = Offset(1f, 2f),
+                            blurRadius = 3f
+                        )
                     ),
                     color = DarkMocha,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-//                Text(
-//                    text = formattedDate,
-//                    style = MaterialTheme.typography.bodySmall,
-//                    fontWeight = FontWeight.Medium,
-//                    color = DarkMocha.copy(alpha = 0.7f),
-//                    maxLines = 1,
-//                    overflow = TextOverflow.Ellipsis
-//                )
+
+                Text(
+                    text = "WHAT'S ON YOUR DAY?",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.2.sp
+                    ),
+                    color = DarkMocha.copy(alpha = 0.7f)
+                )
             }
         }
 
@@ -626,6 +642,7 @@ private fun NowTabHeader(
                 },
                 shape = CircleShape,
                 color = SteamedMilk.copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -633,7 +650,7 @@ private fun NowTabHeader(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add Class",
                         tint = DeepEspresso,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                 }
             }
@@ -645,14 +662,16 @@ private fun NowTabHeader(
                 },
                 shape = CircleShape,
                 color = SteamedMilk.copy(alpha = 0.7f),
-                modifier = Modifier.size(36.dp)
+                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
+                modifier = Modifier
+                    .size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search",
                         tint = DeepEspresso,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(25.dp)
                     )
                 }
             }
@@ -665,6 +684,7 @@ private fun NowTabHeader(
                     },
                     shape = CircleShape,
                     color = SteamedMilk,
+                    border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
                     modifier = Modifier.size(36.dp),
                     shadowElevation = 0.5.dp
                 ) {
@@ -824,6 +844,7 @@ private fun WeeklyCalendarHeader(
             TextButton(
                 onClick = onTodayClick,
                 shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
                 colors = ButtonDefaults.textButtonColors(
                     containerColor = DeepEspresso.copy(alpha = 0.08f)
@@ -940,10 +961,10 @@ private fun WeeklyDateTile(
         },
         shape = RoundedCornerShape(14.dp),
         color = tileBgColor,
-        border = if (isToday && !isSelected) {
-            BorderStroke(1.dp, WarmRoast.copy(alpha = 0.45f))
-        } else {
-            null
+        border = when {
+            isSelected -> BorderStroke(1.25.dp, GoldenCrema.copy(alpha = 0.85f))
+            isToday -> BorderStroke(1.25.dp, WarmRoast.copy(alpha = 0.75f))
+            else -> BorderStroke(1.dp, DarkMocha.copy(alpha = 0.18f))
         },
         shadowElevation = if (isSelected) 2.dp else 0.dp,
         modifier = modifier

@@ -14,6 +14,10 @@ private val DarkColorScheme = darkColorScheme(
     onSecondary = OnSecondaryDark,
     secondaryContainer = SecondaryContainerDark,
     onSecondaryContainer = OnSecondaryContainerDark,
+    tertiary = GoldenCrema,
+    onTertiary = DeepEspresso,
+    tertiaryContainer = SecondaryContainerDark,
+    onTertiaryContainer = SteamedMilk,
     surface = SurfaceDark,
     onSurface = OnSurfaceDark,
     surfaceVariant = SurfaceVariantDark,
@@ -21,7 +25,7 @@ private val DarkColorScheme = darkColorScheme(
     background = SurfaceDark,
     onBackground = OnSurfaceDark,
     outline = OutlineDark,
-    outlineVariant = OutlineVariantDark
+    outlineVariant = OutlineVariantDark,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -33,26 +37,19 @@ private val LightColorScheme = lightColorScheme(
     onSecondary = OnSecondaryLight,
     secondaryContainer = SecondaryContainerLight,
     onSecondaryContainer = OnSecondaryContainerLight,
+    tertiary = GoldenCrema,
+    onTertiary = DeepEspresso,
+    tertiaryContainer = WarmCoffeeCream,
+    onTertiaryContainer = DarkMocha,
     surface = SurfaceLight,
     onSurface = OnSurfaceLight,
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = OnSurfaceVariantLight,
-    background = SurfaceLight,
+    background = AppBackgroundBase,
     onBackground = OnSurfaceLight,
     outline = OutlineLight,
-    outlineVariant = OutlineVariantLight
+    outlineVariant = OutlineVariantLight,
 )
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-
 
 @Composable
 fun SchedulesTheme(

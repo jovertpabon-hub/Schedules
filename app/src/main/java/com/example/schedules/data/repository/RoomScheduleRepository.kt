@@ -35,7 +35,7 @@ class RoomScheduleRepository(
             schedule.courseCode,
             "Restored class for ${schedule.dayName}"
         )
-        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
+        com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(appContext)
     }
 
     override suspend fun deleteSchedule(schedule: ScheduleEntity) {
@@ -47,7 +47,7 @@ class RoomScheduleRepository(
             schedule.courseCode,
             "Removed class from ${schedule.dayName}"
         )
-        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
+        com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(appContext)
     }
 
     override suspend fun clearAllSchedules() {
@@ -62,7 +62,7 @@ class RoomScheduleRepository(
             null,
             "All scheduled classes have been cleared"
         )
-        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
+        com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(appContext)
     }
 
     // --- Complex Logic & Validation ---
@@ -121,7 +121,7 @@ class RoomScheduleRepository(
                 schedule.courseCode,
                 changeDesc
             )
-            com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
+            com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(appContext)
             Result.success(Unit)
         } catch (error: Exception) {
             Result.failure(error)
@@ -164,7 +164,7 @@ class RoomScheduleRepository(
             courseCode,
             changeDesc
         )
-        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
+        com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(appContext)
     }
 
     override suspend fun deleteNoteForScheduleAndDate(scheduleId: Long, date: java.time.LocalDate) {
@@ -176,6 +176,6 @@ class RoomScheduleRepository(
             courseCode,
             "Note removed ($date)"
         )
-        com.example.schedules.ui.widget.CoffeeLogWidgetHelper.updateWidget(appContext)
+        com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(appContext)
     }
 }

@@ -11,15 +11,9 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import com.example.schedules.data.notifications.ScheduleNotificationHelper
 import com.example.schedules.ui.theme.SchedulesTheme
 
@@ -59,21 +53,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val preferences = getSharedPreferences("app_preferences", MODE_PRIVATE)
-            var themeMode by remember {
-                mutableStateOf(preferences.getString("theme_mode", "system") ?: "system")
-            }
-            SchedulesTheme(themeMode = themeMode) {
+            SchedulesTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainScheduleApp(
-                        themeMode = themeMode,
-                        onThemeModeChange = { selected ->
-                            themeMode = selected
-                            preferences.edit { putString("theme_mode", selected) }
-                        },
                         intent = currentIntentState.value
                     )
                 }
@@ -96,11 +81,4 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         return true
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview
-@Composable
-fun MainScheduleAppPreview() {
-    MainScheduleApp(themeMode = "light", onThemeModeChange = {})
 }

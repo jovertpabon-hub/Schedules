@@ -2,6 +2,7 @@
 package com.example.schedules.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,8 @@ fun EmptyDayView(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(colors.primaryContainer.copy(alpha = 0.55f)),
+                .background(colors.primaryContainer.copy(alpha = 0.55f))
+                .border(1.dp, colors.primary.copy(alpha = 0.6f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(

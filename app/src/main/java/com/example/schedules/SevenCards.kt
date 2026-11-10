@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.schedules.data.local.ScheduleEntity
 import com.example.schedules.data.models.CourseClass
@@ -35,7 +34,6 @@ import com.example.schedules.ui.components.NowTabScreen
 import com.example.schedules.ui.components.SkeletonDashboardLayout
 import com.example.schedules.ui.dialogs.AboutSettingsDialog
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
-import com.example.schedules.ui.dialogs.AppearanceSettingsDialog
 import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
 import com.example.schedules.ui.dialogs.GlobalSearchDialog
 import com.example.schedules.ui.dialogs.NotificationSettingsDialog
@@ -56,8 +54,6 @@ import kotlin.time.Duration.Companion.seconds
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainScheduleApp(
-    themeMode: String,
-    onThemeModeChange: (String) -> Unit,
     intent: android.content.Intent? = null
 ) {
     val context = LocalContext.current
@@ -100,7 +96,6 @@ fun MainScheduleApp(
     var showNotificationSettings by remember { mutableStateOf(false) }
     var showSettingsOverview by remember { mutableStateOf(false) }
     var showScheduleSettings by remember { mutableStateOf(false) }
-    var showAppearanceSettings by remember { mutableStateOf(false) }
     var showAboutSettings by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedDate) {
@@ -109,7 +104,7 @@ fun MainScheduleApp(
 
     LaunchedEffect(intent?.data) {
         val uri = intent?.data ?: return@LaunchedEffect
-        if (uri.scheme == "coffeelog") {
+        if (uri.scheme == "clofee") {
             val host = uri.host
             if (host == "today") {
                 val today = LocalDate.now()
@@ -185,14 +180,6 @@ fun MainScheduleApp(
                     selectedDate = date
                     weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
                 },
-                onPreviousWeek = {
-                    selectedDate = selectedDate.minusWeeks(1)
-                    weekStart = weekStart.minusWeeks(1)
-                },
-                onNextWeek = {
-                    selectedDate = selectedDate.plusWeeks(1)
-                    weekStart = weekStart.plusWeeks(1)
-                },
                 onTodayClick = {
                     val today = LocalDate.now()
                     selectedDate = today
@@ -253,10 +240,6 @@ fun MainScheduleApp(
                     showSettingsOverview = false
                     showScheduleSettings = true
                 },
-                onAppearance = {
-                    showSettingsOverview = false
-                    showAppearanceSettings = true
-                },
                 onAbout = {
                     showSettingsOverview = false
                     showAboutSettings = true
@@ -268,9 +251,6 @@ fun MainScheduleApp(
         }
         if (showScheduleSettings) {
             ScheduleSettingsDialog(viewModel = viewModel, onDismiss = { showScheduleSettings = false })
-        }
-        if (showAppearanceSettings) {
-            AppearanceSettingsDialog(themeMode, onThemeModeChange, onDismiss = { showAppearanceSettings = false })
         }
         if (showAboutSettings) AboutSettingsDialog(onDismiss = { showAboutSettings = false })
 
@@ -294,8 +274,6 @@ private fun MainScreenContent(
     selectedDay: String,
     currentTime: LocalTime,
     onDateSelected: (LocalDate) -> Unit,
-    onPreviousWeek: () -> Unit,
-    onNextWeek: () -> Unit,
     onTodayClick: () -> Unit,
     onEditClass: (CourseClass, String) -> Unit,
     onAddClass: () -> Unit,
@@ -393,11 +371,4 @@ private fun MainScreenContent(
             }
         }
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun MainAppPreview() {
-    MainScheduleApp(themeMode = "system", onThemeModeChange = {})
 }

@@ -36,7 +36,7 @@
         </receiver>
 
         <receiver
-            android:name=".ui.widget.CoffeeLogWidgetReceiver"
+            android:name=".ui.widget.ClofeeWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_name">
             <intent-filter>
@@ -48,7 +48,7 @@
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/coffee_log_widget_info" />
+                android:resource="@xml/clofee_widget_info" />
         </receiver>
 
         <activity
@@ -65,7 +65,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="coffeelog" />
+                <data android:scheme="clofee" />
             </intent-filter>
         </activity>
     </application>

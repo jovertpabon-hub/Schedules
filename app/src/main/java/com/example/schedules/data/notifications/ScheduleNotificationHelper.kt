@@ -91,7 +91,7 @@ object ScheduleNotificationHelper {
             notificationManager.createNotificationChannel(silentChannel)
             notificationManager.createNotificationChannel(updatesChannel)
             notificationManager.createNotificationChannel(summaryChannel)
-            Log.d("ScheduleNotification", "All CoffeeLog notification channels initialized successfully")
+            Log.d("ScheduleNotification", "All Clofee notification channels initialized successfully")
         }
     }
 
@@ -126,9 +126,9 @@ object ScheduleNotificationHelper {
             NotificationContentFormatter.formatUpcomingReminder(course, offsetMinutes, showDetails)
         }
 
-        val largeIcon = ContextCompat.getDrawable(context, R.drawable.coffeelog_icon)?.toBitmap()
+        val largeIcon = ContextCompat.getDrawable(context, R.drawable.clofee_icon)?.toBitmap()
         val builder = NotificationCompat.Builder(context, targetChannelId)
-            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setSmallIcon(R.drawable.clofee_icon)
             .setLargeIcon(largeIcon)
             .setContentTitle(formattedContent.title)
             .setContentText(formattedContent.contentText)
@@ -140,7 +140,7 @@ object ScheduleNotificationHelper {
             .setAutoCancel(true)
 
         val publicBuilder = NotificationCompat.Builder(context, targetChannelId)
-            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setSmallIcon(R.drawable.clofee_icon)
             .setContentTitle(formattedContent.publicTitle)
             .setContentText(formattedContent.publicContentText)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -200,9 +200,9 @@ object ScheduleNotificationHelper {
 
         val formattedContent = NotificationContentFormatter.formatScheduleChange(courseCode, changeDescription)
 
-        val largeIcon = ContextCompat.getDrawable(context, R.drawable.coffeelog_icon)?.toBitmap()
+        val largeIcon = ContextCompat.getDrawable(context, R.drawable.clofee_icon)?.toBitmap()
         val builder = NotificationCompat.Builder(context, CHANNEL_UPDATES_ID)
-            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setSmallIcon(R.drawable.clofee_icon)
             .setLargeIcon(largeIcon)
             .setContentTitle(formattedContent.title)
             .setContentText(formattedContent.contentText)
@@ -215,7 +215,7 @@ object ScheduleNotificationHelper {
             .setAutoCancel(true)
 
         val publicBuilder = NotificationCompat.Builder(context, CHANNEL_UPDATES_ID)
-            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setSmallIcon(R.drawable.clofee_icon)
             .setContentTitle(formattedContent.publicTitle)
             .setContentText(formattedContent.publicContentText)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -260,9 +260,9 @@ object ScheduleNotificationHelper {
         val showDetails = NotificationPreferences.showClassDetails(context)
         val formattedContent = NotificationContentFormatter.formatDailySummary(todayClasses, showDetails)
 
-        val largeIcon = ContextCompat.getDrawable(context, R.drawable.coffeelog_icon)?.toBitmap()
+        val largeIcon = ContextCompat.getDrawable(context, R.drawable.clofee_icon)?.toBitmap()
         val builder = NotificationCompat.Builder(context, CHANNEL_SUMMARY_ID)
-            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setSmallIcon(R.drawable.clofee_icon)
             .setLargeIcon(largeIcon)
             .setContentTitle(formattedContent.title)
             .setContentText(formattedContent.contentText)
@@ -275,7 +275,7 @@ object ScheduleNotificationHelper {
             .setAutoCancel(true)
 
         val publicBuilder = NotificationCompat.Builder(context, CHANNEL_SUMMARY_ID)
-            .setSmallIcon(R.drawable.coffeelog_icon)
+            .setSmallIcon(R.drawable.clofee_icon)
             .setContentTitle(formattedContent.publicTitle)
             .setContentText(formattedContent.publicContentText)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

@@ -1,45 +1,17 @@
+
 package com.example.schedules.ui.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,123 +19,348 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedules.data.models.ScheduleConstants
-import com.example.schedules.ui.theme.SchedulesTheme
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
+
+
+@Composable
+private fun SettingsDialogFrame(
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.88f)
+                .widthIn(max = 400.dp)
+                .heightIn(max = 560.dp),
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = 18.dp,
+                    vertical = 14.dp
+                ),
+                content = content
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun SettingsHeader(
+    title: String,
+    subtitle: String,
+    onDismiss: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        IconButton(onClick = onDismiss) {
+            Icon(
+                Icons.Default.Close,
+                contentDescription = "Close"
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsFooter(
+    onDismiss: () -> Unit,
+    label: String = "Done"
+) {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        TextButton(onClick = onDismiss) {
+            Text(label, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+// --------------------------------------------------
+// SETTINGS OVERVIEW
+// --------------------------------------------------
 
 @Composable
 fun SettingsOverviewDialog(
     onDismiss: () -> Unit,
     onNotifications: () -> Unit,
     onSchedule: () -> Unit,
-    onAppearance: () -> Unit,
     onAbout: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(.94f).fillMaxHeight(.82f),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface
+    SettingsDialogFrame(onDismiss) {
+
+        SettingsHeader(
+            title = "Settings",
+            subtitle = "Manage your Clofee experience",
+            onDismiss = onDismiss
+        )
+
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 12.dp),
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(top = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Column(Modifier.padding(horizontal = 22.dp, vertical = 18.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Settings", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text("Manage your CoffeeLog experience", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close settings")
-                    }
-                }
-                HorizontalDivider(Modifier.padding(top = 14.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(top = 8.dp)) {
-                    SettingsNavigationRow(Icons.Default.Notifications, "Notifications", "Reminders, quiet hours and notification behavior", onNotifications)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    SettingsNavigationRow(Icons.Default.CalendarMonth, "Schedule", "School days and timetable preferences", onSchedule)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    SettingsNavigationRow(Icons.Default.Palette, "Appearance", "Theme and visual preferences", onAppearance)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    SettingsNavigationRow(Icons.Default.Info, "About", "App version and information", onAbout)
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Done") }
-                }
-            }
+            SettingsNavigationRow(
+                icon = Icons.Default.Notifications,
+                title = "Notifications",
+                description = "Reminders and quiet hours",
+                onClick = onNotifications
+            )
+
+            SettingsNavigationRow(
+                icon = Icons.Default.CalendarMonth,
+                title = "Schedule",
+                description = "School days and timetable preferences",
+                onClick = onSchedule
+            )
+
+            SettingsNavigationRow(
+                icon = Icons.Default.Info,
+                title = "About",
+                description = "App information and developer",
+                onClick = onAbout
+            )
         }
+
+        SettingsFooter(onDismiss)
     }
 }
 
 @Composable
-fun SettingsNavigationRow(icon: ImageVector, title: String, description: String, onClick: () -> Unit) {
+fun SettingsNavigationRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+
     Row(
-        Modifier.fillMaxWidth().defaultMinSize(minHeight = 104.dp).clickable(onClick = onClick).padding(horizontal = 4.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
-        Column(Modifier.weight(1f).padding(start = 18.dp, end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(colors.secondaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = colors.onSecondaryContainer,
+                modifier = Modifier.size(21.dp)
+            )
         }
-        Icon(Icons.Default.ChevronRight, contentDescription = "Open $title settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.onSurface
+            )
+
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                maxLines = 2
+            )
+        }
+
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = "Open $title",
+            tint = colors.onSurfaceVariant.copy(alpha = 0.7f)
+        )
     }
 }
 
+// --------------------------------------------------
+// SCHEDULE SETTINGS
+// --------------------------------------------------
+
 @Composable
-fun ScheduleSettingsDialog(viewModel: ScheduleViewModel, onDismiss: () -> Unit) {
+fun ScheduleSettingsDialog(
+    viewModel: ScheduleViewModel,
+    onDismiss: () -> Unit
+) {
     val settings by viewModel.notificationSettings.collectAsState()
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(Modifier.fillMaxWidth().fillMaxHeight(.8f), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
-            Column(Modifier.padding(20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Schedule", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = "Close schedule settings") }
-                }
-                Text("Active school days", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 12.dp, bottom = 8.dp))
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    ScheduleConstants.DaysOfWeek.forEach { day ->
-                        Row(Modifier.fillMaxWidth().clickable { viewModel.toggleSchoolDay(day) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(day, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                            Checkbox(checked = day in settings.schoolDays, onCheckedChange = { viewModel.toggleSchoolDay(day) })
+
+    SettingsDialogFrame(onDismiss) {
+
+        SettingsHeader(
+            title = "Schedule",
+            subtitle = "Configure your school days",
+            onDismiss = onDismiss
+        )
+
+        Spacer(Modifier.height(18.dp))
+
+        Text(
+            "ACTIVE SCHOOL DAYS",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            "Select the days you usually have classes.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            ScheduleConstants.DaysOfWeek.forEach { day ->
+                val selected = day in settings.schoolDays
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (selected)
+                                MaterialTheme.colorScheme.secondaryContainer
+                            else
+                                MaterialTheme.colorScheme.surface
+                        )
+                        .clickable {
+                            viewModel.toggleSchoolDay(day)
                         }
-                    }
-                    HorizontalDivider()
-                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Weekend reminders", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        Switch(settings.weekendRemindersEnabled, viewModel::updateWeekendRemindersEnabled)
-                    }
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        day,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (selected)
+                            FontWeight.SemiBold
+                        else
+                            FontWeight.Normal,
+                        color = if (selected)
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Checkbox(
+                        checked = selected,
+                        onCheckedChange = {
+                            viewModel.toggleSchoolDay(day)
+                        }
+                    )
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { TextButton(onClick = onDismiss) { Text("Done") } }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        "Weekend reminders",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Text(
+                        "Receive reminders on weekends",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Switch(
+                    checked = settings.weekendRemindersEnabled,
+                    onCheckedChange =
+                        viewModel::updateWeekendRemindersEnabled
+                )
             }
         }
+
+        SettingsFooter(onDismiss)
     }
 }
 
-@Composable
-fun AppearanceSettingsDialog(themeMode: String, onThemeModeChange: (String) -> Unit, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface) {
-            Column(Modifier.padding(22.dp)) {
-                Text("Appearance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Choose how CoffeeLog looks", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
-                listOf("system" to "System default", "light" to "Light", "dark" to "Dark").forEach { (value, label) ->
-                    Row(Modifier.fillMaxWidth().clickable { onThemeModeChange(value) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        RadioButton(selected = themeMode == value, onClick = { onThemeModeChange(value) })
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { TextButton(onClick = onDismiss) { Text("Done") } }
-            }
-        }
-    }
-}
-
-
-
+// --------------------------------------------------
+// ABOUT
+// --------------------------------------------------
 
 @Composable
 fun AboutSettingsDialog(
@@ -171,158 +368,128 @@ fun AboutSettingsDialog(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val colors = MaterialTheme.colorScheme
 
-    val version = runCatching {
-        context.packageManager
-            .getPackageInfo(context.packageName, 0)
-            .versionName ?: "1.0.0"
-    }.getOrDefault("1.0.0")
+    val version = remember {
+        runCatching {
+            context.packageManager
+                .getPackageInfo(context.packageName, 0)
+                .versionName ?: "1.0.0"
+        }.getOrDefault("1.0.0")
+    }
 
-    val githubUrl = "https://github.com/jovertpabon-hub/Schedules"
+    val githubUrl =
+        "https://github.com/jovertpabon-hub/Schedules"
+
     val email = "jovertpabon@gmail.com"
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
+    SettingsDialogFrame(onDismiss) {
+
+        Row(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .heightIn(max = 680.dp),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.Start
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                // Scrollable Content
+
+                // App identity
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState())
-                        .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 16.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(colors.primaryContainer)
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 1. Header — App Identity
                     Text(
-                        text = "ABOUT THE APP",
+                        "ABOUT THE APP",
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 1.5.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = colors.onPrimaryContainer
                     )
 
-                    Spacer(Modifier.height(6.dp))
-
                     Text(
-                        text = "CoffeeLog",
+                        "Clofee",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = colors.onPrimaryContainer
                     )
-
-                    Spacer(Modifier.height(4.dp))
 
                     Text(
-                        text = "Your academic schedule, brewed into simplicity.",
+                        "Your academic schedule, brewed into simplicity.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = colors.onPrimaryContainer.copy(alpha = 0.8f)
                     )
-
-                    Spacer(Modifier.height(12.dp))
 
                     Surface(
                         shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.primaryContainer
+                        color = colors.surface.copy(alpha = 0.7f)
                     ) {
                         Text(
-                            text = "VERSION $version",
+                            "VERSION $version",
+                            modifier = Modifier.padding(
+                                horizontal = 10.dp,
+                                vertical = 5.dp
+                            ),
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 18.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    )
-
-                    // 2. App Purpose Section
-                    Text(
-                        text = "Why CoffeeLog?",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    Text(
-                        text = "CoffeeLog helps students organize academic schedules, track available time, and manage everyday university routines.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            lineHeight = MaterialTheme.typography.bodyMedium.fontSize * 1.4f
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 18.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    )
-
-                    // 3. Developer Introduction Section
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "DEVELOPED BY",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(Modifier.height(6.dp))
-
-                        Text(
-                            text = "JODev",
-                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Text(
-                            text = "Independent Developer",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Text(
-                            text = "CoffeeLog began as a personal project to make university scheduling simpler while exploring and learning software development.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = colors.onSurface
                         )
                     }
+                }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 18.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    )
+                // Purpose
 
-                    // 4. Contact Section
+                AboutSection(title = "Why Clofee?") {
                     Text(
-                        text = "Find me online",
+                        "Clofee helps students organize academic schedules, track available time, and manage everyday university routines.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant,
+                        lineHeight = MaterialTheme.typography.bodyMedium.fontSize * 1.45f
+                    )
+                }
+
+                HorizontalDivider(
+                    color = colors.outlineVariant.copy(alpha = 0.6f)
+                )
+
+                // Developer
+
+                AboutSection(title = "Developed by") {
+                    Text(
+                        "JODev",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = colors.onSurface
                     )
 
-                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Independent Developer",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colors.primary
+                    )
 
+                    Text(
+                        "Clofee began as a personal project to simplify university scheduling while exploring software development.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant
+                    )
+                }
+
+                HorizontalDivider(
+                    color = colors.outlineVariant.copy(alpha = 0.6f)
+                )
+
+                // Contact
+
+                AboutSection(title = "Find me online") {
                     ContactRow(
                         icon = Icons.Default.Code,
                         title = "GitHub",
@@ -330,52 +497,47 @@ fun AboutSettingsDialog(
                         onClick = { uriHandler.openUri(githubUrl) }
                     )
 
-                    Spacer(Modifier.height(10.dp))
-
                     ContactRow(
                         icon = Icons.Default.Email,
                         title = "Email",
                         subtitle = email,
-                        onClick = { uriHandler.openUri("mailto:$email") }
+                        onClick = {
+                            uriHandler.openUri("mailto:$email")
+                        }
                     )
                 }
 
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                Text(
+                    "Made with care for students.",
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-
-                // Fixed Footer Action Area
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Made with care for students.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(Modifier.height(4.dp))
-
-                    Text(
-                        text = "© 2026 JODev · CoffeeLog",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(Modifier.height(10.dp))
-
-                    TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text("Done")
-                    }
-                }
             }
         }
+
+        SettingsFooter(onDismiss)
+    }
+}
+
+@Composable
+private fun AboutSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        content()
     }
 }
 
@@ -386,68 +548,55 @@ private fun ContactRow(
     subtitle: String,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 48.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(12.dp)
-                ),
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(colors.secondaryContainer),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = icon,
+                icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(20.dp)
+                tint = colors.onSecondaryContainer,
+                modifier = Modifier.size(19.dp)
             )
         }
 
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 14.dp, end = 8.dp)
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
+                title,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = colors.onSurface
             )
 
             Text(
-                text = subtitle,
+                subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = colors.onSurfaceVariant
             )
         }
 
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+            Icons.AutoMirrored.Filled.OpenInNew,
             contentDescription = "Open $title",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp)
+            tint = colors.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun AboutSettingsDialogPreview() {
-    SchedulesTheme(themeMode = "light") {
-        AboutSettingsDialog(
-            onDismiss = {}
-        )
-    }
-}
-
-

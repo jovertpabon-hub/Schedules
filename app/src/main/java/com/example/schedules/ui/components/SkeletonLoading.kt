@@ -39,11 +39,11 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.schedules.ui.theme.AppBackground
 import com.example.schedules.ui.theme.DarkMocha
 import com.example.schedules.ui.theme.DeepEspresso
 import com.example.schedules.ui.theme.GoldenCrema
 import com.example.schedules.ui.theme.SteamedMilk
+import com.example.schedules.ui.theme.WarmRoast
 import com.example.schedules.ui.theme.WarmCoffeeCream
 
 // ---------------------------------------------------------
@@ -70,8 +70,8 @@ fun Modifier.shimmer(
         label = "ShimmerOffset"
     )
 
-    val baseColor = DarkMocha.copy(alpha = 0.06f)
-    val highlightColor = DarkMocha.copy(alpha = 0.16f)
+    val baseColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)
+    val highlightColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)
 
     val brush = Brush.linearGradient(
         colors = listOf(
@@ -121,7 +121,7 @@ fun SkeletonBox(
 fun SkeletonNowHeaderSection() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = AppBackground,
+        color = MaterialTheme.colorScheme.background,
         shadowElevation = 2.dp
     ) {
         Column {
@@ -140,7 +140,7 @@ fun SkeletonNowHeaderSection() {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // App title placeholder ("coffeelog")
+                    // App title placeholder ("clofee")
                     SkeletonBox(
                         width = 110.dp,
                         height = 24.dp,
@@ -191,8 +191,8 @@ fun SkeletonHeroCard(
         modifier = modifier
             .fillMaxWidth()
             .border(
-                1.5.dp,
-                GoldenCrema.copy(alpha = 0.5f),
+                1.25.dp,
+                GoldenCrema.copy(alpha = 0.65f),
                 shape = RoundedCornerShape(24.dp)
             )
     ) {
@@ -410,8 +410,8 @@ fun SkeletonClassCard(
         ),
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
-            0.75.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            1.25.dp,
+            WarmRoast.copy(alpha = 0.45f)
         ),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -609,7 +609,7 @@ fun SkeletonDashboardLayout(
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = AppBackground
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
