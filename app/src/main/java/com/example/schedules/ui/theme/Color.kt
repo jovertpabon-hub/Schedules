@@ -1,6 +1,7 @@
 
 package com.example.schedules.ui.theme
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
@@ -22,10 +23,14 @@ val SteamedMilk = Color(0xFFDCC58F)
 val AppBackground = Brush.linearGradient(
     colorStops = arrayOf(
         0.0f to Color(0xFFE5CEAA),
-        0.35f to Color(0xFFD5B68B),
-        0.70f to Color(0xFFC5A078),
-        1.0f to Color(0xFFB38B63)
-    )
+        0.25f to Color(0xFFD5B68B),
+        0.45f to Color(0xFFB99A75), // Darker middle
+        0.60f to Color(0xFFC5A078),
+        0.80f to Color(0xFFB38B63),
+        1.0f to Color(0xFFA47A55)  // Darker bottom
+    ),
+    start = Offset(0f, 0f),
+    end = Offset(0f, Float.POSITIVE_INFINITY)
 )
 
 val AppBackgroundBase = Color(0xFFD5B68B)

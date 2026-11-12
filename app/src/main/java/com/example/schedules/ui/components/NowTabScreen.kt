@@ -305,6 +305,7 @@ fun NowTabScreen(
                             .fillMaxWidth()
                             .height(170.dp),
                         pageSpacing = 16.dp,
+                        beyondViewportPageCount = 1,
                         verticalAlignment = Alignment.Top
                     ) { page ->
 
@@ -600,7 +601,7 @@ private fun NowTabHeader(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 Text(
-                    text = "Clofee",
+                    text = "parclock",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontSize = 28.sp,
                         fontFamily = FontFamily.SansSerif,

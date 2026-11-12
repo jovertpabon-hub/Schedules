@@ -40,7 +40,9 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.example.schedules.MainActivity
 import com.example.schedules.data.local.ScheduleDatabase
+import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.CourseClass
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -48,29 +50,66 @@ import java.util.Locale
 
 /**
  * Clofee Palette Color Providers for Glance widget styling.
+ * Designed to strictly reflect the main app screen's theme (Color.kt) and visual hierarchy.
  */
 object ClofeeWidgetColors {
-    private val DarkMocha = Color(0xFF623528)
+    // Foundation Coffee Palette (directly matching Color.kt)
+    private val DarkMocha = Color(0xFF543020)
     private val DeepEspresso = Color(0xFF4D2A00)
-    private val WarmRoast = Color(0xFFCC6F00)
-    private val GoldenCrema = Color(0xFFF2A900)
-    private val WarmCoffeeCream = Color(0xFFFFF4D6)
-    private val SteamedMilk = Color(0xFFF0DDAA)
-    private val SurfaceDark = Color(0xFF1F1206)
-    private val SurfaceVariantDark = Color(0xFF382104)
+    private val WarmRoast = Color(0xFFB85D00)
+    private val GoldenCrema = Color(0xFFD99A16)
+    private val WarmCoffeeCream = Color(0xFFF5E6C5)
+    private val SteamedMilk = Color(0xFFDCC58F)
+    private val AppBackgroundBase = Color(0xFFD5B68B)
+    private val SurfaceDark = Color(0xFF1B1009)
+    private val SurfaceVariantDark = Color(0xFF302014)
 
-    val WidgetBackground = ColorProvider(day = WarmCoffeeCream, night = SurfaceDark)
+    // Main Widget Backgrounds & Containers
+    val WidgetBackground = ColorProvider(day = AppBackgroundBase, night = SurfaceDark)
     val CardBackground = ColorProvider(day = SteamedMilk, night = SurfaceVariantDark)
     val ClassItemContainer = ColorProvider(day = SteamedMilk, night = SurfaceVariantDark)
+
+    // Left Accent Pillars (matching ClassItemCard)
     val AccentPillar = ColorProvider(day = WarmRoast, night = GoldenCrema)
+    val OngoingAccentPillar = ColorProvider(day = GoldenCrema, night = GoldenCrema)
+    val CompletedAccentPillar = ColorProvider(day = Color(0xFF9E7767), night = Color(0xFF5E453A))
 
-    val PrimaryText = ColorProvider(day = DarkMocha, night = SteamedMilk)
-    val SecondaryText = ColorProvider(day = Color(0xFF7A4B3A), night = GoldenCrema)
-    val MutedText = ColorProvider(day = Color(0xFF9E7767), night = Color(0xFFB89687))
+    // Text Colors
+    val PrimaryText = ColorProvider(day = DarkMocha, night = WarmCoffeeCream)
+    val SecondaryText = ColorProvider(day = DeepEspresso, night = SteamedMilk)
+    val MutedText = ColorProvider(day = Color(0xFF7A5847), night = Color(0xFFA68E80))
+    val CompletedText = ColorProvider(day = Color(0xFF8A6C5D), night = Color(0xFF8C756B))
 
-    val BadgeBg = ColorProvider(day = WarmRoast, night = DeepEspresso)
-    val BadgeText = ColorProvider(day = Color.White, night = GoldenCrema)
+    // Header Badges
+    val BadgeBg = ColorProvider(day = SteamedMilk, night = SurfaceVariantDark)
+    val BadgeText = ColorProvider(day = DarkMocha, night = GoldenCrema)
+
+    // Status Badges
+    val OngoingBadgeBg = ColorProvider(day = GoldenCrema, night = GoldenCrema)
+    val OngoingBadgeText = ColorProvider(day = DeepEspresso, night = DeepEspresso)
+
+    val UpcomingBadgeBg = ColorProvider(day = WarmRoast, night = DeepEspresso)
+    val UpcomingBadgeText = ColorProvider(day = WarmCoffeeCream, night = GoldenCrema)
+
+    val CompletedBadgeBg = ColorProvider(day = Color(0xFFB89F88), night = Color(0xFF422E22))
+    val CompletedBadgeText = ColorProvider(day = DarkMocha, night = SteamedMilk)
+
+    // Hero / Next Class Card (reflecting Timer Overview / NextClassCard in main screen)
+    val HeroBackground = ColorProvider(day = DeepEspresso, night = Color(0xFF2B1600))
+    val HeroTextPrimary = ColorProvider(day = WarmCoffeeCream, night = WarmCoffeeCream)
+    val HeroTextSecondary = ColorProvider(day = GoldenCrema, night = GoldenCrema)
+    val HeroTextMuted = ColorProvider(day = SteamedMilk.copy(alpha = 0.85f), night = SteamedMilk.copy(alpha = 0.85f))
+    val HeroBadgeBg = ColorProvider(day = GoldenCrema, night = GoldenCrema)
+    val HeroBadgeText = ColorProvider(day = DeepEspresso, night = DeepEspresso)
 }
+
+private data class WidgetClassStatus(
+    val courseClass: CourseClass?,
+    val status: ClassStatus,
+    val timeFormatted: String,
+    val isAllCompleted: Boolean = false,
+    val isFreeDay: Boolean = false
+)
 
 class ClofeeWidget : GlanceAppWidget() {
 
@@ -112,6 +151,7 @@ class ClofeeWidget : GlanceAppWidget() {
             }
 
             val currentDate = LocalDate.now()
+            val currentTime = LocalTime.now()
             val todayName = currentDate.dayOfWeek.name
 
             // Filter and map entities for today in chronological order
@@ -127,6 +167,7 @@ class ClofeeWidget : GlanceAppWidget() {
                 )
             }.sortedBy { it.startTime }
 
+            val widgetStatus = calculateWidgetStatus(todayClasses, currentTime)
             val size = LocalSize.current
 
             Box(
@@ -138,13 +179,13 @@ class ClofeeWidget : GlanceAppWidget() {
             ) {
                 when {
                     size.height < 140.dp -> {
-                        SmallWidgetContent(currentDate, todayClasses, context)
+                        SmallWidgetContent(currentDate, widgetStatus, context)
                     }
-                    size.width < 200.dp -> {
-                        MediumWidgetContent(currentDate, todayClasses, context)
+                    size.width < 220.dp -> {
+                        MediumWidgetContent(currentDate, todayClasses, widgetStatus, context)
                     }
                     else -> {
-                        LargeWidgetContent(currentDate, todayClasses, context)
+                        LargeWidgetContent(currentDate, currentTime, todayClasses, widgetStatus, context)
                     }
                 }
             }
@@ -154,10 +195,9 @@ class ClofeeWidget : GlanceAppWidget() {
     @Composable
     private fun SmallWidgetContent(
         currentDate: LocalDate,
-        todayClasses: List<CourseClass>,
+        widgetStatus: WidgetClassStatus,
         context: Context
     ) {
-        val nextClass = todayClasses.firstOrNull { it.endTime.isAfter(LocalTime.now()) } ?: todayClasses.firstOrNull()
         val fullDateStr = currentDate.format(DateTimeFormatter.ofPattern("MMM d", Locale.US))
 
         Column(
@@ -166,15 +206,16 @@ class ClofeeWidget : GlanceAppWidget() {
                 .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Header Row: App Branding + Date
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "☕ Clofee",
+                    text = "☕ parclock",
                     style = TextStyle(
                         color = ClofeeWidgetColors.PrimaryText,
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -183,58 +224,20 @@ class ClofeeWidget : GlanceAppWidget() {
                     text = fullDateStr,
                     style = TextStyle(
                         color = ClofeeWidgetColors.SecondaryText,
-                        fontSize = 11.sp
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 )
             }
 
             Spacer(modifier = GlanceModifier.height(6.dp))
 
-            if (nextClass != null) {
-                Box(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .background(ClofeeWidgetColors.CardBackground)
-                        .cornerRadius(10.dp)
-                        .padding(8.dp)
-                ) {
-                    Column {
-                        Text(
-                            text = nextClass.courseCode,
-                            style = TextStyle(
-                                color = ClofeeWidgetColors.PrimaryText,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = GlanceModifier.height(2.dp))
-                        Text(
-                            text = "${formatTimeShort(nextClass.startTime)} • Rm ${nextClass.room}",
-                            style = TextStyle(
-                                color = ClofeeWidgetColors.SecondaryText,
-                                fontSize = 10.sp
-                            )
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .background(ClofeeWidgetColors.CardBackground)
-                        .cornerRadius(10.dp)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No classes",
-                        style = TextStyle(
-                            color = ClofeeWidgetColors.SecondaryText,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
-            }
+            // Body Card: Reflecting Hero / Next Class Card
+            WidgetHeroCard(
+                widgetStatus = widgetStatus,
+                context = context,
+                modifier = GlanceModifier.fillMaxWidth().defaultWeight()
+            )
         }
     }
 
@@ -242,6 +245,7 @@ class ClofeeWidget : GlanceAppWidget() {
     private fun MediumWidgetContent(
         currentDate: LocalDate,
         todayClasses: List<CourseClass>,
+        widgetStatus: WidgetClassStatus,
         context: Context
     ) {
         val fullDateStr = currentDate.format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.US))
@@ -257,7 +261,7 @@ class ClofeeWidget : GlanceAppWidget() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "☕ Clofee",
+                    text = "☕ parclock",
                     style = TextStyle(
                         color = ClofeeWidgetColors.PrimaryText,
                         fontSize = 14.sp,
@@ -280,7 +284,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "${todayClasses.size} classes",
+                        text = if (todayClasses.isNotEmpty()) "${todayClasses.size} classes" else "Free Day",
                         style = TextStyle(
                             color = ClofeeWidgetColors.BadgeText,
                             fontSize = 10.sp,
@@ -293,59 +297,12 @@ class ClofeeWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(8.dp))
 
             if (todayClasses.isNotEmpty()) {
-                val displayClasses = todayClasses.take(3)
-                Column(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                    displayClasses.forEachIndexed { idx, course ->
-                        if (idx > 0) Spacer(modifier = GlanceModifier.height(4.dp))
-                        Box(
-                            modifier = GlanceModifier
-                                .fillMaxWidth()
-                                .background(ClofeeWidgetColors.ClassItemContainer)
-                                .cornerRadius(10.dp)
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                                .clickable(actionStartActivity(createClassDeepLinkIntent(context, course.id ?: 0L)))
-                        ) {
-                            Row(
-                                modifier = GlanceModifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = GlanceModifier
-                                        .width(3.dp)
-                                        .height(20.dp)
-                                        .background(ClofeeWidgetColors.AccentPillar)
-                                        .cornerRadius(2.dp)
-                                ) {}
-                                Spacer(modifier = GlanceModifier.width(8.dp))
-                                Text(
-                                    text = course.courseCode,
-                                    style = TextStyle(
-                                        color = ClofeeWidgetColors.PrimaryText,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                                Spacer(modifier = GlanceModifier.width(6.dp))
-                                Text(
-                                    text = course.courseName,
-                                    style = TextStyle(
-                                        color = ClofeeWidgetColors.SecondaryText,
-                                        fontSize = 11.sp
-                                    ),
-                                    maxLines = 1
-                                )
-                                Spacer(modifier = GlanceModifier.defaultWeight())
-                                Text(
-                                    text = "${formatTimeShort(course.startTime)} - ${formatTimeShort(course.endTime)} • Rm ${course.room}",
-                                    style = TextStyle(
-                                        color = ClofeeWidgetColors.MutedText,
-                                        fontSize = 10.sp
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
+                // Hero Card showing active/next class
+                WidgetHeroCard(
+                    widgetStatus = widgetStatus,
+                    context = context,
+                    modifier = GlanceModifier.fillMaxWidth().defaultWeight()
+                )
             } else {
                 Box(
                     modifier = GlanceModifier
@@ -356,13 +313,24 @@ class ClofeeWidget : GlanceAppWidget() {
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No classes scheduled today.",
-                        style = TextStyle(
-                            color = ClofeeWidgetColors.SecondaryText,
-                            fontSize = 12.sp
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "☕ A Clear Day Ahead",
+                            style = TextStyle(
+                                color = ClofeeWidgetColors.PrimaryText,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
+                        Spacer(modifier = GlanceModifier.height(2.dp))
+                        Text(
+                            text = "No classes scheduled today. Enjoy your day!",
+                            style = TextStyle(
+                                color = ClofeeWidgetColors.SecondaryText,
+                                fontSize = 11.sp
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -371,7 +339,9 @@ class ClofeeWidget : GlanceAppWidget() {
     @Composable
     private fun LargeWidgetContent(
         currentDate: LocalDate,
+        currentTime: LocalTime,
         todayClasses: List<CourseClass>,
+        widgetStatus: WidgetClassStatus,
         context: Context
     ) {
         val fullDateStr = currentDate.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.US))
@@ -381,34 +351,29 @@ class ClofeeWidget : GlanceAppWidget() {
                 .fillMaxSize()
                 .padding(14.dp)
         ) {
-            // Header Row: App Title & Full Date
+            // App Header Row: Title & Date
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalAlignment = Alignment.Start
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Clofee branding
                 Row(
                     modifier = GlanceModifier.defaultWeight(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "☕",
-                        style = TextStyle(fontSize = 20.sp)
+                        style = TextStyle(fontSize = 18.sp)
                     )
-
                     Spacer(modifier = GlanceModifier.width(6.dp))
-
                     Column {
                         Text(
-                            text = "Clofee",
+                            text = "parclock",
                             style = TextStyle(
                                 color = ClofeeWidgetColors.PrimaryText,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         )
-
                         Text(
                             text = "Your daily schedule",
                             style = TextStyle(
@@ -419,7 +384,6 @@ class ClofeeWidget : GlanceAppWidget() {
                     }
                 }
 
-                // Current date
                 Text(
                     text = fullDateStr,
                     style = TextStyle(
@@ -433,70 +397,65 @@ class ClofeeWidget : GlanceAppWidget() {
 
             Spacer(modifier = GlanceModifier.height(10.dp))
 
-            // Daily Schedule List
+            // 1. Hero / Timer Overview Card (Matching NextClassCard on main screen)
+            WidgetHeroCard(
+                widgetStatus = widgetStatus,
+                context = context,
+                modifier = GlanceModifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = GlanceModifier.height(10.dp))
+
+            // 2. Schedule Section Header
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Today's Schedule",
+                    style = TextStyle(
+                        color = ClofeeWidgetColors.SecondaryText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+
+                Spacer(modifier = GlanceModifier.defaultWeight())
+
+                Box(
+                    modifier = GlanceModifier
+                        .background(ClofeeWidgetColors.BadgeBg)
+                        .cornerRadius(6.dp)
+                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "${todayClasses.size} ${if (todayClasses.size == 1) "Class" else "Classes"}",
+                        style = TextStyle(
+                            color = ClofeeWidgetColors.BadgeText,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = GlanceModifier.height(6.dp))
+
+            // 3. Class Items List (Matching ClassItemCard on main screen)
             if (todayClasses.isNotEmpty()) {
                 LazyColumn(
                     modifier = GlanceModifier.fillMaxWidth().defaultWeight()
                 ) {
-                    items(items = todayClasses, itemId = { course -> course.id ?: course.courseCode.hashCode().toLong() }) { course ->
-                        Box(
-                            modifier = GlanceModifier
-                                .fillMaxWidth()
-                                .padding(vertical = 3.dp)
-                                .background(ClofeeWidgetColors.ClassItemContainer)
-                                .cornerRadius(10.dp)
-                                .padding(10.dp)
-                                .clickable(actionStartActivity(createClassDeepLinkIntent(context, course.id ?: 0L)))
-                        ) {
-                            Row(
-                                modifier = GlanceModifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Accent Indicator Bar
-                                Box(
-                                    modifier = GlanceModifier
-                                        .width(4.dp)
-                                        .height(32.dp)
-                                        .background(ClofeeWidgetColors.AccentPillar)
-                                        .cornerRadius(2.dp)
-                                ) {}
-
-                                Spacer(modifier = GlanceModifier.width(10.dp))
-
-                                // Course Details
-                                Column(modifier = GlanceModifier.defaultWeight()) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = course.courseCode,
-                                            style = TextStyle(
-                                                color = ClofeeWidgetColors.PrimaryText,
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        )
-                                        Spacer(modifier = GlanceModifier.width(6.dp))
-                                        Text(
-                                            text = course.courseName,
-                                            style = TextStyle(
-                                                color = ClofeeWidgetColors.SecondaryText,
-                                                fontSize = 12.sp
-                                            ),
-                                            maxLines = 1
-                                        )
-                                    }
-
-                                    Spacer(modifier = GlanceModifier.height(2.dp))
-
-                                    Text(
-                                        text = "${formatTimeShort(course.startTime)} - ${formatTimeShort(course.endTime)}  •  Room ${course.room}",
-                                        style = TextStyle(
-                                            color = ClofeeWidgetColors.MutedText,
-                                            fontSize = 11.sp
-                                        )
-                                    )
-                                }
-                            }
-                        }
+                    items(
+                        items = todayClasses,
+                        itemId = { course -> course.id ?: course.courseCode.hashCode().toLong() }
+                    ) { course ->
+                        WidgetClassItemCard(
+                            course = course,
+                            currentTime = currentTime,
+                            context = context,
+                            modifier = GlanceModifier.padding(vertical = 3.dp)
+                        )
                     }
                 }
             } else {
@@ -509,20 +468,333 @@ class ClofeeWidget : GlanceAppWidget() {
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "☕ No classes scheduled today.",
+                            text = "☕ A Clear Day Ahead",
                             style = TextStyle(
                                 color = ClofeeWidgetColors.PrimaryText,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         )
+                        Spacer(modifier = GlanceModifier.height(4.dp))
+                        Text(
+                            text = "No classes scheduled today. Enjoy your free time!",
+                            style = TextStyle(
+                                color = ClofeeWidgetColors.SecondaryText,
+                                fontSize = 11.sp
+                            )
+                        )
                     }
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun WidgetHeroCard(
+        widgetStatus: WidgetClassStatus,
+        context: Context,
+        modifier: GlanceModifier = GlanceModifier
+    ) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(ClofeeWidgetColors.HeroBackground)
+                .cornerRadius(12.dp)
+                .padding(10.dp)
+                .clickable(
+                    actionStartActivity(
+                        if (widgetStatus.courseClass?.id != null) {
+                            createClassDeepLinkIntent(context, widgetStatus.courseClass.id)
+                        } else {
+                            createTodayDeepLinkIntent(context)
+                        }
+                    )
+                )
+        ) {
+            Column(modifier = GlanceModifier.fillMaxWidth()) {
+                // Header Row inside Hero Card
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (widgetStatus.status) {
+                            ClassStatus.ONGOING -> "▶ CURRENT CLASS"
+                            ClassStatus.UPCOMING -> "⏰ UP NEXT"
+                            ClassStatus.NONE -> if (widgetStatus.isAllCompleted) "☕ ALL CLASSES FINISHED" else "☕ DAILY OVERVIEW"
+                        },
+                        style = TextStyle(
+                            color = ClofeeWidgetColors.HeroTextSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+
+                    Spacer(modifier = GlanceModifier.defaultWeight())
+
+                    val course = widgetStatus.courseClass
+                    val badgeText = when {
+                        course != null -> course.courseCode
+                        widgetStatus.isAllCompleted -> "COMPLETED"
+                        else -> "FREE DAY"
+                    }
+
+                    Box(
+                        modifier = GlanceModifier
+                            .background(ClofeeWidgetColors.HeroBadgeBg)
+                            .cornerRadius(6.dp)
+                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            style = TextStyle(
+                                color = ClofeeWidgetColors.HeroBadgeText,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = GlanceModifier.height(6.dp))
+
+                // Course Info inside Hero Card
+                val course = widgetStatus.courseClass
+                if (course != null) {
+                    Text(
+                        text = course.courseName,
+                        style = TextStyle(
+                            color = ClofeeWidgetColors.HeroTextPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        maxLines = 1
+                    )
+
+                    Spacer(modifier = GlanceModifier.height(3.dp))
+
+                    Row(
+                        modifier = GlanceModifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = widgetStatus.timeFormatted,
+                            style = TextStyle(
+                                color = ClofeeWidgetColors.HeroTextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+
+                        Spacer(modifier = GlanceModifier.width(6.dp))
+
+                        Text(
+                            text = "•  ${formatTimeShort(course.startTime)} - ${formatTimeShort(course.endTime)}  •  Rm ${course.room}",
+                            style = TextStyle(
+                                color = ClofeeWidgetColors.HeroTextMuted,
+                                fontSize = 10.sp
+                            ),
+                            maxLines = 1
+                        )
+                    }
+                } else {
+                    Text(
+                        text = if (widgetStatus.isAllCompleted) "You've completed your schedule for today." else "No classes scheduled today.",
+                        style = TextStyle(
+                            color = ClofeeWidgetColors.HeroTextPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                    Spacer(modifier = GlanceModifier.height(2.dp))
+                    Text(
+                        text = if (widgetStatus.isAllCompleted) "Enjoy your free time" else "Make the most of your day",
+                        style = TextStyle(
+                            color = ClofeeWidgetColors.HeroTextMuted,
+                            fontSize = 10.sp
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun WidgetClassItemCard(
+        course: CourseClass,
+        currentTime: LocalTime,
+        context: Context,
+        modifier: GlanceModifier = GlanceModifier
+    ) {
+        val isCompleted = !currentTime.isBefore(course.endTime)
+        val isOngoing = !currentTime.isBefore(course.startTime) && currentTime.isBefore(course.endTime)
+
+        val pillarColor = when {
+            isOngoing -> ClofeeWidgetColors.OngoingAccentPillar
+            isCompleted -> ClofeeWidgetColors.CompletedAccentPillar
+            else -> ClofeeWidgetColors.AccentPillar
+        }
+
+        val titleTextColor = when {
+            isCompleted -> ClofeeWidgetColors.CompletedText
+            else -> ClofeeWidgetColors.PrimaryText
+        }
+
+        val subtitleTextColor = when {
+            isCompleted -> ClofeeWidgetColors.CompletedText
+            else -> ClofeeWidgetColors.MutedText
+        }
+
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(ClofeeWidgetColors.ClassItemContainer)
+                .cornerRadius(10.dp)
+                .padding(horizontal = 10.dp, vertical = 7.dp)
+                .clickable(actionStartActivity(createClassDeepLinkIntent(context, course.id ?: 0L)))
+        ) {
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left Accent Pillar Bar (Matching ClassItemCard in main app)
+                Box(
+                    modifier = GlanceModifier
+                        .width(4.dp)
+                        .height(28.dp)
+                        .background(pillarColor)
+                        .cornerRadius(2.dp)
+                ) {}
+
+                Spacer(modifier = GlanceModifier.width(8.dp))
+
+                // Course Info Column
+                Column(modifier = GlanceModifier.defaultWeight()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = course.courseCode,
+                            style = TextStyle(
+                                color = titleTextColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+
+                        Spacer(modifier = GlanceModifier.width(6.dp))
+
+                        Text(
+                            text = course.courseName,
+                            style = TextStyle(
+                                color = subtitleTextColor,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            maxLines = 1
+                        )
+                    }
+
+                    Spacer(modifier = GlanceModifier.height(2.dp))
+
+                    Text(
+                        text = "${formatTimeShort(course.startTime)} - ${formatTimeShort(course.endTime)}  •  Rm ${course.room}",
+                        style = TextStyle(
+                            color = subtitleTextColor,
+                            fontSize = 10.sp
+                        ),
+                        maxLines = 1
+                    )
+                }
+
+                Spacer(modifier = GlanceModifier.width(6.dp))
+
+                // Status Badge Tag
+                val (badgeBg, badgeText, label) = when {
+                    isOngoing -> Triple(ClofeeWidgetColors.OngoingBadgeBg, ClofeeWidgetColors.OngoingBadgeText, "NOW")
+                    isCompleted -> Triple(ClofeeWidgetColors.CompletedBadgeBg, ClofeeWidgetColors.CompletedBadgeText, "DONE")
+                    else -> Triple(ClofeeWidgetColors.UpcomingBadgeBg, ClofeeWidgetColors.UpcomingBadgeText, "NEXT")
+                }
+
+                Box(
+                    modifier = GlanceModifier
+                        .background(badgeBg)
+                        .cornerRadius(6.dp)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = label,
+                        style = TextStyle(
+                            color = badgeText,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun calculateWidgetStatus(
+        todayClasses: List<CourseClass>,
+        currentTime: LocalTime
+    ): WidgetClassStatus {
+        if (todayClasses.isEmpty()) {
+            return WidgetClassStatus(
+                courseClass = null,
+                status = ClassStatus.NONE,
+                timeFormatted = "00:00:00",
+                isFreeDay = true
+            )
+        }
+
+        val ongoing = todayClasses.firstOrNull {
+            !currentTime.isBefore(it.startTime) && currentTime.isBefore(it.endTime)
+        }
+        if (ongoing != null) {
+            val remainingSeconds = maxOf(0L, Duration.between(currentTime, ongoing.endTime).seconds)
+            return WidgetClassStatus(
+                courseClass = ongoing,
+                status = ClassStatus.ONGOING,
+                timeFormatted = formatDurationShort(remainingSeconds)
+            )
+        }
+
+        val upcoming = todayClasses.firstOrNull { currentTime.isBefore(it.startTime) }
+        if (upcoming != null) {
+            val startSeconds = maxOf(0L, Duration.between(currentTime, upcoming.startTime).seconds)
+            return WidgetClassStatus(
+                courseClass = upcoming,
+                status = ClassStatus.UPCOMING,
+                timeFormatted = formatUpcomingDuration(startSeconds)
+            )
+        }
+
+        return WidgetClassStatus(
+            courseClass = todayClasses.lastOrNull(),
+            status = ClassStatus.NONE,
+            timeFormatted = "Finished",
+            isAllCompleted = true
+        )
+    }
+
+    private fun formatDurationShort(seconds: Long): String {
+        val hrs = seconds / 3600
+        val mins = (seconds % 3600) / 60
+        return when {
+            hrs > 0 -> "${hrs}h ${mins}m left"
+            mins > 0 -> "${mins}m left"
+            else -> "< 1m left"
+        }
+    }
+
+    private fun formatUpcomingDuration(seconds: Long): String {
+        val hrs = seconds / 3600
+        val mins = (seconds % 3600) / 60
+        return when {
+            hrs > 0 -> "In ${hrs}h ${mins}m"
+            mins > 0 -> "In ${mins}m"
+            else -> "Starting"
         }
     }
 
