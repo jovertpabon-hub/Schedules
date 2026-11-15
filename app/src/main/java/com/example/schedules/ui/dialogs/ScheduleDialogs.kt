@@ -1,7 +1,5 @@
 package com.example.schedules.ui.dialogs
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -85,8 +83,7 @@ fun AddOrEditClassDialog(
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = Modifier.background(colors.surface)
+                        onDismissRequest = { expanded = false }
                     ) {
                         days.forEach { selectionDay ->
                             DropdownMenuItem(
@@ -208,8 +205,7 @@ fun AddOrEditClassDialog(
                     )
                     ExposedDropdownMenu(
                         expanded = reminderExpanded,
-                        onDismissRequest = { reminderExpanded = false },
-                        modifier = Modifier.background(colors.surface)
+                        onDismissRequest = { reminderExpanded = false }
                     ) {
                         offsetOptions.forEach { (offset, label) ->
                             DropdownMenuItem(
@@ -331,7 +327,23 @@ fun TimePickerDialog(
                     color = colors.onSurface,
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
-                TimePicker(state = timePickerState)
+                TimePicker(
+                    state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        selectorColor = colors.primary,
+                        clockDialColor = colors.surfaceVariant,
+                        clockDialSelectedContentColor = colors.onPrimary,
+                        clockDialUnselectedContentColor = colors.onSurface,
+                        periodSelectorSelectedContainerColor = colors.primary,
+                        periodSelectorSelectedContentColor = colors.onPrimary,
+                        periodSelectorUnselectedContainerColor = colors.surfaceVariant,
+                        periodSelectorUnselectedContentColor = colors.onSurface,
+                        timeSelectorSelectedContainerColor = colors.primaryContainer,
+                        timeSelectorSelectedContentColor = colors.onPrimaryContainer,
+                        timeSelectorUnselectedContainerColor = colors.surfaceVariant,
+                        timeSelectorUnselectedContentColor = colors.onSurface
+                    )
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
                     horizontalArrangement = Arrangement.End

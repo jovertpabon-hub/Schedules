@@ -622,7 +622,7 @@ fun AboutSettingsDialog(
                     )
 
                     Text(
-                        "Clofee",
+                        "ParClock",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = colors.onPrimaryContainer
@@ -653,9 +653,9 @@ fun AboutSettingsDialog(
 
                 // Purpose
 
-                AboutSection(title = "Why Clofee?") {
+                AboutSection(title = "Why ParClock?") {
                     Text(
-                        "Clofee helps students organize academic schedules, track available time, and manage everyday university routines.",
+                        "ParClock helps students organize academic schedules, track available time, and manage everyday university routines.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onSurfaceVariant,
                         lineHeight = MaterialTheme.typography.bodyMedium.fontSize * 1.45f

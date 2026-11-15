@@ -24,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -47,13 +46,12 @@ fun NowTabCountdownCard(
 ) {
     val colors = MaterialTheme.colorScheme
     val containerColor = colors.primaryContainer
-    val onContainerColor = colors.onPrimaryContainer
     val accentColor = colors.secondary
 
     val infiniteTransition = rememberInfiniteTransition(label = "hintFade")
     val textAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.45f,
-        targetValue = 0.95f,
+        initialValue = 0.5f,
+        targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -70,7 +68,7 @@ fun NowTabCountdownCard(
             containerColor = Color.Transparent
         ),
         elevation = CardDefaults.cardElevation(4.dp),
-        border = BorderStroke(1.25.dp, accentColor.copy(alpha = 0.65f)),
+        border = BorderStroke(1.25.dp, accentColor.copy(alpha = 0.75f)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -87,7 +85,7 @@ fun NowTabCountdownCard(
                     text = "Tap to return",
                     style = MaterialTheme.typography.labelSmall,
                     color = accentColor,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 14.dp, bottom = 10.dp)
@@ -179,7 +177,7 @@ fun EmptyScheduleView(
         }
 
         HorizontalDivider(
-            color = contentColor.copy(alpha = 0.15f),
+            color = contentColor.copy(alpha = 0.25f),
             thickness = 1.dp
         )
 
@@ -194,7 +192,7 @@ fun EmptyScheduleView(
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawArc(
-                        color = accentColor.copy(alpha = 0.35f),
+                        color = accentColor.copy(alpha = 0.45f),
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,
@@ -218,7 +216,7 @@ fun EmptyScheduleView(
                         text = "REMAINING",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = contentColor.copy(alpha = 0.75f),
+                        color = contentColor.copy(alpha = 0.9f),
                         letterSpacing = 0.5.sp
                     )
                 }
@@ -243,7 +241,8 @@ fun EmptyScheduleView(
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = contentColor.copy(alpha = 0.75f)
+                        fontWeight = FontWeight.Medium,
+                        color = contentColor.copy(alpha = 0.9f)
                     )
 
                     Row(
@@ -330,7 +329,7 @@ fun ActiveCountdownView(
         }
 
         HorizontalDivider(
-            color = contentColor.copy(alpha = 0.15f),
+            color = contentColor.copy(alpha = 0.25f),
             thickness = 1.dp
         )
 
@@ -350,7 +349,7 @@ fun ActiveCountdownView(
 
                     drawArc(
                         color = accentColor.copy(
-                            alpha = if (isOngoing) 0.35f else 0.25f
+                            alpha = if (isOngoing) 0.45f else 0.35f
                         ),
                         startAngle = 0f,
                         sweepAngle = 360f,
@@ -391,13 +390,13 @@ fun ActiveCountdownView(
                         text = if (isOngoing) "REMAINING" else "STARTS IN",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = contentColor.copy(alpha = 0.75f),
+                        color = contentColor.copy(alpha = 0.9f),
                         letterSpacing = 0.5.sp
                     )
                 }
             }
 
-            VerticalDivider(color = contentColor.copy(alpha = 0.15f), thickness = 1.dp)
+            VerticalDivider(color = contentColor.copy(alpha = 0.25f), thickness = 1.dp)
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -412,7 +411,7 @@ fun ActiveCountdownView(
                     overflow = TextOverflow.Ellipsis
                 )
                 HorizontalDivider(
-                    color = contentColor.copy(alpha = 0.15f),
+                    color = contentColor.copy(alpha = 0.25f),
                     thickness = 1.dp
                 )
 
@@ -433,8 +432,8 @@ fun ActiveCountdownView(
                         Text(
                             text = "${course.startTime.format(ScheduleConstants.TimeFormatter)} - ${course.endTime.format(ScheduleConstants.TimeFormatter)}",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = contentColor.copy(alpha = 0.85f)
+                            fontWeight = FontWeight.SemiBold,
+                            color = contentColor.copy(alpha = 0.95f)
                         )
                     }
 
@@ -453,8 +452,8 @@ fun ActiveCountdownView(
                             Text(
                                 text = course.room,
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = contentColor.copy(alpha = 0.95f),
+                                fontWeight = FontWeight.Bold,
+                                color = contentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
