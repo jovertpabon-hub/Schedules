@@ -34,6 +34,7 @@ import com.example.schedules.ui.components.NowTabScreen
 import com.example.schedules.ui.components.SkeletonDashboardLayout
 import com.example.schedules.ui.dialogs.AboutSettingsDialog
 import com.example.schedules.ui.dialogs.AddOrEditClassDialog
+import com.example.schedules.ui.dialogs.AppearanceSettingsDialog
 import com.example.schedules.ui.dialogs.ClearAllConfirmationDialog
 import com.example.schedules.ui.dialogs.GlobalSearchDialog
 import com.example.schedules.ui.dialogs.NotificationSettingsDialog
@@ -93,6 +94,7 @@ fun MainScheduleApp(
     var editingClass by remember { mutableStateOf<CourseClass?>(null) }
     var editingDay by remember { mutableStateOf("") }
     var showClearAllDialog by remember { mutableStateOf(false) }
+    var showAppearanceSettings by remember { mutableStateOf(false) }
     var showNotificationSettings by remember { mutableStateOf(false) }
     var showSettingsOverview by remember { mutableStateOf(false) }
     var showScheduleSettings by remember { mutableStateOf(false) }
@@ -232,6 +234,10 @@ fun MainScheduleApp(
         if (showSettingsOverview) {
             SettingsOverviewDialog(
                 onDismiss = { showSettingsOverview = false },
+                onAppearance = {
+                    showSettingsOverview = false
+                    showAppearanceSettings = true
+                },
                 onNotifications = {
                     showSettingsOverview = false
                     showNotificationSettings = true
@@ -245,6 +251,9 @@ fun MainScheduleApp(
                     showAboutSettings = true
                 }
             )
+        }
+        if (showAppearanceSettings) {
+            AppearanceSettingsDialog(viewModel = viewModel, onDismiss = { showAppearanceSettings = false })
         }
         if (showNotificationSettings) {
             NotificationSettingsDialog(viewModel = viewModel, onDismiss = { showNotificationSettings = false })

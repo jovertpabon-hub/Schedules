@@ -1,3 +1,5 @@
+package com.example.schedules.ui.now.components
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,10 +35,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmRoast
 
 @Composable
 fun NowTabHeader(
@@ -48,6 +46,7 @@ fun NowTabHeader(
 ) {
     val haptic = LocalHapticFeedback.current
     var showHeaderMenu by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
 
     Row(
         modifier = Modifier
@@ -62,13 +61,13 @@ fun NowTabHeader(
             modifier = Modifier.weight(1f)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy( 1.dp)
+                verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
                 Text(
                     text = "scofe",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = DarkMocha,
+                    color = colors.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -85,15 +84,15 @@ fun NowTabHeader(
                     onAddClass()
                 },
                 shape = CircleShape,
-                color = SteamedMilk.copy(alpha = 0.7f),
-                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
+                color = colors.surfaceVariant.copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, colors.primary.copy(alpha = 0.35f)),
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add Class",
-                        tint = DeepEspresso,
+                        tint = colors.onSurface,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -105,15 +104,15 @@ fun NowTabHeader(
                     onSearchClick()
                 },
                 shape = CircleShape,
-                color = SteamedMilk.copy(alpha = 0.7f),
-                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
+                color = colors.surfaceVariant.copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, colors.primary.copy(alpha = 0.35f)),
                 modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search",
-                        tint = DeepEspresso,
+                        tint = colors.onSurface,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -126,8 +125,8 @@ fun NowTabHeader(
                         showHeaderMenu = true
                     },
                     shape = CircleShape,
-                    color = SteamedMilk,
-                    border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
+                    color = colors.surfaceVariant,
+                    border = BorderStroke(1.dp, colors.primary.copy(alpha = 0.35f)),
                     modifier = Modifier.size(36.dp),
                     shadowElevation = 0.5.dp
                 ) {
@@ -135,7 +134,7 @@ fun NowTabHeader(
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = "More Options",
-                            tint = DeepEspresso,
+                            tint = colors.onSurface,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -144,36 +143,36 @@ fun NowTabHeader(
                 DropdownMenu(
                     expanded = showHeaderMenu,
                     onDismissRequest = { showHeaderMenu = false },
-                    modifier = Modifier.background(SteamedMilk)
+                    modifier = Modifier.background(colors.surfaceVariant)
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Import COE", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                        text = { Text("Import COE", fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant) },
                         onClick = {
                             showHeaderMenu = false
                             onImportPdf()
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Clear All", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
+                        text = { Text("Clear All", fontWeight = FontWeight.Bold, color = colors.error) },
                         onClick = {
                             showHeaderMenu = false
                             onClearAll()
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = colors.error, modifier = Modifier.size(18.dp))
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Settings", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                        text = { Text("Settings", fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant) },
                         onClick = {
                             showHeaderMenu = false
                             onSettingsClick()
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.Settings, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Settings, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         }
                     )
                 }

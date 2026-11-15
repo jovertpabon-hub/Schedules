@@ -1,35 +1,11 @@
 package com.example.schedules.ui.dialogs
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -65,7 +41,8 @@ fun AddOrEditClassDialog(
     var expanded by remember { mutableStateOf(false) }
 
     val validationError by viewModel.inputErrorMessage.collectAsState()
-    
+    val colors = MaterialTheme.colorScheme
+
     val isFormValid = remember(code, name, room) {
         code.isNotBlank() && name.isNotBlank() && room.isNotBlank()
     }
@@ -73,7 +50,8 @@ fun AddOrEditClassDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.medium,
-            tonalElevation = 8.dp
+            tonalElevation = 8.dp,
+            color = colors.surface
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -81,7 +59,8 @@ fun AddOrEditClassDialog(
             ) {
                 Text(
                     text = if (editingClass == null) "Add New Class" else "Edit Class",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
+                    color = colors.onSurface
                 )
 
                 ExposedDropdownMenuBox(
@@ -96,15 +75,22 @@ fun AddOrEditClassDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier
                             .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                            .fillMaxWidth()
+                            .fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = colors.onSurface,
+                            unfocusedTextColor = colors.onSurface,
+                            focusedBorderColor = colors.primary,
+                            unfocusedBorderColor = colors.outline
+                        )
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(colors.surface)
                     ) {
                         days.forEach { selectionDay ->
                             DropdownMenuItem(
-                                text = { Text(selectionDay) },
+                                text = { Text(selectionDay, color = colors.onSurface) },
                                 onClick = {
                                     day = selectionDay
                                     expanded = false
@@ -114,8 +100,30 @@ fun AddOrEditClassDialog(
                     }
                 }
 
-                OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Course Code") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Course Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = code,
+                    onValueChange = { code = it },
+                    label = { Text("Course Code") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = colors.onSurface,
+                        unfocusedTextColor = colors.onSurface,
+                        focusedBorderColor = colors.primary,
+                        unfocusedBorderColor = colors.outline
+                    )
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Course Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = colors.onSurface,
+                        unfocusedTextColor = colors.onSurface,
+                        focusedBorderColor = colors.primary,
+                        unfocusedBorderColor = colors.outline
+                    )
+                )
                 
                 Row(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
@@ -125,10 +133,10 @@ fun AddOrEditClassDialog(
                         modifier = Modifier.weight(1f).clickable { showStartTimePicker = true },
                         readOnly = true,
                         enabled = false,
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledBorderColor = MaterialTheme.colorScheme.outline
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = colors.onSurface,
+                            disabledLabelColor = colors.onSurfaceVariant,
+                            disabledBorderColor = colors.outline
                         )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -139,15 +147,26 @@ fun AddOrEditClassDialog(
                         modifier = Modifier.weight(1f).clickable { showEndTimePicker = true },
                         readOnly = true,
                         enabled = false,
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledBorderColor = MaterialTheme.colorScheme.outline
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = colors.onSurface,
+                            disabledLabelColor = colors.onSurfaceVariant,
+                            disabledBorderColor = colors.outline
                         )
                     )
                 }
                 
-                OutlinedTextField(value = room, onValueChange = { room = it }, label = { Text("Room") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = room,
+                    onValueChange = { room = it },
+                    label = { Text("Room") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = colors.onSurface,
+                        unfocusedTextColor = colors.onSurface,
+                        focusedBorderColor = colors.primary,
+                        unfocusedBorderColor = colors.outline
+                    )
+                )
 
                 val context = LocalContext.current
                 var customOffset by remember {
@@ -179,15 +198,22 @@ fun AddOrEditClassDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = reminderExpanded) },
                         modifier = Modifier
                             .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                            .fillMaxWidth()
+                            .fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = colors.onSurface,
+                            unfocusedTextColor = colors.onSurface,
+                            focusedBorderColor = colors.primary,
+                            unfocusedBorderColor = colors.outline
+                        )
                     )
                     ExposedDropdownMenu(
                         expanded = reminderExpanded,
-                        onDismissRequest = { reminderExpanded = false }
+                        onDismissRequest = { reminderExpanded = false },
+                        modifier = Modifier.background(colors.surface)
                     ) {
                         offsetOptions.forEach { (offset, label) ->
                             DropdownMenuItem(
-                                text = { Text(label) },
+                                text = { Text(label, color = colors.onSurface) },
                                 onClick = {
                                     customOffset = offset
                                     reminderExpanded = false
@@ -198,14 +224,14 @@ fun AddOrEditClassDialog(
                 }
 
                 validationError?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(it, color = colors.error, style = MaterialTheme.typography.bodySmall)
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text("Cancel", color = colors.onSurface) }
                     Button(
                         onClick = { 
                             editingClass?.id?.let { id ->
@@ -213,9 +239,10 @@ fun AddOrEditClassDialog(
                             }
                             onConfirm(editingClass?.id, day, code, name, startTime, endTime, room)
                         },
-                        enabled = isFormValid
+                        enabled = isFormValid,
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.primary)
                     ) { 
-                        Text(if (editingClass == null) "Add" else "Update") 
+                        Text(if (editingClass == null) "Add" else "Update", color = colors.onPrimary)
                     }
                 }
             }
@@ -250,15 +277,17 @@ fun ClearAllConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    androidx.compose.material3.AlertDialog(
+    val colors = MaterialTheme.colorScheme
+    AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Clear All Schedules?") },
-        text = { Text("This will permanently remove all classes from your schedule. This action cannot be undone.") },
+        title = { Text("Clear All Schedules?", color = colors.onSurface) },
+        text = { Text("This will permanently remove all classes from your schedule. This action cannot be undone.", color = colors.onSurfaceVariant) },
+        containerColor = colors.surface,
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
-                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = colors.error
                 )
             ) {
                 Text("Clear All")
@@ -266,7 +295,7 @@ fun ClearAllConfirmationDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = colors.onSurface)
             }
         }
     )
@@ -284,11 +313,13 @@ fun TimePickerDialog(
         initialMinute = initialTime.minute,
         is24Hour = false
     )
+    val colors = MaterialTheme.colorScheme
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp
+            tonalElevation = 6.dp,
+            color = colors.surface
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -297,6 +328,7 @@ fun TimePickerDialog(
                 Text(
                     text = "Select Time",
                     style = MaterialTheme.typography.labelMedium,
+                    color = colors.onSurface,
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
                 TimePicker(state = timePickerState)
@@ -304,10 +336,10 @@ fun TimePickerDialog(
                     modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text("Cancel", color = colors.onSurface) }
                     TextButton(onClick = { 
                         onConfirm(LocalTime.of(timePickerState.hour, timePickerState.minute)) 
-                    }) { Text("OK") }
+                    }) { Text("OK", color = colors.primary, fontWeight = FontWeight.Bold) }
                 }
             }
         }
@@ -327,12 +359,13 @@ fun ClassNoteDialog(
     val formattedDate = remember(selectedDate) {
         selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy", java.util.Locale.US))
     }
+    val colors = MaterialTheme.colorScheme
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 8.dp,
-            color = com.example.schedules.ui.theme.SteamedMilk
+            color = colors.surface
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -342,12 +375,12 @@ fun ClassNoteDialog(
                     text = "Temporary Note",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = com.example.schedules.ui.theme.DarkMocha
+                    color = colors.onSurface
                 )
                 Text(
                     text = "${course.courseCode} - ${course.courseName}\nApplies only to date: $formattedDate",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = com.example.schedules.ui.theme.DarkMocha.copy(alpha = 0.8f)
+                    color = colors.onSurfaceVariant
                 )
 
                 OutlinedTextField(
@@ -357,7 +390,13 @@ fun ClassNoteDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
-                    maxLines = 5
+                    maxLines = 5,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = colors.onSurface,
+                        unfocusedTextColor = colors.onSurface,
+                        focusedBorderColor = colors.primary,
+                        unfocusedBorderColor = colors.outline
+                    )
                 )
 
                 Row(
@@ -371,7 +410,7 @@ fun ClassNoteDialog(
                                 onDismiss()
                             }
                         ) {
-                            Text("Delete Note", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                            Text("Delete Note", color = colors.error, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         Spacer(modifier = Modifier.width(1.dp))
@@ -379,16 +418,16 @@ fun ClassNoteDialog(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancel", color = com.example.schedules.ui.theme.DarkMocha)
+                            Text("Cancel", color = colors.onSurface)
                         }
                         Button(
                             onClick = {
                                 onSave(noteText.trim())
                                 onDismiss()
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = com.example.schedules.ui.theme.DarkMocha)
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.primary)
                         ) {
-                            Text("Save", color = com.example.schedules.ui.theme.SteamedMilk, fontWeight = FontWeight.Bold)
+                            Text("Save", color = colors.onPrimary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

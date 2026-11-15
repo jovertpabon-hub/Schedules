@@ -21,20 +21,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.ui.now.model.VacantTimeBlock
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.GoldenCrema
-import com.example.schedules.ui.theme.SteamedMilk
 
 @Composable
 fun VacantTimeBlockCard(
     block: VacantTimeBlock
 ) {
+    val colors = MaterialTheme.colorScheme
     val hours = block.durationMinutes / 60
     val mins = block.durationMinutes % 60
     val durationText = when {
@@ -44,10 +40,10 @@ fun VacantTimeBlockCard(
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = SteamedMilk.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant.copy(alpha = 0.5f)),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.25.dp, Color.Black.copy(alpha = 0.25f)),
+        border = BorderStroke(1.25.dp, colors.outlineVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -63,16 +59,16 @@ fun VacantTimeBlockCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Surface(
-                    color = GoldenCrema.copy(alpha = 0.3f),
+                    color = colors.secondary.copy(alpha = 0.3f),
                     shape = CircleShape,
-                    border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.7f)),
+                    border = BorderStroke(1.dp, colors.secondary.copy(alpha = 0.7f)),
                     modifier = Modifier.size(32.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.FreeBreakfast,
                             contentDescription = "Free time",
-                            tint = DeepEspresso,
+                            tint = colors.onSurface,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -85,28 +81,28 @@ fun VacantTimeBlockCard(
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = "Gap duration",
-                        tint = DarkMocha.copy(alpha = 0.7f),
+                        tint = colors.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = "${block.startTime.format(ScheduleConstants.TimeFormatter)} - ${block.endTime.format(ScheduleConstants.TimeFormatter)}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = DarkMocha
+                        color = colors.onSurface
                     )
                 }
             }
 
             Surface(
-                color = DeepEspresso.copy(alpha = 0.85f),
+                color = colors.primaryContainer.copy(alpha = 0.85f),
                 shape = RoundedCornerShape(50.dp),
-                border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.5f))
+                border = BorderStroke(1.dp, colors.secondary.copy(alpha = 0.5f))
             ) {
                 Text(
                     text = durationText,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = SteamedMilk,
+                    color = colors.onPrimaryContainer,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
             }

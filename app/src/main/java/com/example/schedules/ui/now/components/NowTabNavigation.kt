@@ -27,8 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.schedules.ui.now.model.NowSubTab
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
 
 @Composable
 fun NowTabSubNavigation(
@@ -37,6 +35,7 @@ fun NowTabSubNavigation(
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
+    val colors = MaterialTheme.colorScheme
 
     Row(
         modifier = modifier
@@ -49,13 +48,13 @@ fun NowTabSubNavigation(
             val isSelected = tab == selectedSubTab
 
             val iconColor by animateColorAsState(
-                targetValue = if (isSelected) DeepEspresso else DarkMocha.copy(alpha = 0.45f),
+                targetValue = if (isSelected) colors.primary else colors.onSurface.copy(alpha = 0.45f),
                 animationSpec = tween(durationMillis = 150),
                 label = "tabIconColor"
             )
 
             val textColor by animateColorAsState(
-                targetValue = if (isSelected) DeepEspresso else DarkMocha.copy(alpha = 0.55f),
+                targetValue = if (isSelected) colors.primary else colors.onSurface.copy(alpha = 0.55f),
                 animationSpec = tween(durationMillis = 150),
                 label = "tabTextColor"
             )

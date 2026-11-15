@@ -51,10 +51,6 @@ import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleStatus
 import com.example.schedules.data.models.WeekSchedule
 import com.example.schedules.ui.components.NowTabScreen
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmRoast
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -120,13 +116,14 @@ fun CoffeeCalendarDialog(
     var displayedMonth by remember { mutableStateOf(initialDate.withDayOfMonth(1)) }
 
     val monthFormatter = remember { DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US) }
+    val colors = MaterialTheme.colorScheme
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(24.dp),
             tonalElevation = 8.dp,
-            color = SteamedMilk,
-            border = BorderStroke(1.25.dp, WarmRoast.copy(alpha = 0.4f))
+            color = colors.surface,
+            border = BorderStroke(1.25.dp, colors.outlineVariant.copy(alpha = 0.5f))
         ) {
             Column(
                 modifier = Modifier
@@ -144,7 +141,7 @@ fun CoffeeCalendarDialog(
                         Icon(
                             imageVector = Icons.Default.ChevronLeft,
                             contentDescription = "Previous month",
-                            tint = DeepEspresso
+                            tint = colors.onSurface
                         )
                     }
 
@@ -173,7 +170,7 @@ fun CoffeeCalendarDialog(
                                 text = targetMonth.format(monthFormatter),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = DeepEspresso,
+                                color = colors.onSurface,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -183,7 +180,7 @@ fun CoffeeCalendarDialog(
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
                             contentDescription = "Next month",
-                            tint = DeepEspresso
+                            tint = colors.onSurface
                         )
                     }
                 }
@@ -198,7 +195,7 @@ fun CoffeeCalendarDialog(
                             text = day,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = DarkMocha.copy(alpha = 0.7f),
+                            color = colors.onSurfaceVariant.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.width(36.dp)
                         )
@@ -237,8 +234,8 @@ fun CoffeeCalendarDialog(
                                     val isToday = date == LocalDate.now()
                                     val hasNote = notesDates.contains(date)
 
-                                    val cellBg = if (isSelected) DeepEspresso else Color.Transparent
-                                    val textColor = if (isSelected) SteamedMilk else DarkMocha
+                                    val cellBg = if (isSelected) colors.primaryContainer else Color.Transparent
+                                    val textColor = if (isSelected) colors.onPrimaryContainer else colors.onSurface
 
                                     Surface(
                                         onClick = { selectedCalendarDate = date },
@@ -263,7 +260,7 @@ fun CoffeeCalendarDialog(
                                                 modifier = Modifier
                                                     .size(5.dp)
                                                     .clip(CircleShape)
-                                                    .background(if (hasNote) WarmRoast else Color.Transparent)
+                                                    .background(if (hasNote) colors.secondary else Color.Transparent)
                                             )
                                         }
                                     }
@@ -281,7 +278,7 @@ fun CoffeeCalendarDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel", color = DarkMocha)
+                        Text("Cancel", color = colors.onSurface)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
@@ -289,9 +286,9 @@ fun CoffeeCalendarDialog(
                             onDateSelected(selectedCalendarDate)
                             onDismiss()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = DeepEspresso)
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.primaryContainer)
                     ) {
-                        Text("Select", color = SteamedMilk, fontWeight = FontWeight.Bold)
+                        Text("Select", color = colors.onPrimaryContainer, fontWeight = FontWeight.Bold)
                     }
                 }
             }

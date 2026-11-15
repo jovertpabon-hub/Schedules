@@ -54,11 +54,6 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.WeekSchedule
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmCoffeeCream
-import com.example.schedules.ui.theme.WarmRoast
 import java.util.Locale
 
 data class SearchResultItem(
@@ -82,6 +77,8 @@ fun GlobalSearchDialog(
         focusRequester.requestFocus()
         keyboardController?.show()
     }
+
+    val colors = MaterialTheme.colorScheme
 
     val searchResults = remember(searchQuery, weekSchedule, notesMap) {
         if (searchQuery.isBlank()) {
@@ -111,7 +108,6 @@ fun GlobalSearchDialog(
                 }
             }
 
-            // Sort by day of week index, then by start time
             results.sortedWith(
                 compareBy(
                     { item -> ScheduleConstants.DaysOfWeek.indexOfFirst { it.equals(item.dayName, ignoreCase = true) }.let { if (it == -1) 99 else it } },
@@ -125,16 +121,9 @@ fun GlobalSearchDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-        val surfaceColor = if (isDark) MaterialTheme.colorScheme.background else Color.Transparent
-        val mod = if (isDark) {
-            Modifier.fillMaxSize()
-        } else {
-            Modifier.fillMaxSize()
-        }
         Surface(
-            modifier = mod,
-            color = surfaceColor
+            modifier = Modifier.fillMaxSize(),
+            color = colors.background
         ) {
             Column(
                 modifier = Modifier
@@ -144,7 +133,6 @@ fun GlobalSearchDialog(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Top Search Bar & Back Button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -154,12 +142,12 @@ fun GlobalSearchDialog(
                         onClick = onDismiss,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(SteamedMilk, CircleShape)
+                            .background(colors.surfaceVariant, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = DeepEspresso
+                            tint = colors.onSurface
                         )
                     }
 
@@ -169,26 +157,26 @@ fun GlobalSearchDialog(
                         placeholder = {
                             Text(
                                 "Search subjects, instructors, rooms...",
-                                color = DarkMocha.copy(alpha = 0.5f),
+                                color = colors.onSurfaceVariant.copy(alpha = 0.5f),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         },
                         singleLine = true,
                         shape = RoundedCornerShape(24.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = SteamedMilk,
-                            unfocusedContainerColor = SteamedMilk,
-                            disabledContainerColor = SteamedMilk,
-                            focusedBorderColor = WarmRoast,
+                            focusedContainerColor = colors.surfaceVariant,
+                            unfocusedContainerColor = colors.surfaceVariant,
+                            disabledContainerColor = colors.surfaceVariant,
+                            focusedBorderColor = colors.primary,
                             unfocusedBorderColor = Color.Transparent,
-                            focusedTextColor = DarkMocha,
-                            unfocusedTextColor = DarkMocha
+                            focusedTextColor = colors.onSurface,
+                            unfocusedTextColor = colors.onSurface
                         ),
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = DeepEspresso
+                                tint = colors.onSurfaceVariant
                             )
                         },
                         trailingIcon = {
@@ -197,7 +185,7 @@ fun GlobalSearchDialog(
                                     Icon(
                                         imageVector = Icons.Default.Clear,
                                         contentDescription = "Clear",
-                                        tint = DarkMocha.copy(alpha = 0.7f)
+                                        tint = colors.onSurfaceVariant.copy(alpha = 0.7f)
                                     )
                                 }
                             }
@@ -208,72 +196,41 @@ fun GlobalSearchDialog(
                     )
                 }
 
-                // Results or Initial State
                 if (searchQuery.isBlank()) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxSize()
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = null,
-                                tint = WarmRoast.copy(alpha = 0.6f),
-                                modifier = Modifier.size(56.dp)
-                            )
-                            Text(
-                                text = "Search your timetable",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkMocha
-                            )
-                            Text(
-                                text = "Find subjects, room numbers, times, or notes instantly across all days.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = DarkMocha.copy(alpha = 0.7f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                        Text(
+                            text = "Type to search your schedule...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 } else if (searchResults.isEmpty()) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxSize()
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(32.dp)
-                        ) {
-                            Text(
-                                text = "No matching classes found",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkMocha
-                            )
-                            Text(
-                                text = "Try searching for another subject, room, or keyword.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = DarkMocha.copy(alpha = 0.7f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                        Text(
+                            text = "No matching classes or notes found",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 } else {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
+                        contentPadding = PaddingValues(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(searchResults) { item ->
                             SearchResultCard(
@@ -292,13 +249,13 @@ fun GlobalSearchDialog(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun SearchResultCard(
     item: SearchResultItem,
     noteText: String?,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val timeFormatted = remember(item.course) {
         val startStr = item.course.startTime.format(ScheduleConstants.TimeFormatter)
         val endStr = item.course.endTime.format(ScheduleConstants.TimeFormatter)
@@ -307,10 +264,10 @@ private fun SearchResultCard(
 
     Card(
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = WarmCoffeeCream),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
-        border = BorderStroke(1.25.dp, WarmRoast.copy(alpha = 0.45f)),
+        border = BorderStroke(1.25.dp, colors.outlineVariant.copy(alpha = 0.45f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -328,17 +285,17 @@ private fun SearchResultCard(
                     text = item.course.courseCode,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = WarmRoast
+                    color = colors.primary
                 )
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = DeepEspresso
+                    color = colors.primaryContainer
                 ) {
                     Text(
                         text = item.dayName,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = SteamedMilk,
+                        color = colors.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
@@ -348,7 +305,7 @@ private fun SearchResultCard(
                 text = item.course.courseName,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = DarkMocha
+                color = colors.onSurface
             )
 
             Row(
@@ -363,13 +320,13 @@ private fun SearchResultCard(
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = null,
-                        tint = DeepEspresso,
+                        tint = colors.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = timeFormatted,
                         style = MaterialTheme.typography.bodySmall,
-                        color = DarkMocha.copy(alpha = 0.8f)
+                        color = colors.onSurfaceVariant.copy(alpha = 0.8f)
                     )
                 }
 
@@ -380,13 +337,13 @@ private fun SearchResultCard(
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = null,
-                        tint = DeepEspresso,
+                        tint = colors.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = item.course.room,
                         style = MaterialTheme.typography.bodySmall,
-                        color = DarkMocha.copy(alpha = 0.8f)
+                        color = colors.onSurfaceVariant.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -394,13 +351,13 @@ private fun SearchResultCard(
             if (!noteText.isNullOrBlank()) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = SteamedMilk.copy(alpha = 0.7f),
+                    color = colors.secondary.copy(alpha = 0.25f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = "Note: $noteText",
                         style = MaterialTheme.typography.bodySmall,
-                        color = DarkMocha,
+                        color = colors.onSurface,
                         modifier = Modifier.padding(8.dp)
                     )
                 }

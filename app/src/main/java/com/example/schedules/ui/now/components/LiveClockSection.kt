@@ -13,8 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.WarmRoast
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -27,6 +25,7 @@ fun CompactLiveClockSection(
 ) {
     val dateFormatter = remember { DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.US) }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("hh:mm a", Locale.US) }
+    val colors = MaterialTheme.colorScheme
 
     Column(
         modifier = Modifier
@@ -39,7 +38,7 @@ fun CompactLiveClockSection(
             text = currentDate.format(dateFormatter),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
-            color = WarmRoast,
+            color = colors.primary,
             textAlign = TextAlign.Center
         )
 
@@ -47,7 +46,7 @@ fun CompactLiveClockSection(
             text = currentTime.format(timeFormatter),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.ExtraBold,
-            color = DeepEspresso,
+            color = colors.onSurface,
             textAlign = TextAlign.Center
         )
     }

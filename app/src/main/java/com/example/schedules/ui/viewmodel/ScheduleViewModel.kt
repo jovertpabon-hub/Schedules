@@ -98,6 +98,10 @@ class ScheduleViewModel(
     private val _notificationSettings = MutableStateFlow(NotificationPreferences.loadAllSettings(appContext))
     val notificationSettings: StateFlow<NotificationSettingsData> = _notificationSettings.asStateFlow()
 
+    // Theme Settings State
+    private val _themeSettings = MutableStateFlow(com.example.schedules.ui.theme.ThemeSettingsData())
+    val themeSettings: StateFlow<com.example.schedules.ui.theme.ThemeSettingsData> = _themeSettings.asStateFlow()
+
     // Temporary storage to allow "Undo" after deleting a class
     private var recentlyDeletedClass: ScheduleEntity? = null
 
@@ -119,11 +123,28 @@ class ScheduleViewModel(
         }
     }
 
+    fun setTheme(theme: com.example.schedules.ui.theme.AppTheme) {
+        viewModelScope.launch {
+            com.example.schedules.data.theme.ThemePreferences.setTheme(appContext, theme)
+        }
+    }
+
+    fun setThemeMode(mode: com.example.schedules.ui.theme.ThemeMode) {
+        viewModelScope.launch {
+            com.example.schedules.data.theme.ThemePreferences.setThemeMode(appContext, mode)
+        }
+    }
+
     init {
         // Start these as soon as the ViewModel is created
         monitorDatabaseChanges()
         startLiveUpdatesTimer()
         setSelectedDate(java.time.LocalDate.now())
+        viewModelScope.launch {
+            com.example.schedules.data.theme.ThemePreferences.getThemeSettings(appContext).collectLatest { settings ->
+                _themeSettings.value = settings
+            }
+        }
     }
 
     /**

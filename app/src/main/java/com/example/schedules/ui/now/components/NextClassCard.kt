@@ -10,14 +10,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -25,14 +18,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayCircleFilled
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -51,12 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.example.schedules.data.models.ClassStatus
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.data.models.ScheduleStatus
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.GoldenCrema
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmRoast
 import java.time.LocalDate
-
 
 @Composable
 fun NowTabCountdownCard(
@@ -64,24 +45,17 @@ fun NowTabCountdownCard(
     selectedDate: LocalDate = LocalDate.now(),
     onClick: () -> Unit = {}
 ) {
-    val espressoGradient = Brush.linearGradient(
-        colorStops = arrayOf(
-            0.0f to Color(0xFF704515),  // Warm roasted brown
-            0.35f to Color(0xFF4D2A00), // Your DeepEspresso
-            0.70f to Color(0xFF3B2000), // Deep coffee brown
-            1.0f to Color(0xFF291600)   // Dark espresso
-        )
-    )
-    val infiniteTransition = rememberInfiniteTransition(label = "hintFade")
+    val colors = MaterialTheme.colorScheme
+    val containerColor = colors.primaryContainer
+    val onContainerColor = colors.onPrimaryContainer
+    val accentColor = colors.secondary
 
+    val infiniteTransition = rememberInfiniteTransition(label = "hintFade")
     val textAlpha by infiniteTransition.animateFloat(
         initialValue = 0.45f,
         targetValue = 0.95f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1200,
-                easing = FastOutSlowInEasing
-            ),
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "textAlpha"
@@ -96,7 +70,7 @@ fun NowTabCountdownCard(
             containerColor = Color.Transparent
         ),
         elevation = CardDefaults.cardElevation(4.dp),
-        border = BorderStroke(1.25.dp, GoldenCrema.copy(alpha = 0.65f)),
+        border = BorderStroke(1.25.dp, accentColor.copy(alpha = 0.65f)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -104,7 +78,7 @@ fun NowTabCountdownCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(espressoGradient)
+                .background(containerColor)
         ) {
             CountdownTimerView(status = status)
 
@@ -112,7 +86,7 @@ fun NowTabCountdownCard(
                 Text(
                     text = "Tap to return",
                     style = MaterialTheme.typography.labelSmall,
-                    color = GoldenCrema,
+                    color = accentColor,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -123,6 +97,7 @@ fun NowTabCountdownCard(
         }
     }
 }
+
 @Composable
 fun CountdownTimerView(
     status: ScheduleStatus
@@ -141,34 +116,18 @@ fun CountdownTimerView(
     }
 }
 
-
 @Composable
 fun EmptyScheduleView(
     hasClassesToday: Boolean
 ) {
-    val title = if (hasClassesToday) {
-        "All Classes Finished"
-    } else {
-        "A Clear Day Ahead"
-    }
+    val colors = MaterialTheme.colorScheme
+    val contentColor = colors.onPrimaryContainer
+    val accentColor = colors.secondary
 
-    val description = if (hasClassesToday) {
-        "You've completed your schedule for today."
-    } else {
-        "No classes scheduled today."
-    }
-
-    val supportingText = if (hasClassesToday) {
-        "Enjoy your free time"
-    } else {
-        "Make the most of your day"
-    }
-
-    val icon = if (hasClassesToday) {
-        Icons.Default.CheckCircle
-    } else {
-        Icons.Default.FreeBreakfast
-    }
+    val title = if (hasClassesToday) "All Classes Finished" else "A Clear Day Ahead"
+    val description = if (hasClassesToday) "You've completed your schedule for today." else "No classes scheduled today."
+    val supportingText = if (hasClassesToday) "Enjoy your free time" else "Make the most of your day"
+    val icon = if (hasClassesToday) Icons.Default.CheckCircle else Icons.Default.FreeBreakfast
 
     Column(
         modifier = Modifier
@@ -176,7 +135,6 @@ fun EmptyScheduleView(
             .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Status header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -189,7 +147,7 @@ fun EmptyScheduleView(
                 Icon(
                     imageVector = Icons.Default.FreeBreakfast,
                     contentDescription = null,
-                    tint = GoldenCrema,
+                    tint = accentColor,
                     modifier = Modifier.size(16.dp)
                 )
 
@@ -197,21 +155,21 @@ fun EmptyScheduleView(
                     text = "DAILY OVERVIEW",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = SteamedMilk,
+                    color = contentColor,
                     letterSpacing = 0.6.sp
                 )
             }
 
             Surface(
-                color = GoldenCrema,
+                color = accentColor,
                 shape = RoundedCornerShape(6.dp),
-                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.6f))
+                border = BorderStroke(1.dp, colors.primary.copy(alpha = 0.6f))
             ) {
                 Text(
                     text = if (hasClassesToday) "COMPLETED" else "FREE DAY",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    color = DeepEspresso,
+                    color = colors.onSecondary,
                     modifier = Modifier.padding(
                         horizontal = 8.dp,
                         vertical = 3.dp
@@ -220,13 +178,11 @@ fun EmptyScheduleView(
             }
         }
 
-        // Subtle horizontal divider anchor
         HorizontalDivider(
-            color = SteamedMilk.copy(alpha = 0.15f),
+            color = contentColor.copy(alpha = 0.15f),
             thickness = 1.dp
         )
 
-        // Fixed timer and information area
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -238,7 +194,7 @@ fun EmptyScheduleView(
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawArc(
-                        color = GoldenCrema.copy(alpha = 0.35f),
+                        color = accentColor.copy(alpha = 0.35f),
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,
@@ -254,7 +210,7 @@ fun EmptyScheduleView(
                         text = "00:00:00",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
-                        color = SteamedMilk,
+                        color = contentColor,
                         textAlign = TextAlign.Center
                     )
 
@@ -262,7 +218,7 @@ fun EmptyScheduleView(
                         text = "REMAINING",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = SteamedMilk.copy(alpha = 0.75f),
+                        color = contentColor.copy(alpha = 0.75f),
                         letterSpacing = 0.5.sp
                     )
                 }
@@ -276,7 +232,7 @@ fun EmptyScheduleView(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = SteamedMilk,
+                    color = contentColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -287,7 +243,7 @@ fun EmptyScheduleView(
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = SteamedMilk.copy(alpha = 0.75f)
+                        color = contentColor.copy(alpha = 0.75f)
                     )
 
                     Row(
@@ -297,7 +253,7 @@ fun EmptyScheduleView(
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            tint = GoldenCrema,
+                            tint = accentColor,
                             modifier = Modifier.size(13.dp)
                         )
 
@@ -305,7 +261,7 @@ fun EmptyScheduleView(
                             text = supportingText,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = GoldenCrema
+                            color = accentColor
                         )
                     }
                 }
@@ -320,6 +276,9 @@ fun ActiveCountdownView(
 ) {
     val course = status.courseClass ?: return
     val isOngoing = status.status == ClassStatus.ONGOING
+    val colors = MaterialTheme.colorScheme
+    val contentColor = colors.onPrimaryContainer
+    val accentColor = colors.secondary
 
     Column(
         modifier = Modifier
@@ -327,7 +286,6 @@ fun ActiveCountdownView(
             .padding(horizontal = 18.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Status header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -338,12 +296,9 @@ fun ActiveCountdownView(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
-                    imageVector = if (isOngoing)
-                        Icons.Default.PlayCircleFilled
-                    else
-                        Icons.Default.AccessTime,
+                    imageVector = if (isOngoing) Icons.Default.PlayCircleFilled else Icons.Default.AccessTime,
                     contentDescription = null,
-                    tint = GoldenCrema,
+                    tint = accentColor,
                     modifier = Modifier.size(16.dp)
                 )
 
@@ -351,21 +306,21 @@ fun ActiveCountdownView(
                     text = if (isOngoing) "CURRENT CLASS" else "UP NEXT",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = SteamedMilk,
+                    color = contentColor,
                     letterSpacing = 0.6.sp
                 )
             }
 
             Surface(
-                color = GoldenCrema,
+                color = accentColor,
                 shape = RoundedCornerShape(6.dp),
-                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.6f))
+                border = BorderStroke(1.dp, colors.primary.copy(alpha = 0.6f))
             ) {
                 Text(
                     text = course.courseCode,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = DeepEspresso,
+                    color = colors.onSecondary,
                     modifier = Modifier.padding(
                         horizontal = 8.dp,
                         vertical = 2.dp
@@ -374,13 +329,11 @@ fun ActiveCountdownView(
             }
         }
 
-        // Subtle horizontal divider anchor
         HorizontalDivider(
-            color = SteamedMilk.copy(alpha = 0.15f),
+            color = contentColor.copy(alpha = 0.15f),
             thickness = 1.dp
         )
 
-        // Countdown and course information
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -396,7 +349,7 @@ fun ActiveCountdownView(
                     val strokeWidth = if (isOngoing) 6.dp.toPx() else 2.dp.toPx()
 
                     drawArc(
-                        color = GoldenCrema.copy(
+                        color = accentColor.copy(
                             alpha = if (isOngoing) 0.35f else 0.25f
                         ),
                         startAngle = 0f,
@@ -410,7 +363,7 @@ fun ActiveCountdownView(
 
                     if (isOngoing) {
                         drawArc(
-                            color = GoldenCrema,
+                            color = accentColor,
                             startAngle = -90f,
                             sweepAngle = 360f * status.progressPercent.coerceIn(0f, 1f),
                             useCenter = false,
@@ -430,7 +383,7 @@ fun ActiveCountdownView(
                         text = status.remainingFormatted,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
-                        color = SteamedMilk,
+                        color = contentColor,
                         textAlign = TextAlign.Center
                     )
 
@@ -438,13 +391,13 @@ fun ActiveCountdownView(
                         text = if (isOngoing) "REMAINING" else "STARTS IN",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = SteamedMilk.copy(alpha = 0.75f),
+                        color = contentColor.copy(alpha = 0.75f),
                         letterSpacing = 0.5.sp
                     )
                 }
             }
 
-            VerticalDivider(color = SteamedMilk.copy(alpha = 0.15f), thickness = 1.dp)
+            VerticalDivider(color = contentColor.copy(alpha = 0.15f), thickness = 1.dp)
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -454,16 +407,15 @@ fun ActiveCountdownView(
                     text = course.courseName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = SteamedMilk,
+                    color = contentColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 HorizontalDivider(
-                    color = SteamedMilk.copy(alpha = 0.15f),
+                    color = contentColor.copy(alpha = 0.15f),
                     thickness = 1.dp
                 )
 
-                // Grouped schedule details (time and room location)
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -474,7 +426,7 @@ fun ActiveCountdownView(
                         Icon(
                             imageVector = Icons.Default.AccessTime,
                             contentDescription = "Class time",
-                            tint = GoldenCrema,
+                            tint = accentColor,
                             modifier = Modifier.size(13.dp)
                         )
 
@@ -482,7 +434,7 @@ fun ActiveCountdownView(
                             text = "${course.startTime.format(ScheduleConstants.TimeFormatter)} - ${course.endTime.format(ScheduleConstants.TimeFormatter)}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
-                            color = SteamedMilk.copy(alpha = 0.85f)
+                            color = contentColor.copy(alpha = 0.85f)
                         )
                     }
 
@@ -494,7 +446,7 @@ fun ActiveCountdownView(
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = "Room location",
-                                tint = GoldenCrema,
+                                tint = accentColor,
                                 modifier = Modifier.size(13.dp)
                             )
 
@@ -502,7 +454,7 @@ fun ActiveCountdownView(
                                 text = course.room,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = SteamedMilk.copy(alpha = 0.95f),
+                                color = contentColor.copy(alpha = 0.95f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )

@@ -39,12 +39,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.GoldenCrema
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmRoast
-import com.example.schedules.ui.theme.WarmCoffeeCream
 
 // ---------------------------------------------------------
 // SHIMMER EFFECT
@@ -167,7 +161,7 @@ fun SkeletonNowHeaderSection() {
                 modifier = Modifier
                     .height(1.dp)
                     .fillMaxWidth(),
-                color = DarkMocha.copy(alpha = 0.15f)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
         }
     }
@@ -184,7 +178,7 @@ fun SkeletonHeroCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = DeepEspresso
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -192,7 +186,7 @@ fun SkeletonHeroCard(
             .fillMaxWidth()
             .border(
                 1.25.dp,
-                GoldenCrema.copy(alpha = 0.65f),
+                MaterialTheme.colorScheme.secondary.copy(alpha = 0.65f),
                 shape = RoundedCornerShape(24.dp)
             )
     ) {
@@ -237,7 +231,7 @@ fun SkeletonHeroCard(
                             .fillMaxSize()
                             .border(
                                 width = 2.dp,
-                                color = GoldenCrema.copy(alpha = 0.35f),
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f),
                                 shape = CircleShape
                             )
                     )
@@ -375,7 +369,7 @@ fun SkeletonClassesFreeTimeSelector() {
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = WarmCoffeeCream.copy(alpha = 0.65f),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(4.dp),
@@ -406,12 +400,12 @@ fun SkeletonClassCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = SteamedMilk
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.25.dp,
-            WarmRoast.copy(alpha = 0.45f)
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
         ),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -551,7 +545,7 @@ fun SkeletonWeeklyCalendarStrip() {
         ) {
             repeat(7) { index ->
                 val isSelected = (index == 0)
-                val tileBg = if (isSelected) DeepEspresso else SteamedMilk
+                val tileBg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
 
                 Surface(
                     shape = RoundedCornerShape(14.dp),
@@ -586,7 +580,7 @@ fun SkeletonWeeklyCalendarStrip() {
                                     modifier = Modifier
                                         .size(4.dp)
                                         .clip(CircleShape)
-                                        .background(GoldenCrema)
+                                        .background(MaterialTheme.colorScheme.secondary)
                                 )
                             }
                         }

@@ -1,10 +1,13 @@
 
 package com.example.schedules.ui.dialogs
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.schedules.data.models.ScheduleConstants
+import com.example.schedules.ui.theme.AppTheme
+import com.example.schedules.ui.theme.ThemeMode
 import com.example.schedules.ui.viewmodel.ScheduleViewModel
 
 
@@ -124,6 +129,7 @@ private fun SettingsFooter(
 @Composable
 fun SettingsOverviewDialog(
     onDismiss: () -> Unit,
+    onAppearance: () -> Unit,
     onNotifications: () -> Unit,
     onSchedule: () -> Unit,
     onAbout: () -> Unit
@@ -149,6 +155,13 @@ fun SettingsOverviewDialog(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             SettingsNavigationRow(
+                icon = Icons.Default.Palette,
+                title = "Appearance",
+                description = "Theme selection and display mode",
+                onClick = onAppearance
+            )
+
+            SettingsNavigationRow(
                 icon = Icons.Default.Notifications,
                 title = "Notifications",
                 description = "Reminders and quiet hours",
@@ -171,6 +184,199 @@ fun SettingsOverviewDialog(
         }
 
         SettingsFooter(onDismiss)
+    }
+}
+
+// --------------------------------------------------
+// APPEARANCE SETTINGS
+// --------------------------------------------------
+
+@Composable
+fun AppearanceSettingsDialog(
+    viewModel: ScheduleViewModel,
+    onDismiss: () -> Unit
+) {
+    val themeSettings by viewModel.themeSettings.collectAsState()
+
+    SettingsDialogFrame(onDismiss) {
+        SettingsHeader(
+            title = "Appearance",
+            subtitle = "Customize themes and display mode",
+            onDismiss = onDismiss
+        )
+
+        Spacer(Modifier.height(14.dp))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                "DISPLAY MODE",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ThemeMode.entries.forEach { mode ->
+                    val isSelected = themeSettings.mode == mode
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { viewModel.setThemeMode(mode) },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = if (isSelected)
+                            BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+                        else
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = when (mode) {
+                                    ThemeMode.SYSTEM -> "System"
+                                    ThemeMode.LIGHT -> "Light"
+                                    ThemeMode.DARK -> "Dark"
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            Text(
+                "COLOR THEME",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                AppTheme.entries.forEach { theme ->
+                    val isSelected = themeSettings.theme == theme
+                    ThemeCard(
+                        theme = theme,
+                        isSelected = isSelected,
+                        onSelect = { viewModel.setTheme(theme) }
+                    )
+                }
+            }
+        }
+
+        SettingsFooter(onDismiss)
+    }
+}
+
+@Composable
+private fun ThemeCard(
+    theme: AppTheme,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onSelect),
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected)
+            colors.secondaryContainer
+        else
+            colors.surface,
+        border = if (isSelected)
+            BorderStroke(2.dp, colors.primary)
+        else
+            BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.6f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(CircleShape)
+                        .background(theme.previewPrimary)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(CircleShape)
+                        .background(theme.previewSecondary)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(CircleShape)
+                        .background(theme.previewSurface)
+                        .border(1.dp, theme.previewPrimary.copy(alpha = 0.3f), CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(CircleShape)
+                        .background(theme.previewContainer)
+                )
+            }
+
+            Text(
+                text = theme.displayName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (isSelected) colors.onSecondaryContainer else colors.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Selected",
+                    tint = colors.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, colors.outlineVariant, CircleShape)
+                )
+            }
+        }
     }
 }
 

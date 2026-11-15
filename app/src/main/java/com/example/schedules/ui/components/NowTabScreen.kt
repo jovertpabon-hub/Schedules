@@ -87,12 +87,6 @@ import com.example.schedules.ui.now.components.ClassesFreeTimeSelector
 import com.example.schedules.ui.now.components.NowTabClassDetails
 import com.example.schedules.ui.now.components.NowTabCountdownCard
 import com.example.schedules.ui.now.components.VacantTimeBlockCard
-import com.example.schedules.ui.theme.AppBackground
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.GoldenCrema
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmRoast
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Duration
@@ -267,10 +261,8 @@ fun NowTabScreen(
     }
 
     Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppBackground),
-        color = Color.Transparent
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -330,7 +322,7 @@ fun NowTabScreen(
                                 ) {
                                     Card(
                                         colors = CardDefaults.cardColors(
-                                            containerColor = SteamedMilk
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                                         ),
                                         shape = RoundedCornerShape(16.dp),
                                         elevation = CardDefaults.cardElevation(
@@ -340,7 +332,7 @@ fun NowTabScreen(
                                             .fillMaxWidth()
                                             .border(
                                                 1.25.dp,
-                                                Color.Black.copy(0.25f),
+                                                MaterialTheme.colorScheme.outlineVariant.copy(0.5f),
                                                 RoundedCornerShape(16.dp)
                                             )
                                     ) {
@@ -375,7 +367,7 @@ fun NowTabScreen(
                                 label = "indicatorWidth"
                             )
                             val color by animateColorAsState(
-                                targetValue = if (isSelected) DeepEspresso else DarkMocha.copy(alpha = 0.25f),
+                                targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f),
                                 animationSpec = tween(durationMillis = 250),
                                 label = "indicatorColor"
                             )
@@ -409,7 +401,7 @@ fun NowTabScreen(
                         Icon(
                             imageVector = Icons.Default.Event,
                             contentDescription = null,
-                            tint = DeepEspresso,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Column {
@@ -417,21 +409,21 @@ fun NowTabScreen(
                                 text = if (isToday) "Today's Schedule" else "$selectedDay's Schedule",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = DeepEspresso
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = formattedSelectedDate,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
-                                color = DarkMocha.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
                     Surface(
-                        color = SteamedMilk,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
                         shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, Color.Black.copy(0.25f))
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(0.4f))
                     ) {
                         Text(
                             text = if (showVacantTimes) {
@@ -441,7 +433,7 @@ fun NowTabScreen(
                             },
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = DarkMocha,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.padding(
                                 horizontal = 10.dp,
                                 vertical = 5.dp
@@ -568,7 +560,7 @@ private fun NowTabHeaderSection(
                 modifier = Modifier
                     .height(1.dp)
                     .fillMaxWidth(),
-                color = DarkMocha.copy(alpha = 0.15f)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
         }
     }
@@ -609,12 +601,12 @@ private fun NowTabHeader(
                         fontStyle = FontStyle.Italic,
                         letterSpacing = (-0.5).sp,
                         shadow = Shadow(
-                            color = DarkMocha.copy(alpha = 0.22f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.22f),
                             offset = Offset(1f, 2f),
                             blurRadius = 3f
                         )
                     ),
-                    color = DarkMocha,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -626,7 +618,7 @@ private fun NowTabHeader(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 1.2.sp
                     ),
-                    color = DarkMocha.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
@@ -648,7 +640,7 @@ private fun NowTabHeader(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add Class",
-                        tint = DeepEspresso,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(25.dp)
                     )
                 }
@@ -668,7 +660,7 @@ private fun NowTabHeader(
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search",
-                        tint = DeepEspresso,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(25.dp)
                     )
                 }
@@ -689,7 +681,7 @@ private fun NowTabHeader(
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = "More Options",
-                            tint = DeepEspresso,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(25.dp)
                         )
                     }
@@ -698,16 +690,16 @@ private fun NowTabHeader(
                 DropdownMenu(
                     expanded = showHeaderMenu,
                     onDismissRequest = { showHeaderMenu = false },
-                    modifier = Modifier.background(SteamedMilk)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Import COE", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                        text = { Text("Import COE", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         onClick = {
                             showHeaderMenu = false
                             onImportPdf()
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         }
                     )
                     DropdownMenuItem(
@@ -721,13 +713,13 @@ private fun NowTabHeader(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Settings", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                        text = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         onClick = {
                             showHeaderMenu = false
                             onSettingsClick()
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.Settings, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         }
                     )
                 }
@@ -777,7 +769,7 @@ fun WeeklyCalendarStrip(
 
         HorizontalDivider(
             thickness = 1.dp,
-            color = DeepEspresso.copy(alpha = 0.12f)
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
 
         WeeklyDateSelector(
@@ -821,7 +813,7 @@ private fun WeeklyCalendarHeader(
                     Icon(
                         imageVector = Icons.Default.Event,
                         contentDescription = "Open calendar",
-                        tint = WarmRoast,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -834,22 +826,22 @@ private fun WeeklyCalendarHeader(
                         text = targetText,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = DeepEspresso
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
             TextButton(
                 onClick = onTodayClick,
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, WarmRoast.copy(alpha = 0.35f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
                 colors = ButtonDefaults.textButtonColors(
-                    containerColor = DeepEspresso.copy(alpha = 0.08f)
+                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                 )
             ) {
                 Text(
                     text = "Today",
-                    color = WarmRoast,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -934,21 +926,21 @@ private fun WeeklyDateTile(
     val haptic = LocalHapticFeedback.current
 
     val tileBgColor by animateColorAsState(
-        targetValue = if (isSelected) DeepEspresso else Color.Transparent,
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
         animationSpec = tween(150),
         label = "tileBgColor"
     )
 
     val weekdayTextColor = when {
-        isSelected -> SteamedMilk.copy(alpha = 0.9f)
-        isToday -> WarmRoast
-        else -> DarkMocha.copy(alpha = 0.65f)
+        isSelected -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+        isToday -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
     }
 
     val dateTextColor = when {
-        isSelected -> SteamedMilk
-        isToday -> WarmRoast
-        else -> DarkMocha
+        isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+        isToday -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurface
     }
 
     Surface(
@@ -959,9 +951,9 @@ private fun WeeklyDateTile(
         shape = RoundedCornerShape(14.dp),
         color = tileBgColor,
         border = when {
-            isSelected -> BorderStroke(1.25.dp, GoldenCrema.copy(alpha = 0.85f))
-            isToday -> BorderStroke(1.25.dp, WarmRoast.copy(alpha = 0.75f))
-            else -> BorderStroke(1.dp, DarkMocha.copy(alpha = 0.18f))
+            isSelected -> BorderStroke(1.25.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.85f))
+            isToday -> BorderStroke(1.25.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.75f))
+            else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
         },
         shadowElevation = if (isSelected) 2.dp else 0.dp,
         modifier = modifier
@@ -1010,7 +1002,7 @@ private fun WeeklyDateTile(
                                 .size(4.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isSelected) GoldenCrema else WarmRoast
+                                    if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
                                 )
                         )
                     }
@@ -1020,7 +1012,7 @@ private fun WeeklyDateTile(
                                 .size(4.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isSelected) SteamedMilk else DeepEspresso
+                                    if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primaryContainer
                                 )
                         )
                     }

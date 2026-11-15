@@ -11,11 +11,15 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.example.schedules.data.notifications.ScheduleNotificationHelper
+import com.example.schedules.data.theme.ThemePreferences
 import com.example.schedules.ui.theme.SchedulesTheme
+import com.example.schedules.ui.theme.ThemeSettingsData
 
 class MainActivity : ComponentActivity() {
 
@@ -53,7 +57,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            SchedulesTheme {
+            val themeSettings by ThemePreferences.getThemeSettings(applicationContext)
+                .collectAsState(initial = ThemeSettingsData())
+
+            SchedulesTheme(
+                theme = themeSettings.theme,
+                themeMode = themeSettings.mode
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

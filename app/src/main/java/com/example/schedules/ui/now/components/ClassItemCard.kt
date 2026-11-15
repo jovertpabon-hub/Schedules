@@ -2,13 +2,7 @@ package com.example.schedules.ui.now.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -17,37 +11,16 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.schedules.data.models.CourseClass
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.ui.dialogs.ClassNoteDialog
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.GoldenCrema
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmRoast
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -69,25 +42,26 @@ fun NowTabClassDetails(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showNoteDialog by remember { mutableStateOf(false) }
 
+    val colors = MaterialTheme.colorScheme
     val isCompleted = isToday && !currentTime.isBefore(course.endTime)
     val isOngoing = isToday && !currentTime.isBefore(course.startTime) && currentTime.isBefore(course.endTime)
 
     val cardTextColor = when {
-        isCompleted -> DarkMocha.copy(alpha = 0.55f)
-        else -> DarkMocha
+        isCompleted -> colors.onSurface.copy(alpha = 0.55f)
+        else -> colors.onSurface
     }
-    val iconTint = DarkMocha.copy(alpha = 0.65f)
+    val iconTint = colors.onSurfaceVariant.copy(alpha = 0.75f)
 
     val cardBg = when {
-        isCompleted -> SteamedMilk.copy(alpha = 0.7f)
-        else -> SteamedMilk
+        isCompleted -> colors.surfaceVariant.copy(alpha = 0.7f)
+        else -> colors.surfaceVariant
     }
 
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text("Delete Class", fontWeight = FontWeight.Bold, color = DarkMocha) },
-            text = { Text("Are you sure you want to delete ${course.courseName} (${course.courseCode})?", color = DarkMocha) },
+            title = { Text("Delete Class", fontWeight = FontWeight.Bold, color = colors.onSurface) },
+            text = { Text("Are you sure you want to delete ${course.courseName} (${course.courseCode})?", color = colors.onSurfaceVariant) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -95,15 +69,15 @@ fun NowTabClassDetails(
                         onDelete()
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text("Delete", color = colors.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancel", color = DarkMocha)
+                    Text("Cancel", color = colors.onSurface)
                 }
             },
-            containerColor = SteamedMilk
+            containerColor = colors.surface
         )
     }
 
@@ -125,9 +99,9 @@ fun NowTabClassDetails(
         border = BorderStroke(
             width = 1.25.dp,
             color = when {
-                isOngoing -> GoldenCrema
-                isCompleted -> WarmRoast.copy(alpha = 0.35f)
-                else -> Color.Black.copy(alpha = 0.25f)
+                isOngoing -> colors.secondary
+                isCompleted -> colors.outlineVariant.copy(alpha = 0.35f)
+                else -> colors.outlineVariant.copy(alpha = 0.5f)
             }
         ),
         modifier = Modifier.fillMaxWidth()
@@ -157,34 +131,34 @@ fun NowTabClassDetails(
                             text = course.courseCode,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = DeepEspresso
+                            color = colors.primary
                         )
 
                         if (isToday && isOngoing) {
                             Surface(
-                                color = DeepEspresso,
+                                color = colors.primaryContainer,
                                 shape = RoundedCornerShape(50.dp),
-                                border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.6f))
+                                border = BorderStroke(1.dp, colors.secondary.copy(alpha = 0.6f))
                             ) {
                                 Text(
                                     text = "ONGOING",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = SteamedMilk,
+                                    color = colors.onPrimaryContainer,
                                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
                         } else if (isToday && isCompleted) {
                             Surface(
-                                color = DarkMocha.copy(alpha = 0.1f),
+                                color = colors.onSurface.copy(alpha = 0.1f),
                                 shape = RoundedCornerShape(50.dp),
-                                border = BorderStroke(1.dp, DarkMocha.copy(alpha = 0.25f))
+                                border = BorderStroke(1.dp, colors.onSurface.copy(alpha = 0.25f))
                             ) {
                                 Text(
                                     text = "DONE",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = DarkMocha.copy(alpha = 0.6f),
+                                    color = colors.onSurface.copy(alpha = 0.6f),
                                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                 )
                             }
@@ -217,36 +191,36 @@ fun NowTabClassDetails(
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false },
-                        modifier = Modifier.background(SteamedMilk)
+                        modifier = Modifier.background(colors.surface)
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Edit Class", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                            text = { Text("Edit Class", fontWeight = FontWeight.Bold, color = colors.onSurface) },
                             onClick = {
                                 showMenu = false
                                 onEdit()
                             },
                             leadingIcon = {
-                                Icon(Icons.Default.Edit, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Edit, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(16.dp))
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(if (note.isNullOrBlank()) "Add Temporary Note" else "Edit Temporary Note", fontWeight = FontWeight.Bold, color = DarkMocha) },
+                            text = { Text(if (note.isNullOrBlank()) "Add Temporary Note" else "Edit Temporary Note", fontWeight = FontWeight.Bold, color = colors.onSurface) },
                             onClick = {
                                 showMenu = false
                                 showNoteDialog = true
                             },
                             leadingIcon = {
-                                Icon(Icons.Default.Event, contentDescription = null, tint = DarkMocha, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Event, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(16.dp))
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete Class", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
+                            text = { Text("Delete Class", fontWeight = FontWeight.Bold, color = colors.error) },
                             onClick = {
                                 showMenu = false
                                 showDeleteConfirmDialog = true
                             },
                             leadingIcon = {
-                                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = colors.error, modifier = Modifier.size(16.dp))
                             }
                         )
                     }
@@ -257,12 +231,12 @@ fun NowTabClassDetails(
                 HorizontalDivider(
                     modifier = Modifier.fillMaxWidth(),
                     thickness = 0.5.dp,
-                    color = DarkMocha.copy(alpha = 0.12f)
+                    color = colors.outlineVariant.copy(alpha = 0.4f)
                 )
                 Surface(
-                    color = GoldenCrema.copy(alpha = 0.25f),
+                    color = colors.secondary.copy(alpha = 0.25f),
                     shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.7f)),
+                    border = BorderStroke(1.dp, colors.secondary.copy(alpha = 0.7f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -273,7 +247,7 @@ fun NowTabClassDetails(
                         Icon(
                             imageVector = Icons.Default.Event,
                             contentDescription = "Temporary Note",
-                            tint = DeepEspresso,
+                            tint = colors.primary,
                             modifier = Modifier.size(16.dp)
                         )
                         Column(modifier = Modifier.weight(1f)) {
@@ -281,7 +255,7 @@ fun NowTabClassDetails(
                                 text = "Temporary Note (${selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US))})",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = DeepEspresso
+                                color = colors.primary
                             )
                             Text(
                                 text = note,
@@ -296,7 +270,7 @@ fun NowTabClassDetails(
             HorizontalDivider(
                 modifier = Modifier.fillMaxWidth(),
                 thickness = 0.5.dp,
-                color = DarkMocha.copy(alpha = 0.12f)
+                color = colors.outlineVariant.copy(alpha = 0.4f)
             )
 
             Row(

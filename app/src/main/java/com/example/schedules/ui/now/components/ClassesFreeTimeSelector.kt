@@ -29,12 +29,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.GoldenCrema
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmCoffeeCream
-
 
 @Composable
 fun ClassesFreeTimeSelector(
@@ -43,6 +37,7 @@ fun ClassesFreeTimeSelector(
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
+    val colors = MaterialTheme.colorScheme
 
     val options = listOf(
         false to ("Classes" to Icons.Default.Book),
@@ -53,12 +48,12 @@ fun ClassesFreeTimeSelector(
         modifier = modifier
             .fillMaxWidth()
             .background(
-                color = WarmCoffeeCream.copy(alpha = 0.65f),
+                color = colors.surfaceVariant.copy(alpha = 0.65f),
                 shape = RoundedCornerShape(12.dp)
             )
             .border(
                 width = 1.25.dp,
-                color = Color.Black.copy(0.25f),
+                color = colors.outlineVariant.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(4.dp),
@@ -69,14 +64,14 @@ fun ClassesFreeTimeSelector(
             val isSelected = showVacantTimes == value
 
             val backgroundColor by animateColorAsState(
-                targetValue = if (isSelected) DeepEspresso else Color.Transparent,
+                targetValue = if (isSelected) colors.primaryContainer else Color.Transparent,
                 animationSpec = tween(200),
                 label = "segmentBackground"
             )
 
             val contentColor by animateColorAsState(
-                targetValue = if (isSelected) SteamedMilk
-                else DarkMocha.copy(alpha = 0.7f),
+                targetValue = if (isSelected) colors.onPrimaryContainer
+                else colors.onSurfaceVariant.copy(alpha = 0.7f),
                 animationSpec = tween(200),
                 label = "segmentContent"
             )
@@ -93,7 +88,7 @@ fun ClassesFreeTimeSelector(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(9.dp),
                 color = backgroundColor,
-                border = if (isSelected) BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.6f)) else null
+                border = if (isSelected) BorderStroke(1.dp, colors.secondary.copy(alpha = 0.6f)) else null
             ) {
                 Row(
                     modifier = Modifier
@@ -129,4 +124,3 @@ fun ClassesFreeTimeSelector(
         }
     }
 }
-

@@ -25,20 +25,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.schedules.ui.theme.DarkMocha
-import com.example.schedules.ui.theme.DeepEspresso
-import com.example.schedules.ui.theme.GoldenCrema
-import com.example.schedules.ui.theme.SteamedMilk
-import com.example.schedules.ui.theme.WarmRoast
 
 @Composable
 fun TodayEmptyDayCard(
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = SteamedMilk),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.25.dp, WarmRoast.copy(alpha = 0.45f)),
+        border = BorderStroke(1.25.dp, colors.primary.copy(alpha = 0.45f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -50,16 +47,16 @@ fun TodayEmptyDayCard(
             verticalArrangement = Arrangement.Center
         ) {
             Surface(
-                color = GoldenCrema.copy(alpha = 0.25f),
+                color = colors.secondary.copy(alpha = 0.25f),
                 shape = CircleShape,
-                border = BorderStroke(1.dp, GoldenCrema.copy(alpha = 0.7f)),
+                border = BorderStroke(1.dp, colors.secondary.copy(alpha = 0.7f)),
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.FreeBreakfast,
                         contentDescription = "Free Day",
-                        tint = DeepEspresso,
+                        tint = colors.onSurface,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -71,7 +68,7 @@ fun TodayEmptyDayCard(
                 text = "Nothing on your timetable",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = DeepEspresso,
+                color = colors.onSurface,
                 textAlign = TextAlign.Center
             )
 
@@ -80,7 +77,7 @@ fun TodayEmptyDayCard(
             Text(
                 text = "Looks like you have some extra time. Make the most of it",
                 style = MaterialTheme.typography.bodySmall,
-                color = DarkMocha.copy(alpha = 0.7f),
+                color = colors.onSurfaceVariant.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
             )
         }
