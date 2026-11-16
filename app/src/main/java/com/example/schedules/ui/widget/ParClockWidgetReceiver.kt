@@ -5,8 +5,8 @@ import android.content.Intent
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 
-class ClofeeWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = ClofeeWidget()
+class ParClockWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = ParClockWidget()
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
@@ -15,7 +15,7 @@ class ClofeeWidgetReceiver : GlanceAppWidgetReceiver() {
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED,
             "com.example.schedules.action.REFRESH_WIDGET" -> {
-                ClofeeWidgetHelper.updateWidget(context)
+                ParClockWidgetHelper.updateWidget(context)
             }
         }
     }

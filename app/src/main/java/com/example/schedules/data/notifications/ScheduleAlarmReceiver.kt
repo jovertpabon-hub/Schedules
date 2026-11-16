@@ -100,7 +100,7 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.e("ScheduleAlarmReceiver", "Error processing alarm broadcast", e)
             } finally {
-                com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(context)
+                com.example.schedules.ui.widget.ParClockWidgetHelper.updateWidget(context)
                 pendingResult.finish()
             }
         }

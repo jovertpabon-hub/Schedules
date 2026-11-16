@@ -226,6 +226,7 @@ fun NowTabScreen(
     onClearAll: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
+    onAboutClick: () -> Unit = {},
     onSaveNote: (Long, String) -> Unit = { _, _ -> },
     onDeleteNote: (Long) -> Unit = {},
     initialPage: Int = 0,
@@ -267,13 +268,14 @@ fun NowTabScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 1. Clofee Header Section (Fixed at top)
+            // 1. ParClock Header Section (Fixed at top)
             NowTabHeaderSection(
                 onAddClass = onAddClass,
                 onImportPdf = onImportPdf,
                 onClearAll = onClearAll,
                 onSettingsClick = onSettingsClick,
-                onSearchClick = onSearchClick
+                onSearchClick = onSearchClick,
+                onAboutClick = onAboutClick
             )
 
             // 2. Scrollable Content: Overview Pager + Page Indicator + Shared Schedule Section
@@ -531,7 +533,8 @@ private fun NowTabHeaderSection(
     onImportPdf: () -> Unit,
     onClearAll: () -> Unit,
     onSettingsClick: () -> Unit,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    onAboutClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -553,6 +556,7 @@ private fun NowTabHeaderSection(
                     onClearAll = onClearAll,
                     onSettingsClick = onSettingsClick,
                     onSearchClick = onSearchClick,
+                    onAboutClick = onAboutClick
                 )
             }
 
@@ -572,7 +576,8 @@ private fun NowTabHeader(
     onImportPdf: () -> Unit = {},
     onClearAll: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {}
+    onSearchClick: () -> Unit = {},
+    onAboutClick: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
     var showHeaderMenu by remember { mutableStateOf(false) }
@@ -590,7 +595,14 @@ private fun NowTabHeader(
             modifier = Modifier.weight(1f)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onAboutClick()
+                    }
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = "parclock",

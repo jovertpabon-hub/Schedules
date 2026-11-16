@@ -36,7 +36,7 @@
         </receiver>
 
         <receiver
-            android:name=".ui.widget.ClofeeWidgetReceiver"
+            android:name=".ui.widget.ParClockWidgetReceiver"
             android:exported="true"
             android:label="@string/widget_name">
             <intent-filter>

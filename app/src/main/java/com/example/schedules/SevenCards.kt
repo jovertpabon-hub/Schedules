@@ -205,6 +205,9 @@ fun MainScheduleApp(
                 },
                 onSettingsClick = {
                     showSettingsOverview = true
+                },
+                onAboutClick = {
+                    showAboutSettings = true
                 }
             )
         }
@@ -288,7 +291,8 @@ private fun MainScreenContent(
     onAddClass: () -> Unit,
     onImportPdf: () -> Unit,
     onClearAll: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onAboutClick: () -> Unit
 ) {
     val currentStatus by viewModel.liveStatus.collectAsState()
     val weekSchedule by viewModel.weekSchedule.collectAsState()
@@ -345,6 +349,7 @@ private fun MainScreenContent(
                     onImportPdf = onImportPdf,
                     onClearAll = onClearAll,
                     onSettingsClick = onSettingsClick,
+                    onAboutClick = onAboutClick,
                     onSearchClick = { showSearchDialog = true },
                     onSaveNote = { scheduleId, text -> viewModel.saveNote(scheduleId, selectedDate, text) },
                     onDeleteNote = { scheduleId -> viewModel.deleteNote(scheduleId, selectedDate) }

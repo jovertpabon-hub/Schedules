@@ -25,7 +25,7 @@ class ScheduleBootReceiver : BroadcastReceiver() {
 
         if (action in validActions) {
             val pendingResult = goAsync()
-            com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(context)
+            com.example.schedules.ui.widget.ParClockWidgetHelper.updateWidget(context)
             ScheduleNotificationHelper.rescheduleAllReminders(context) {
                 Log.d("ScheduleBootReceiver", "Completed alarm recovery/reconciliation after $action")
                 pendingResult.finish()

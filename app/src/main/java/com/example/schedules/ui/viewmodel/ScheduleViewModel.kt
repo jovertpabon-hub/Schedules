@@ -105,16 +105,15 @@ class ScheduleViewModel(
     // Temporary storage to allow "Undo" after deleting a class
     private var recentlyDeletedClass: ScheduleEntity? = null
 
-    private val _selectedDate = MutableStateFlow(java.time.LocalDate.now())
-    val selectedDate: StateFlow<java.time.LocalDate> = _selectedDate.asStateFlow()
+    private val _selectedDate = MutableStateFlow(LocalDate.now())
 
     private val _selectedDateNotes = MutableStateFlow<Map<Long, String>>(emptyMap())
     val selectedDateNotes: StateFlow<Map<Long, String>> = _selectedDateNotes.asStateFlow()
 
-    private val _notesDates = MutableStateFlow<Set<java.time.LocalDate>>(emptySet())
-    val notesDates: StateFlow<Set<java.time.LocalDate>> = _notesDates.asStateFlow()
+    private val _notesDates = MutableStateFlow<Set<LocalDate>>(emptySet())
+    val notesDates: StateFlow<Set<LocalDate>> = _notesDates.asStateFlow()
 
-    fun setSelectedDate(date: java.time.LocalDate) {
+    fun setSelectedDate(date: LocalDate) {
         _selectedDate.value = date
         viewModelScope.launch {
             repository.getNotesForDate(date).collectLatest { notes ->
@@ -139,7 +138,7 @@ class ScheduleViewModel(
         // Start these as soon as the ViewModel is created
         monitorDatabaseChanges()
         startLiveUpdatesTimer()
-        setSelectedDate(java.time.LocalDate.now())
+        setSelectedDate(LocalDate.now())
         viewModelScope.launch {
             com.example.schedules.data.theme.ThemePreferences.getThemeSettings(appContext).collectLatest { settings ->
                 _themeSettings.value = settings
@@ -262,7 +261,7 @@ class ScheduleViewModel(
                         .onSuccess { successCount++ }
                 }
                 _importPreview.value = null
-                com.example.schedules.ui.widget.ClofeeWidgetHelper.updateWidget(appContext)
+                com.example.schedules.ui.widget.ParClockWidgetHelper.updateWidget(appContext)
                 _uiEvents.emit(UiEvent.ShowMessage("Imported $successCount classes from PDF"))
             } catch (e: Exception) {
                 _uiEvents.emit(UiEvent.ShowMessage("Error saving imported schedules: ${e.message}"))
@@ -336,14 +335,14 @@ class ScheduleViewModel(
         }
     }
 
-    fun saveNote(scheduleId: Long, date: java.time.LocalDate, noteText: String) {
+    fun saveNote(scheduleId: Long, date: LocalDate, noteText: String) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.saveNoteForScheduleAndDate(scheduleId, date, noteText)
             _uiEvents.emit(UiEvent.ShowMessage("Temporary note saved"))
         }
     }
 
-    fun deleteNote(scheduleId: Long, date: java.time.LocalDate) {
+    fun deleteNote(scheduleId: Long, date: LocalDate) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.deleteNoteForScheduleAndDate(scheduleId, date)
             _uiEvents.emit(UiEvent.ShowMessage("Temporary note removed"))

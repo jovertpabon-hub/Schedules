@@ -2,30 +2,66 @@
 package com.example.schedules.ui.dialogs
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.schedules.R
 import com.example.schedules.data.models.ScheduleConstants
 import com.example.schedules.ui.theme.AppTheme
 import com.example.schedules.ui.theme.ThemeMode
@@ -138,7 +174,7 @@ fun SettingsOverviewDialog(
 
         SettingsHeader(
             title = "Settings",
-            subtitle = "Manage your Clofee experience",
+            subtitle = "Manage your ParClock experience",
             onDismiss = onDismiss
         )
 
@@ -568,6 +604,7 @@ fun ScheduleSettingsDialog(
 // ABOUT
 // --------------------------------------------------
 
+
 @Composable
 fun AboutSettingsDialog(
     onDismiss: () -> Unit
@@ -584,118 +621,115 @@ fun AboutSettingsDialog(
         }.getOrDefault("1.0.0")
     }
 
-    val githubUrl =
-        "https://github.com/jovertpabon-hub/Schedules"
-
-    val email = "jovertpabon@gmail.com"
+    val githubUrl = "https://github.com/jovertpabon-hub/Schedules"
+    val email = "jovertp@gmail.com"
 
     SettingsDialogFrame(onDismiss) {
 
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.Start
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+
+            // App identity
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-
-                // App identity
-
-                Column(
+                Image(
+                    painter = painterResource(R.drawable.parclock_icon),
+                    contentDescription = "ParClock app icon",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(colors.primaryContainer)
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        "ABOUT THE APP",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.5.sp,
-                        color = colors.onPrimaryContainer
-                    )
-
-                    Text(
-                        "ParClock",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = colors.onPrimaryContainer
-                    )
-
-                    Text(
-                        "Your academic schedule, brewed into simplicity.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.onPrimaryContainer.copy(alpha = 0.8f)
-                    )
-
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = colors.surface.copy(alpha = 0.7f)
-                    ) {
-                        Text(
-                            "VERSION $version",
-                            modifier = Modifier.padding(
-                                horizontal = 10.dp,
-                                vertical = 5.dp
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = colors.onSurface
-                        )
-                    }
-                }
-
-                // Purpose
-
-                AboutSection(title = "Why ParClock?") {
-                    Text(
-                        "ParClock helps students organize academic schedules, track available time, and manage everyday university routines.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.onSurfaceVariant,
-                        lineHeight = MaterialTheme.typography.bodyMedium.fontSize * 1.45f
-                    )
-                }
-
-                HorizontalDivider(
-                    color = colors.outlineVariant.copy(alpha = 0.6f)
+                        .size(64.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Fit
                 )
 
-                // Developer
+                Text(
+                    "ParClock",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.onSurface
+                )
 
-                AboutSection(title = "Developed by") {
+                Text(
+                    "Your academic schedule, brewed into simplicity.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = colors.secondaryContainer
+                ) {
+                    Text(
+                        "VERSION $version",
+                        modifier = Modifier.padding(
+                            horizontal = 10.dp,
+                            vertical = 5.dp
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onSecondaryContainer
+                    )
+                }
+            }
+
+            HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.6f))
+
+            // About
+            AboutSection(title = "About") {
+                Text(
+                    "Organize academic schedules, track available time, and manage everyday university routines.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant
+                )
+            }
+
+            HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.6f))
+
+            // Developer
+            AboutSection(title = "Developer") {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp))
+                {
                     Text(
                         "JODev",
                         style = MaterialTheme.typography.titleMedium,
+                        fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.Bold,
                         color = colors.onSurface
                     )
 
                     Text(
-                        "Independent Developer",
-                        style = MaterialTheme.typography.labelMedium,
+                        "- Independent Developer",
+                        style = MaterialTheme.typography.labelSmall,
                         color = colors.primary
-                    )
-
-                    Text(
-                        "Clofee began as a personal project to simplify university scheduling while exploring software development.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.onSurfaceVariant
                     )
                 }
 
-                HorizontalDivider(
-                    color = colors.outlineVariant.copy(alpha = 0.6f)
+                Text(
+                    "Built as a personal project to simplify university scheduling while exploring software development.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
                 )
+            }
 
-                // Contact
+            HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.6f))
 
-                AboutSection(title = "Find me online") {
+            // Contact
+            AboutSection(title = "Connect") {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     ContactRow(
                         icon = Icons.Default.Code,
                         title = "GitHub",
@@ -712,15 +746,17 @@ fun AboutSettingsDialog(
                         }
                     )
                 }
-
-                Text(
-                    "Made with care for students.",
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
             }
+
+            Text(
+                "Made with care for students.",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         }
 
         SettingsFooter(onDismiss)

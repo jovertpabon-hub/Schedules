@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Parclock</string>
-    <string name="widget_name">Parclock Schedule</string>
+    <string name="app_name">ParClock</string>
+    <string name="widget_name">ParClock Schedule</string>
     <string name="widget_description">View your daily university timetable and next class countdown at a glance.</string>
 </resources>

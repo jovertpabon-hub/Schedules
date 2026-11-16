@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 /**
  * Centralized helper for updating and synchronizing Clofee Glance Widget instances.
  */
-object ClofeeWidgetHelper {
+object ParClockWidgetHelper {
     val KEY_REVISION = longPreferencesKey("widget_revision")
 
     fun updateWidget(context: Context) {
@@ -20,7 +20,7 @@ object ClofeeWidgetHelper {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val manager = GlanceAppWidgetManager(appContext)
-                val glanceIds = manager.getGlanceIds(ClofeeWidget::class.java)
+                val glanceIds = manager.getGlanceIds(ParClockWidget::class.java)
                 if (glanceIds.isNotEmpty()) {
                     val timestamp = System.currentTimeMillis()
                     glanceIds.forEach { glanceId ->
@@ -28,9 +28,9 @@ object ClofeeWidgetHelper {
                             prefs[KEY_REVISION] = timestamp
                         }
                     }
-                    ClofeeWidget().updateAll(appContext)
+                    ParClockWidget().updateAll(appContext)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Safeguard against refresh exceptions so CRUD operations are not interrupted
             }
         }

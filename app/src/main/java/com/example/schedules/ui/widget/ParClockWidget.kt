@@ -52,7 +52,7 @@ import java.util.Locale
  * Clofee Palette Color Providers for Glance widget styling.
  * Designed to strictly reflect the main app screen's theme (Color.kt) and visual hierarchy.
  */
-object ClofeeWidgetColors {
+object ParClockWidgetColors {
     // Foundation Coffee Palette (directly matching Color.kt)
     private val DarkMocha = Color(0xFF543020)
     private val DeepEspresso = Color(0xFF4D2A00)
@@ -111,7 +111,7 @@ private data class WidgetClassStatus(
     val isFreeDay: Boolean = false
 )
 
-class ClofeeWidget : GlanceAppWidget() {
+class ParClockWidget : GlanceAppWidget() {
 
     companion object {
         val SMALL_SQUARE = DpSize(120.dp, 120.dp)
@@ -142,7 +142,7 @@ class ClofeeWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             val prefs = currentState<Preferences>()
-            val revision = prefs[ClofeeWidgetHelper.KEY_REVISION] ?: 0L
+            val revision = prefs[ParClockWidgetHelper.KEY_REVISION] ?: 0L
 
             // Retrieve fresh schedule entities from Room database asynchronously on state update
             val allEntities by produceState(initialValue = emptyList(), key1 = revision) {
@@ -173,7 +173,7 @@ class ClofeeWidget : GlanceAppWidget() {
             Box(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .background(ClofeeWidgetColors.WidgetBackground)
+                    .background(ParClockWidgetColors.WidgetBackground)
                     .cornerRadius(16.dp)
                     .clickable(actionStartActivity(createTodayDeepLinkIntent(context)))
             ) {
@@ -214,7 +214,7 @@ class ClofeeWidget : GlanceAppWidget() {
                 Text(
                     text = "☕ parclock",
                     style = TextStyle(
-                        color = ClofeeWidgetColors.PrimaryText,
+                        color = ParClockWidgetColors.PrimaryText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -223,7 +223,7 @@ class ClofeeWidget : GlanceAppWidget() {
                 Text(
                     text = fullDateStr,
                     style = TextStyle(
-                        color = ClofeeWidgetColors.SecondaryText,
+                        color = ParClockWidgetColors.SecondaryText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -263,7 +263,7 @@ class ClofeeWidget : GlanceAppWidget() {
                 Text(
                     text = "☕ parclock",
                     style = TextStyle(
-                        color = ClofeeWidgetColors.PrimaryText,
+                        color = ParClockWidgetColors.PrimaryText,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -272,21 +272,21 @@ class ClofeeWidget : GlanceAppWidget() {
                 Text(
                     text = "•  $fullDateStr",
                     style = TextStyle(
-                        color = ClofeeWidgetColors.SecondaryText,
+                        color = ParClockWidgetColors.SecondaryText,
                         fontSize = 12.sp
                     )
                 )
                 Spacer(modifier = GlanceModifier.defaultWeight())
                 Box(
                     modifier = GlanceModifier
-                        .background(ClofeeWidgetColors.BadgeBg)
+                        .background(ParClockWidgetColors.BadgeBg)
                         .cornerRadius(8.dp)
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = if (todayClasses.isNotEmpty()) "${todayClasses.size} classes" else "Free Day",
                         style = TextStyle(
-                            color = ClofeeWidgetColors.BadgeText,
+                            color = ParClockWidgetColors.BadgeText,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -308,7 +308,7 @@ class ClofeeWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .defaultWeight()
-                        .background(ClofeeWidgetColors.CardBackground)
+                        .background(ParClockWidgetColors.CardBackground)
                         .cornerRadius(12.dp)
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
@@ -317,7 +317,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = "☕ A Clear Day Ahead",
                             style = TextStyle(
-                                color = ClofeeWidgetColors.PrimaryText,
+                                color = ParClockWidgetColors.PrimaryText,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -326,7 +326,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = "No classes scheduled today. Enjoy your day!",
                             style = TextStyle(
-                                color = ClofeeWidgetColors.SecondaryText,
+                                color = ParClockWidgetColors.SecondaryText,
                                 fontSize = 11.sp
                             )
                         )
@@ -369,7 +369,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = "parclock",
                             style = TextStyle(
-                                color = ClofeeWidgetColors.PrimaryText,
+                                color = ParClockWidgetColors.PrimaryText,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -377,7 +377,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = "Your daily schedule",
                             style = TextStyle(
-                                color = ClofeeWidgetColors.SecondaryText,
+                                color = ParClockWidgetColors.SecondaryText,
                                 fontSize = 10.sp
                             )
                         )
@@ -387,7 +387,7 @@ class ClofeeWidget : GlanceAppWidget() {
                 Text(
                     text = fullDateStr,
                     style = TextStyle(
-                        color = ClofeeWidgetColors.SecondaryText,
+                        color = ParClockWidgetColors.SecondaryText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     ),
@@ -414,7 +414,7 @@ class ClofeeWidget : GlanceAppWidget() {
                 Text(
                     text = "Today's Schedule",
                     style = TextStyle(
-                        color = ClofeeWidgetColors.SecondaryText,
+                        color = ParClockWidgetColors.SecondaryText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -424,14 +424,14 @@ class ClofeeWidget : GlanceAppWidget() {
 
                 Box(
                     modifier = GlanceModifier
-                        .background(ClofeeWidgetColors.BadgeBg)
+                        .background(ParClockWidgetColors.BadgeBg)
                         .cornerRadius(6.dp)
                         .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = "${todayClasses.size} ${if (todayClasses.size == 1) "Class" else "Classes"}",
                         style = TextStyle(
-                            color = ClofeeWidgetColors.BadgeText,
+                            color = ParClockWidgetColors.BadgeText,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -463,7 +463,7 @@ class ClofeeWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .defaultWeight()
-                        .background(ClofeeWidgetColors.CardBackground)
+                        .background(ParClockWidgetColors.CardBackground)
                         .cornerRadius(12.dp)
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
@@ -472,7 +472,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = "☕ A Clear Day Ahead",
                             style = TextStyle(
-                                color = ClofeeWidgetColors.PrimaryText,
+                                color = ParClockWidgetColors.PrimaryText,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -481,7 +481,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = "No classes scheduled today. Enjoy your free time!",
                             style = TextStyle(
-                                color = ClofeeWidgetColors.SecondaryText,
+                                color = ParClockWidgetColors.SecondaryText,
                                 fontSize = 11.sp
                             )
                         )
@@ -500,7 +500,7 @@ class ClofeeWidget : GlanceAppWidget() {
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .background(ClofeeWidgetColors.HeroBackground)
+                .background(ParClockWidgetColors.HeroBackground)
                 .cornerRadius(12.dp)
                 .padding(10.dp)
                 .clickable(
@@ -526,7 +526,7 @@ class ClofeeWidget : GlanceAppWidget() {
                             ClassStatus.NONE -> if (widgetStatus.isAllCompleted) "☕ ALL CLASSES FINISHED" else "☕ DAILY OVERVIEW"
                         },
                         style = TextStyle(
-                            color = ClofeeWidgetColors.HeroTextSecondary,
+                            color = ParClockWidgetColors.HeroTextSecondary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -543,14 +543,14 @@ class ClofeeWidget : GlanceAppWidget() {
 
                     Box(
                         modifier = GlanceModifier
-                            .background(ClofeeWidgetColors.HeroBadgeBg)
+                            .background(ParClockWidgetColors.HeroBadgeBg)
                             .cornerRadius(6.dp)
                             .padding(horizontal = 7.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = badgeText,
                             style = TextStyle(
-                                color = ClofeeWidgetColors.HeroBadgeText,
+                                color = ParClockWidgetColors.HeroBadgeText,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -566,7 +566,7 @@ class ClofeeWidget : GlanceAppWidget() {
                     Text(
                         text = course.courseName,
                         style = TextStyle(
-                            color = ClofeeWidgetColors.HeroTextPrimary,
+                            color = ParClockWidgetColors.HeroTextPrimary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         ),
@@ -582,7 +582,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = widgetStatus.timeFormatted,
                             style = TextStyle(
-                                color = ClofeeWidgetColors.HeroTextSecondary,
+                                color = ParClockWidgetColors.HeroTextSecondary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -593,7 +593,7 @@ class ClofeeWidget : GlanceAppWidget() {
                         Text(
                             text = "•  ${formatTimeShort(course.startTime)} - ${formatTimeShort(course.endTime)}  •  Rm ${course.room}",
                             style = TextStyle(
-                                color = ClofeeWidgetColors.HeroTextMuted,
+                                color = ParClockWidgetColors.HeroTextMuted,
                                 fontSize = 10.sp
                             ),
                             maxLines = 1
@@ -603,7 +603,7 @@ class ClofeeWidget : GlanceAppWidget() {
                     Text(
                         text = if (widgetStatus.isAllCompleted) "You've completed your schedule for today." else "No classes scheduled today.",
                         style = TextStyle(
-                            color = ClofeeWidgetColors.HeroTextPrimary,
+                            color = ParClockWidgetColors.HeroTextPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -612,7 +612,7 @@ class ClofeeWidget : GlanceAppWidget() {
                     Text(
                         text = if (widgetStatus.isAllCompleted) "Enjoy your free time" else "Make the most of your day",
                         style = TextStyle(
-                            color = ClofeeWidgetColors.HeroTextMuted,
+                            color = ParClockWidgetColors.HeroTextMuted,
                             fontSize = 10.sp
                         )
                     )
@@ -632,25 +632,25 @@ class ClofeeWidget : GlanceAppWidget() {
         val isOngoing = !currentTime.isBefore(course.startTime) && currentTime.isBefore(course.endTime)
 
         val pillarColor = when {
-            isOngoing -> ClofeeWidgetColors.OngoingAccentPillar
-            isCompleted -> ClofeeWidgetColors.CompletedAccentPillar
-            else -> ClofeeWidgetColors.AccentPillar
+            isOngoing -> ParClockWidgetColors.OngoingAccentPillar
+            isCompleted -> ParClockWidgetColors.CompletedAccentPillar
+            else -> ParClockWidgetColors.AccentPillar
         }
 
         val titleTextColor = when {
-            isCompleted -> ClofeeWidgetColors.CompletedText
-            else -> ClofeeWidgetColors.PrimaryText
+            isCompleted -> ParClockWidgetColors.CompletedText
+            else -> ParClockWidgetColors.PrimaryText
         }
 
         val subtitleTextColor = when {
-            isCompleted -> ClofeeWidgetColors.CompletedText
-            else -> ClofeeWidgetColors.MutedText
+            isCompleted -> ParClockWidgetColors.CompletedText
+            else -> ParClockWidgetColors.MutedText
         }
 
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .background(ClofeeWidgetColors.ClassItemContainer)
+                .background(ParClockWidgetColors.ClassItemContainer)
                 .cornerRadius(10.dp)
                 .padding(horizontal = 10.dp, vertical = 7.dp)
                 .clickable(actionStartActivity(createClassDeepLinkIntent(context, course.id ?: 0L)))
@@ -711,9 +711,9 @@ class ClofeeWidget : GlanceAppWidget() {
 
                 // Status Badge Tag
                 val (badgeBg, badgeText, label) = when {
-                    isOngoing -> Triple(ClofeeWidgetColors.OngoingBadgeBg, ClofeeWidgetColors.OngoingBadgeText, "NOW")
-                    isCompleted -> Triple(ClofeeWidgetColors.CompletedBadgeBg, ClofeeWidgetColors.CompletedBadgeText, "DONE")
-                    else -> Triple(ClofeeWidgetColors.UpcomingBadgeBg, ClofeeWidgetColors.UpcomingBadgeText, "NEXT")
+                    isOngoing -> Triple(ParClockWidgetColors.OngoingBadgeBg, ParClockWidgetColors.OngoingBadgeText, "NOW")
+                    isCompleted -> Triple(ParClockWidgetColors.CompletedBadgeBg, ParClockWidgetColors.CompletedBadgeText, "DONE")
+                    else -> Triple(ParClockWidgetColors.UpcomingBadgeBg, ParClockWidgetColors.UpcomingBadgeText, "NEXT")
                 }
 
                 Box(

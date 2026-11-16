@@ -91,7 +91,7 @@ object ScheduleNotificationHelper {
             notificationManager.createNotificationChannel(silentChannel)
             notificationManager.createNotificationChannel(updatesChannel)
             notificationManager.createNotificationChannel(summaryChannel)
-            Log.d("ScheduleNotification", "All Clofee notification channels initialized successfully")
+            Log.d("ScheduleNotification", "All ParClock notification channels initialized successfully")
         }
     }
 
@@ -239,7 +239,7 @@ object ScheduleNotificationHelper {
         }
     }
 
-    fun showScheduleChangeNotification(context: Context, title: String, message: String) {
+    fun showScheduleChangeNotification(context: Context, message: String) {
         showScheduleChangeNotification(context, courseCode = null, changeDescription = message)
     }
 

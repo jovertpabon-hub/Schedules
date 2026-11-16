@@ -101,7 +101,7 @@ fun NowTabClassDetails(
             color = when {
                 isOngoing -> colors.secondary
                 isCompleted -> colors.outlineVariant.copy(alpha = 0.35f)
-                else -> colors.outlineVariant.copy(alpha = 0.5f)
+                else -> colors.outlineVariant.copy(alpha = 0.15f)
             }
         ),
         modifier = Modifier.fillMaxWidth()
